@@ -1,70 +1,50 @@
 
-# Tre miglioramenti all'export e al form
+# Tre fix per migliorare validazione & UX
 
-## 1. Export PNG con fallback (no più crash da file-saver)
+## 1. Errore runtime `onExportSingle is not defined`
+È un residuo del bundle precedente — nessun file sorgente attuale lo referenzia (verificato con search). Per forzare un re-bundle pulito tocco un file di routing (rigenerazione del route tree) e correggo un dettaglio di tipo che potrebbe contribuire: `exportRefs` è tipizzato come `MutableRefObject` mentre `useRef<Map<...>>(new Map())` produce `RefObject` in React 19. Allineo la prop a `RefObject<Map<string, HTMLDivElement>>` in `ExportButton.tsx` per togliere ogni warning TS.
 
-Nuovo modulo `src/lib/download.ts` con funzione `saveBlob(blob, filename)` che prova in ordine:
-1. **`file-saver`** (via dynamic import, così se il pacchetto rompe il modulo non crasha l'app)
-2. **Fallback nativo**: crea un `<a download>`, lo clicca e revoca l'`objectURL`
-3. **Ultimo fallback**: apre il blob in una nuova tab con un toast che dice "Tasto destro → Salva immagine come..."
+## 2. Pulizia compilazione `SlideEditorForm.tsx`
+- Rimuovo l'import inutilizzato `useMemo` (lo lascio se serve, ma `errors` può essere ricalcolato; uso `useMemo` correttamente — già fatto, ma rimuovo eventuali import non usati come `Plus` che non viene più impiegato in alcuni rami).
+- Garantisco che ogni sotto-editor (Split/Grid/BigNum/Center/Timeline/Compare/Vocab/QA/Checklist/Stat) accetti `errFor: ErrFor` e che TypeScript non si lamenti dei branch dello `switch`.
+- Aggiungo `data-field={path}` su ogni `<Input>`/`<Textarea>` corrispondente a un campo validato. Serve al focus automatico (punto 3).
 
-`src/lib/export.ts` viene aggiornato per usare `saveBlob` invece di importare `saveAs` direttamente. Risultato: anche se il bundler ha problemi con `file-saver`, l'export funziona e l'utente vede sempre un messaggio chiaro invece della pagina bianca.
+## 3. "Vai alla prima slide invalida" → focus + scroll sul campo
+Flusso completo:
 
-Tutti gli errori di export vengono mostrati con `toast.error(...)` già presente, ma in più aggiungo un **banner inline** sotto la toolbar (componente `ExportErrorBanner`) che resta visibile finché non viene chiuso, con il messaggio completo dell'errore (utile se l'utente lo perde nel toast).
+a) Estendo `validateAllSlides` per includere, oltre al `field` path, una nuova proprietà `firstField: string` (path del primo campo da fixare).
 
-## 2. Bottone export unificato con menu Single PNG / ZIP
+b) `ExportButton.onConfirmDialog` (ramo non-force):
+   1. `setActive(first.slideId)` (già fatto)
+   2. dispatch di un `CustomEvent("slide:focus-field", { detail: { slideId, field } })` sul `window`.
 
-I due bottoni separati attuali ("PNG slide" + "ZIP (N)") vengono uniti in un unico bottone **"Export"** con `DropdownMenu` (shadcn, già installato) che apre due voci:
+c) Nel pannello editor (`SlideEditorForm`) aggiungo un `useEffect` che ascolta `slide:focus-field` e quando `slideId` matcha:
+   - cerca nel proprio container un elemento con `[data-field="<path>"]`
+   - chiama `.scrollIntoView({ behavior: "smooth", block: "center" })`
+   - chiama `.focus()` con un piccolo delay (50ms) per dare tempo al tab "Form" di montare.
+   - aggiunge un anello rosso pulsante (`animate-pulse ring-2 ring-destructive`) per 1.5s.
 
-- **PNG — slide corrente** (`slide-NN.png`) — disabilitato se nessuna slide attiva
-- **ZIP — tutte le slide (N)** (`titolo-carosello.zip`) — disabilitato se 0 slide
+d) Se l'utente è nel tab "JSON", forzo lo switch al tab "Form" prima del focus. Per farlo trasformo il `Tabs` in `routes/index.tsx` da `defaultValue` a controlled (`value`/`onValueChange`) e ascolto lo stesso evento per resettare a `"form"`.
 
-Lo stato `exporting` resta uno solo e mostra lo spinner sul bottone principale durante l'operazione. Più pulito visivamente e fa esattamente quello che hai chiesto: scelta esplicita al momento del click.
+## 4. Messaggi validazione con label esatte
+Ridisegno `src/lib/validation.ts`:
 
-## 3. Validazione dei campi obbligatori prima dell'export
-
-Nuovo file `src/lib/validation.ts` con:
-
-```text
-validateSlide(slide) → { valid: boolean; errors: { field: string; message: string }[] }
-validateAllSlides(slides) → { slideId, slideIndex, errors[] }[]
-```
-
-**Regole obbligatorie per template** (in italiano, mostrate all'utente):
-- **split**: `title` non vuoto
-- **grid2x2**: `title` non vuoto + tutte e 4 le celle con `title` non vuoto
-- **bignum**: `number` + `title` non vuoti
-- **center**: `title` non vuoto
-- **timeline**: `title` non vuoto + almeno 1 step con `title`
-- **compare**: `title` + `before.title` + `after.title` non vuoti + almeno 1 voce per lato
-- **vocab**: `word` + `def` non vuoti
-- **qa**: `question` + almeno 1 paragrafo di risposta non vuoto
-- **checklist**: `title` + almeno 1 voce con `title`
-- **stat**: `value` + `label` non vuoti
-
-**Dove appare la validazione:**
-
-a) **Nel form (live)**: ogni campo obbligatorio mancante mostra un bordo rosso + messaggio sotto ("Campo obbligatorio"). Componente `Field` esteso con prop `error?: string`. La sidebar mostra un puntino rosso vicino alle slide invalide.
-
-b) **All'export**: prima di lanciare PNG o ZIP, `validateAllSlides()` viene eseguita. Se ci sono errori:
-- L'export viene **bloccato**
-- Si apre un `AlertDialog` con la lista delle slide invalide e i campi mancanti (es. *"Slide 03 (Timeline): Titolo mancante, almeno uno step richiesto"*)
-- Due bottoni: "Vai alla prima slide invalida" (seleziona quella slide e chiude) o "Annulla"
-
-c) **Override per emergenza**: nel dialog c'è una checkbox "Esporta comunque" che permette di bypassare la validazione (utile se vuoi un mockup veloce).
+- Definisco una mappa `FIELD_LABELS: Record<TemplateId, Record<string, string>>` con label leggibili (es. `split.title` → "Titolo", `timeline.items` → "Step", `qa.answer` → "Paragrafi risposta").
+- Ogni messaggio usa il pattern: `"<Label>: <ragione>"` — esempi:
+  - `"Titolo: campo obbligatorio"`
+  - `"Step 2 — Titolo: campo obbligatorio"` (per array indicizzati)
+  - `"Cella 3 — Titolo riquadro: campo obbligatorio"`
+  - `"Colonna 'Dopo' — Voce 1: campo obbligatorio"`
+  - `"Risposta — Paragrafo 1: campo obbligatorio"`
+- Per gli array, se manca *l'intero* array: `"Step: aggiungi almeno una voce"`. Se mancano dei campi *dentro* un item, si segnala l'item specifico con il suo indice 1-based.
+- Aggiorno il dialog di `ExportButton` per mostrare le label così come escono da `validation.ts` (già fa `e.message`), e aggiungo l'indicazione del **template label** (già presente) + il **conteggio errori** ("3 campi da completare").
 
 ## File toccati
-
-- `src/lib/download.ts` *(nuovo)* — fallback chain per il salvataggio blob
-- `src/lib/export.ts` — usa `saveBlob`, rimuove import diretto di `file-saver`
-- `src/lib/validation.ts` *(nuovo)* — regole + funzioni di validazione per i 10 template
-- `src/components/ExportButton.tsx` *(nuovo)* — bottone unificato con dropdown + dialog di validazione
-- `src/components/ExportErrorBanner.tsx` *(nuovo)* — banner persistente per errori export
-- `src/components/SlideEditorForm.tsx` — `Field` con prop `error`, integrazione validazione live
-- `src/components/SlidesSidebar.tsx` — puntino rosso sulle slide invalide
-- `src/routes/index.tsx` — sostituisce i due bottoni export con `ExportButton`, monta `ExportErrorBanner`
-- `src/lib/store.ts` — nessuna modifica strutturale (la validazione è derivata, non in store)
+- `src/lib/validation.ts` — riscrittura messaggi + `firstField` nel risultato
+- `src/components/SlideEditorForm.tsx` — `data-field` su tutti gli input, listener `slide:focus-field`, pulizia import
+- `src/components/ExportButton.tsx` — dispatch evento custom dopo `setActive`, fix tipo `RefObject`, label "Vai alla prima slide invalida" → "Vai al primo campo da completare"
+- `src/routes/index.tsx` — `Tabs` controlled, listener evento per forzare tab "form"
 
 ## Fuori scope
-- Validazione del JSON nel tab "JSON" (il parsing JSON ha già il suo error handling)
-- Validazione su lunghezza testi / overflow visivo (richiederebbe misurare il rendering)
+- Nessuna modifica a `store.ts` (l'evento è effimero, non va in store)
+- Nessun cambiamento al rendering delle slide o all'export logic
