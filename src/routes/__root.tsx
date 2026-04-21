@@ -1,5 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { useCarousel } from "@/lib/store";
+import { toast } from "sonner";
 
 import appCss from "../styles.css?url";
 
@@ -30,14 +33,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Carousel Generator" },
+      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua, brand persistente ed export PNG 1080×1350." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Carousel Generator" },
+      { property: "og:description", content: "Genera caroselli editoriali multilingua, esporta PNG 1080×1350." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -66,6 +68,23 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  // Client-side rehydrate of persisted brand + presets (skipHydration is true in store).
+  useEffect(() => {
+    let restored = false;
+    try {
+      restored = !!localStorage.getItem("carousel-brand-v1");
+    } catch {
+      /* ignore */
+    }
+    void useCarousel.persist.rehydrate()?.then(() => {
+      if (restored) {
+        toast.success("Brand ripristinato dalla sessione precedente", {
+          duration: 3000,
+        });
+      }
+    });
+  }, []);
+
   return (
     <>
       <Outlet />

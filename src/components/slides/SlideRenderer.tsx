@@ -43,16 +43,29 @@ function HL({ text }: { text: string }) {
 function buildClassName(slide: Slide, brand: BrandSettings): string {
   const fx = brand.effects;
   const parts = ["slide-frame", `tpl-${slide.template}`];
-  if (fx.bgPattern && fx.bgPattern !== "none") parts.push(`fx-pattern-${fx.bgPattern === "gradient-mesh" ? "mesh" : fx.bgPattern}`);
+  if (fx.bgPattern && fx.bgPattern !== "none") {
+    const bgKey = fx.bgPattern === "gradient-mesh" ? "mesh" : fx.bgPattern;
+    parts.push(`fx-pattern-${bgKey}`);
+  }
   if (fx.accentGlow) parts.push("fx-accent-glow");
   if (fx.textGradient) parts.push("fx-text-gradient");
   if (fx.borderStyle && fx.borderStyle !== "none") parts.push(`fx-border-${fx.borderStyle}`);
+  if (fx.shadow && fx.shadow !== "none") parts.push(`fx-shadow-${fx.shadow}`);
+  if (fx.cornerStyle) parts.push(`fx-corner-${fx.cornerStyle}`);
+  if (fx.titleEffect && fx.titleEffect !== "none") parts.push(`fx-title-${fx.titleEffect}`);
+  if (fx.dividerStyle && fx.dividerStyle !== "line") parts.push(`fx-divider-${fx.dividerStyle}`);
+  if (fx.iconAccent) parts.push("fx-icon-accent");
   return parts.join(" ");
 }
 
 export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendererProps) {
   const counter = `${pad2(index + 1)} / ${pad2(total)}`;
   const data = getSlideData(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage);
+
+  const radius =
+    brand.effects.cornerStyle === "sharp" ? "0px"
+    : brand.effects.cornerStyle === "pill" ? "24px"
+    : "10px";
 
   const styleVars: React.CSSProperties = {
     ["--cyan" as string]: brand.accent,
@@ -63,6 +76,7 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
     ["--font-body" as string]: `'${brand.fontBody}', system-ui, sans-serif`,
     ["--w-h" as string]: String(brand.headingWeight),
     ["--w-b" as string]: String(brand.bodyWeight),
+    ["--radius" as string]: radius,
   };
 
   return (
