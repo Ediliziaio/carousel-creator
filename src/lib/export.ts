@@ -1,11 +1,9 @@
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
-import fileSaver from "file-saver";
-const { saveAs } = fileSaver;
+import { saveBlob, type SaveMethod } from "./download";
 
 async function ensureFonts() {
   if (typeof document === "undefined") return;
-  // Inject Google Fonts link if missing
   const id = "carousel-google-fonts";
   if (!document.getElementById(id)) {
     const link = document.createElement("link");
@@ -24,7 +22,7 @@ async function ensureFonts() {
 
 export async function captureNode(node: HTMLElement): Promise<string> {
   await ensureFonts();
-  // Render twice — first render warms up images/fonts, second is the real one
+  // Render twice — first warms up images/fonts, second is the real one
   await toPng(node, {
     width: 1080,
     height: 1350,
@@ -42,13 +40,13 @@ export async function captureNode(node: HTMLElement): Promise<string> {
   return dataUrl;
 }
 
-export async function downloadSinglePng(node: HTMLElement, filename: string) {
+export async function downloadSinglePng(node: HTMLElement, filename: string): Promise<SaveMethod> {
   const dataUrl = await captureNode(node);
   const blob = await (await fetch(dataUrl)).blob();
-  saveAs(blob, filename);
+  return saveBlob(blob, filename);
 }
 
-export async function downloadZipFromNodes(nodes: HTMLElement[], baseName: string) {
+export async function downloadZipFromNodes(nodes: HTMLElement[], baseName: string): Promise<SaveMethod> {
   const zip = new JSZip();
   for (let i = 0; i < nodes.length; i++) {
     const dataUrl = await captureNode(nodes[i]);
@@ -57,5 +55,5 @@ export async function downloadZipFromNodes(nodes: HTMLElement[], baseName: strin
     zip.file(`slide-${num}.png`, base64, { base64: true });
   }
   const blob = await zip.generateAsync({ type: "blob" });
-  saveAs(blob, `${baseName}.zip`);
+  return saveBlob(blob, `${baseName}.zip`);
 }
