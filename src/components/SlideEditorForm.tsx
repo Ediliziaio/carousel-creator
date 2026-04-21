@@ -32,7 +32,7 @@ interface Props { slide: Slide }
 export function SlideEditorForm({ slide }: Props) {
   const update = useCarousel((s) => s.updateSlide);
   const activeLang = useCarousel((s) => s.activeLang);
-  const setActiveLang = useCarousel((s) => s.setActiveLang);
+  const setActiveLangRaw = useCarousel((s) => s.setActiveLang);
   const languages = useCarousel((s) => s.brand.languages);
   const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
 
@@ -80,6 +80,15 @@ export function SlideEditorForm({ slide }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slide.id]);
+
+  // Flush pending draft sync before switching language to avoid losing edits.
+  const setActiveLang = (code: string) => {
+    if (code === activeLang) return;
+    if (draftRef.current !== data) {
+      update(slide.id, draftRef.current);
+    }
+    setActiveLangRaw(code);
+  };
 
   const errors = useMemo(
     () => validateSlideData(slide.template, draft).errors,
