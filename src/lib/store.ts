@@ -518,6 +518,40 @@ export const useCarousel = create<CarouselState>()(
       setStrictExport: (v) => set({ strictExport: v }),
       setValidationOverlay: (v) => set({ validationOverlay: v }),
 
+      bulkUpdateMarketingSlides: (updates) =>
+        set((s) => {
+          const map = new Map(updates.map((u) => [u.slideId, u.patch]));
+          const slides = s.slides.map((sl) => {
+            const patch = map.get(sl.id);
+            if (!patch) return sl;
+            const lang = s.activeLang;
+            const def = s.brand.defaultLanguage;
+            const current = getSlideData(sl, lang, def) as unknown as Record<string, unknown>;
+            const merged = { ...current, ...patch } as unknown as AnyTemplateData;
+            return { ...sl, data: setSlideData(sl.data, lang, merged, def) };
+          });
+          return withHistory(s, { slides });
+        }),
+
+      offerPresets: BUILT_IN_OFFER_PRESETS,
+
+      saveOfferPreset: (name, values) =>
+        set((s) => ({
+          offerPresets: [...s.offerPresets, makeOfferPreset(name, values)],
+        })),
+
+      deleteOfferPreset: (id) =>
+        set((s) => ({
+          offerPresets: s.offerPresets.filter((p) => p.id !== id || p.builtIn),
+        })),
+
+      renameOfferPreset: (id, name) =>
+        set((s) => ({
+          offerPresets: s.offerPresets.map((p) =>
+            p.id === id && !p.builtIn ? { ...p, name: name.trim() || p.name } : p,
+          ),
+        })),
+
 
       undo: () =>
         set((s) => {
@@ -567,7 +601,36 @@ export const useCarousel = create<CarouselState>()(
         lastFontSizeByFieldType: s.lastFontSizeByFieldType,
         strictExport: s.strictExport,
         validationOverlay: s.validationOverlay,
+        offerPresets: s.offerPresets.filter((p) => !p.builtIn),
       }),
+      merge: (persistedState, currentState) => {
+        const ps = persistedState as Partial<{
+          brand: BrandSettings;
+          brandPresets: BrandPreset[];
+          slideCombos: SlideCombo[];
+          templateCategoryOrder: string[];
+          templatesPerCategory: Record<string, TemplateId[]>;
+          lastFontSizeByFieldType: Record<string, number>;
+          strictExport: boolean;
+          validationOverlay: boolean;
+          offerPresets: OfferPreset[];
+        }> | undefined;
+        const customPresets = ps?.brandPresets ?? [];
+        const customOfferPresets = ps?.offerPresets ?? [];
+        const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
+        return {
+          ...currentState,
+          brand: mergeBrand(ps?.brand),
+          brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => !p.builtIn)],
+          slideCombos: ps?.slideCombos ?? [],
+          templateCategoryOrder: picker.templateCategoryOrder,
+          templatesPerCategory: picker.templatesPerCategory,
+          lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
+          strictExport: ps?.strictExport ?? true,
+          validationOverlay: ps?.validationOverlay ?? true,
+          offerPresets: [...BUILT_IN_OFFER_PRESETS, ...customOfferPresets.filter((p) => !p.builtIn)],
+        };
+      },
       merge: (persistedState, currentState) => {
         const ps = persistedState as Partial<{
           brand: BrandSettings;
