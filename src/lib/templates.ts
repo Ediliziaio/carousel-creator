@@ -19,7 +19,13 @@ export type TemplateId =
   | "chartDonut"
   | "chartLine"
   | "feature"
-  | "testimonial";
+  | "testimonial"
+  | "myth"
+  | "process"
+  | "prosCons"
+  | "quoteBig"
+  | "roadmap"
+  | "cta";
 
 export interface SplitData {
   eyebrow: string;
@@ -132,6 +138,45 @@ export interface TestimonialData {
   role?: string;
   rating?: number;
 }
+export interface MythData {
+  eyebrow: string;
+  title: string;
+  myth: { label: string; text: string };
+  reality: { label: string; text: string };
+  source?: string;
+}
+export interface ProcessData {
+  eyebrow: string;
+  title: string;
+  steps: { number?: string; title: string; desc: string }[];
+}
+export interface ProsConsData {
+  eyebrow: string;
+  title: string;
+  prosLabel?: string;
+  consLabel?: string;
+  pros: string[];
+  cons: string[];
+}
+export interface QuoteBigData {
+  quote: string;
+  author: string;
+  role?: string;
+  avatarUrl?: string;
+}
+export type RoadmapStatus = "done" | "progress" | "planned";
+export interface RoadmapData {
+  eyebrow: string;
+  title: string;
+  milestones: { status: RoadmapStatus; period: string; title: string; desc: string }[];
+}
+export interface CtaData {
+  eyebrow?: string;
+  headline: string;
+  subtitle?: string;
+  buttonLabel: string;
+  handle?: string;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -151,7 +196,13 @@ export type AnyTemplateData =
   | ChartDonutData
   | ChartLineData
   | FeatureData
-  | TestimonialData;
+  | TestimonialData
+  | MythData
+  | ProcessData
+  | ProsConsData
+  | QuoteBigData
+  | RoadmapData
+  | CtaData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -330,6 +381,12 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   chartLine: { label: "Grafico a linee", desc: "Trend / andamento nel tempo" },
   feature: { label: "Feature spotlight", desc: "Immagine grande + 3 bullet" },
   testimonial: { label: "Testimonianza", desc: "Avatar + quote + autore" },
+  myth: { label: "Mito vs Realtà", desc: "Sfata un mito con la verità" },
+  process: { label: "Processo a step", desc: "Lista numerata di passaggi" },
+  prosCons: { label: "Pro & Contro", desc: "Due colonne a confronto" },
+  quoteBig: { label: "Citazione XXL", desc: "Quote tipografica gigante" },
+  roadmap: { label: "Roadmap", desc: "Milestone con stati" },
+  cta: { label: "Call To Action", desc: "Slide finale con bottone" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -337,6 +394,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "compare", "vocab", "qa", "checklist", "stat", "cover",
   "gallery", "imageQuote", "chartBar", "chartDonut", "chartLine",
   "feature", "testimonial",
+  "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -512,6 +570,60 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         role: "CEO @ Acme",
         rating: 5,
       } as TestimonialData;
+    case "myth":
+      return {
+        eyebrow: "Mito vs Realtà",
+        title: "Sfatiamo un mito sull'AI.",
+        myth: { label: "MITO", text: "L'AI sostituirà tutti i creator entro un anno." },
+        reality: { label: "REALTÀ", text: "L'AI amplifica chi sa usarla. I creator che la integrano crescono 3x più veloci." },
+        source: "FONTE — REPORT 2025",
+      } as MythData;
+    case "process":
+      return {
+        eyebrow: "Come funziona",
+        title: "Da idea a post in 4 step.",
+        steps: [
+          { title: "Definisci l'obiettivo", desc: "Cosa vuoi ottenere con questo contenuto?" },
+          { title: "Scegli il formato", desc: "Carosello, reel, statico — adatta al messaggio." },
+          { title: "Genera con AI", desc: "Prompt chiaro, output veloce, iterazione." },
+          { title: "Pubblica e misura", desc: "Posta, leggi i dati, ripeti il ciclo." },
+        ],
+      } as ProcessData;
+    case "prosCons":
+      return {
+        eyebrow: "Decisione",
+        title: "Vale la pena usare l'AI?",
+        prosLabel: "PRO",
+        consLabel: "CONTRO",
+        pros: ["Velocità 10x", "Costi ridotti", "Output replicabili", "Scalabilità immediata"],
+        cons: ["Curva di apprendimento", "Output da verificare", "Dipendenza dai tool"],
+      } as ProsConsData;
+    case "quoteBig":
+      return {
+        quote: "La creatività è connettere le cose.",
+        author: "Steve Jobs",
+        role: "Apple",
+        avatarUrl: undefined,
+      } as QuoteBigData;
+    case "roadmap":
+      return {
+        eyebrow: "Roadmap 2026",
+        title: "Cosa stiamo costruendo.",
+        milestones: [
+          { status: "done", period: "Q4 2025", title: "Lancio beta", desc: "Prime 100 persone a bordo." },
+          { status: "progress", period: "Q1 2026", title: "Editor AI", desc: "Generazione contenuti integrata." },
+          { status: "planned", period: "Q2 2026", title: "Mobile app", desc: "iOS + Android nativi." },
+          { status: "planned", period: "Q3 2026", title: "Marketplace", desc: "Template e preset community." },
+        ],
+      } as RoadmapData;
+    case "cta":
+      return {
+        eyebrow: "AZIONE",
+        headline: "Salva questo post.",
+        subtitle: "Tornaci ogni volta che ti serve.",
+        buttonLabel: "SALVA ORA →",
+        handle: "@edoardo_barravecchia",
+      } as CtaData;
   }
 }
 
@@ -665,6 +777,54 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "quote", label: "Citazione" },
         { path: "author", label: "Autore" },
         { path: "role", label: "Ruolo" },
+      ];
+    case "myth":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "myth.text", label: "Mito" },
+        { path: "reality.text", label: "Realtà" },
+      ];
+    case "process": {
+      const d = data as ProcessData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}.title`, label: `Step ${i + 1} – titolo` }));
+      return out;
+    }
+    case "prosCons": {
+      const d = data as ProsConsData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.pros?.forEach((_, i) => out.push({ path: `pros.${i}`, label: `Pro ${i + 1}` }));
+      d?.cons?.forEach((_, i) => out.push({ path: `cons.${i}`, label: `Contro ${i + 1}` }));
+      return out;
+    }
+    case "quoteBig":
+      return [
+        { path: "quote", label: "Citazione" },
+        { path: "author", label: "Autore" },
+        { path: "role", label: "Ruolo" },
+      ];
+    case "roadmap": {
+      const d = data as RoadmapData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.milestones?.forEach((_, i) => out.push({ path: `milestones.${i}.title`, label: `Milestone ${i + 1}` }));
+      return out;
+    }
+    case "cta":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "headline", label: "Headline" },
+        { path: "subtitle", label: "Sottotitolo" },
+        { path: "buttonLabel", label: "Bottone" },
       ];
   }
 }

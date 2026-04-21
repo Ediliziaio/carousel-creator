@@ -26,10 +26,10 @@ import { setSlideData, getSlideData } from "./i18n";
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
-  text:  ["cover", "center", "split", "bignum"],
-  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine"],
+  text:  ["cover", "center", "split", "bignum", "myth", "quoteBig"],
+  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "process", "prosCons", "roadmap"],
   media: ["gallery", "imageQuote", "feature", "testimonial"],
-  ref:   ["vocab", "qa"],
+  ref:   ["vocab", "qa", "cta"],
 };
 
 /** Merge persisted picker state with defaults so newly-added templates/categories appear. */

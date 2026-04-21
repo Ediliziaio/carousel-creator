@@ -18,6 +18,12 @@ import type {
   ChartLineData,
   FeatureData,
   TestimonialData,
+  MythData,
+  ProcessData,
+  ProsConsData,
+  QuoteBigData,
+  RoadmapData,
+  CtaData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -54,10 +60,15 @@ export const LIMITS = {
   chartDonut: { min: 2, max: 8 },
   chartLine: { min: 3, max: 24 },
   featureBullets: { min: 2, max: 5 },
+  processSteps: { min: 3, max: 6 },
+  prosCons: { min: 2, max: 5 },
+  roadmap: { min: 3, max: 5 },
   quoteMin: 10,
   quoteMax: 280,
   authorMax: 60,
   captionMax: 80,
+  headlineMax: 80,
+  buttonMax: 32,
 } as const;
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -291,6 +302,75 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       }
       const u = checkImageUrl(d.avatarUrl);
       if (u) err("avatarUrl", u);
+      break;
+    }
+    case "myth": {
+      const d = data as MythData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (empty(d.myth?.text)) err("myth.text", `Mito: ${REQUIRED}`);
+      if (empty(d.reality?.text)) err("reality.text", `Realtà: ${REQUIRED}`);
+      break;
+    }
+    case "process": {
+      const d = data as ProcessData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (d.steps.length < LIMITS.processSteps.min)
+        err("steps", `Servono almeno ${LIMITS.processSteps.min} step (hai ${d.steps.length})`);
+      if (d.steps.length > LIMITS.processSteps.max)
+        err("steps", `Massimo ${LIMITS.processSteps.max} step (hai ${d.steps.length})`);
+      d.steps.forEach((s, i) => {
+        if (empty(s.title)) err(`steps.${i}.title`, `Step ${i + 1}: titolo obbligatorio`);
+      });
+      break;
+    }
+    case "prosCons": {
+      const d = data as ProsConsData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (d.pros.length < LIMITS.prosCons.min)
+        err("pros", `PRO: servono almeno ${LIMITS.prosCons.min} voci (hai ${d.pros.length})`);
+      if (d.pros.length > LIMITS.prosCons.max)
+        err("pros", `PRO: massimo ${LIMITS.prosCons.max} voci`);
+      if (d.cons.length < LIMITS.prosCons.min)
+        err("cons", `CONTRO: servono almeno ${LIMITS.prosCons.min} voci (hai ${d.cons.length})`);
+      if (d.cons.length > LIMITS.prosCons.max)
+        err("cons", `CONTRO: massimo ${LIMITS.prosCons.max} voci`);
+      d.pros.forEach((p, i) => { if (empty(p)) err(`pros.${i}`, `PRO ${i + 1}: ${REQUIRED}`); });
+      d.cons.forEach((c, i) => { if (empty(c)) err(`cons.${i}`, `CONTRO ${i + 1}: ${REQUIRED}`); });
+      break;
+    }
+    case "quoteBig": {
+      const d = data as QuoteBigData;
+      if (empty(d.quote)) err("quote", `Citazione: ${REQUIRED}`);
+      else if (d.quote.length < LIMITS.quoteMin || d.quote.length > LIMITS.quoteMax)
+        err("quote", `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`);
+      if (empty(d.author)) err("author", `Autore: ${REQUIRED}`);
+      else if (d.author.length > LIMITS.authorMax)
+        err("author", `Autore: massimo ${LIMITS.authorMax} caratteri`);
+      const u = checkImageUrl(d.avatarUrl);
+      if (u) err("avatarUrl", u);
+      break;
+    }
+    case "roadmap": {
+      const d = data as RoadmapData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (d.milestones.length < LIMITS.roadmap.min)
+        err("milestones", `Roadmap: servono almeno ${LIMITS.roadmap.min} milestone (hai ${d.milestones.length})`);
+      if (d.milestones.length > LIMITS.roadmap.max)
+        err("milestones", `Roadmap: massimo ${LIMITS.roadmap.max} milestone`);
+      d.milestones.forEach((m, i) => {
+        if (empty(m.title)) err(`milestones.${i}.title`, `Milestone ${i + 1}: titolo obbligatorio`);
+        if (empty(m.period)) err(`milestones.${i}.period`, `Milestone ${i + 1}: periodo obbligatorio`);
+      });
+      break;
+    }
+    case "cta": {
+      const d = data as CtaData;
+      if (empty(d.headline)) err("headline", `Headline: ${REQUIRED}`);
+      else if (d.headline.length > LIMITS.headlineMax)
+        err("headline", `Headline: massimo ${LIMITS.headlineMax} caratteri`);
+      if (empty(d.buttonLabel)) err("buttonLabel", `Bottone: ${REQUIRED}`);
+      else if (d.buttonLabel.length > LIMITS.buttonMax)
+        err("buttonLabel", `Bottone: massimo ${LIMITS.buttonMax} caratteri`);
       break;
     }
   }
