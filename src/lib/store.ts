@@ -631,31 +631,6 @@ export const useCarousel = create<CarouselState>()(
           offerPresets: [...BUILT_IN_OFFER_PRESETS, ...customOfferPresets.filter((p) => !p.builtIn)],
         };
       },
-      merge: (persistedState, currentState) => {
-        const ps = persistedState as Partial<{
-          brand: BrandSettings;
-          brandPresets: BrandPreset[];
-          slideCombos: SlideCombo[];
-          templateCategoryOrder: string[];
-          templatesPerCategory: Record<string, TemplateId[]>;
-          lastFontSizeByFieldType: Record<string, number>;
-          strictExport: boolean;
-          validationOverlay: boolean;
-        }> | undefined;
-        const customPresets = ps?.brandPresets ?? [];
-        const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
-        return {
-          ...currentState,
-          brand: mergeBrand(ps?.brand),
-          brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => !p.builtIn)],
-          slideCombos: ps?.slideCombos ?? [],
-          templateCategoryOrder: picker.templateCategoryOrder,
-          templatesPerCategory: picker.templatesPerCategory,
-          lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
-          strictExport: ps?.strictExport ?? true,
-          validationOverlay: ps?.validationOverlay ?? true,
-        };
-      },
     },
   ),
 );
