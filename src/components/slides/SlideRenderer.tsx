@@ -349,3 +349,220 @@ function Cover({ slide, d }: { slide: Slide; d: CoverData }) {
     </>
   );
 }
+
+/* ===================== NEW MEDIA / CHART TEMPLATES ===================== */
+
+function Gallery({ slide, d }: { slide: Slide; d: GalleryData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="gallery-grid">
+        {d.images.slice(0, 3).map((img, i) => (
+          <figure key={i} className="gallery-item">
+            <div className="gallery-img">
+              {img.url ? <img src={img.url} alt={img.caption ?? ""} /> : <div className="gallery-placeholder">Foto {i + 1}</div>}
+            </div>
+            {img.caption && (
+              <figcaption style={fieldStyle(slide, `images.${i}.caption`)}>{img.caption}</figcaption>
+            )}
+          </figure>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ImageQuote({ slide, d }: { slide: Slide; d: ImageQuoteData }) {
+  return (
+    <>
+      <div className={`iq-bg ${d.imageUrl ? "" : "empty"}`}>
+        {d.imageUrl && <img src={d.imageUrl} alt="" />}
+        <div className="veil" />
+      </div>
+      <div className="iq-content">
+        <div className="iq-mark">“</div>
+        <blockquote className="iq-quote" style={fieldStyle(slide, "quote")}>{d.quote}</blockquote>
+        <div className="iq-author" style={fieldStyle(slide, "author")}>
+          — {d.author}
+          {d.role && <span className="iq-role" style={fieldStyle(slide, "role")}> · {d.role}</span>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ChartBar({ slide, d, brand }: { slide: Slide; d: ChartBarData; brand: BrandSettings }) {
+  const max = Math.max(1, ...d.items.map((i) => i.value));
+  const colors = [brand.accent, brand.accentSecondary];
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="chart-bar-list">
+        {d.items.map((it, i) => {
+          const pct = (it.value / max) * 100;
+          const color = it.color ?? colors[i % colors.length];
+          return (
+            <div key={i} className="chart-bar-row">
+              <div className="chart-bar-label" style={fieldStyle(slide, `items.${i}.label`)}>{it.label}</div>
+              <div className="chart-bar-track">
+                <div className="chart-bar-fill" style={{ width: `${pct}%`, background: color }} />
+              </div>
+              <div className="chart-bar-value">{it.value}{d.unit ?? ""}</div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function ChartDonut({ slide, d, brand }: { slide: Slide; d: ChartDonutData; brand: BrandSettings }) {
+  const total = d.segments.reduce((s, x) => s + x.value, 0) || 1;
+  const colors = [brand.accent, brand.accentSecondary, "#888", "#444"];
+  const r = 70;
+  const c = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="chart-donut-wrap">
+        <svg className="chart-donut-svg" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="28" />
+          {d.segments.map((seg, i) => {
+            const frac = seg.value / total;
+            const dash = frac * c;
+            const offset = -acc;
+            acc += dash;
+            const color = seg.color ?? colors[i % colors.length];
+            return (
+              <circle
+                key={i}
+                cx="100" cy="100" r={r} fill="none"
+                stroke={color} strokeWidth="28"
+                strokeDasharray={`${dash} ${c - dash}`}
+                strokeDashoffset={offset}
+                transform="rotate(-90 100 100)"
+              />
+            );
+          })}
+          {d.centerLabel && (
+            <text x="100" y="108" textAnchor="middle" fontSize="28" fontWeight="800" fill="currentColor">
+              {d.centerLabel}
+            </text>
+          )}
+        </svg>
+        <ul className="chart-donut-legend">
+          {d.segments.map((seg, i) => {
+            const color = seg.color ?? colors[i % colors.length];
+            const pct = Math.round((seg.value / total) * 100);
+            return (
+              <li key={i}>
+                <span className="legend-dot" style={{ background: color }} />
+                <span className="legend-label" style={fieldStyle(slide, `segments.${i}.label`)}>{seg.label}</span>
+                <span className="legend-value">{pct}%</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function ChartLine({ slide, d, brand }: { slide: Slide; d: ChartLineData; brand: BrandSettings }) {
+  const w = 800, h = 320, pad = 40;
+  const max = Math.max(1, ...d.values);
+  const min = Math.min(0, ...d.values);
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / Math.max(1, d.values.length - 1);
+  const points = d.values.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return { x, y, v };
+  });
+  const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="chart-line-wrap">
+        <svg className="chart-line-svg" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={`lg-${slide.id}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={brand.accent} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={brand.accent} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0.25, 0.5, 0.75].map((g) => (
+            <line key={g} x1={pad} x2={w - pad} y1={pad + (h - pad * 2) * g} y2={pad + (h - pad * 2) * g}
+              stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+          ))}
+          <path d={`${path} L ${points[points.length - 1].x} ${h - pad} L ${pad} ${h - pad} Z`} fill={`url(#lg-${slide.id})`} />
+          <path d={path} fill="none" stroke={brand.accent} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          {points.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="5" fill={brand.accent} stroke={brand.bgColor} strokeWidth="2" />
+          ))}
+          {d.xLabels.map((lb, i) => (
+            <text key={i} x={pad + i * stepX} y={h - 10} textAnchor="middle" fontSize="14" fill="rgba(255,255,255,0.6)">
+              {lb}
+            </text>
+          ))}
+        </svg>
+      </div>
+    </>
+  );
+}
+
+function Feature({ slide, d }: { slide: Slide; d: FeatureData }) {
+  return (
+    <>
+      <div className="feat-left">
+        {d.imageUrl ? (
+          <img src={d.imageUrl} alt="" className="feat-image" />
+        ) : (
+          <div className="feat-image feat-image-empty">Immagine</div>
+        )}
+      </div>
+      <div className="feat-right">
+        {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+        <ul className="feat-bullets">
+          {d.bullets.map((b, i) => (
+            <li key={i}>
+              <span className="feat-marker">{b.marker}</span>
+              <div>
+                <div className="feat-bullet-title" style={fieldStyle(slide, `bullets.${i}.title`)}>{b.title}</div>
+                {b.text && <div className="feat-bullet-text">{b.text}</div>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function Testimonial({ slide, d }: { slide: Slide; d: TestimonialData }) {
+  return (
+    <>
+      <div className="testi-avatar">
+        {d.avatarUrl ? <img src={d.avatarUrl} alt={d.author} /> : <div className="testi-avatar-empty">{d.author?.[0] ?? "?"}</div>}
+      </div>
+      {d.rating != null && (
+        <div className="testi-rating">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i} className={i < (d.rating ?? 0) ? "star on" : "star"}>★</span>
+          ))}
+        </div>
+      )}
+      <blockquote className="testi-quote" style={fieldStyle(slide, "quote")}>“{d.quote}”</blockquote>
+      <div className="testi-author" style={fieldStyle(slide, "author")}>
+        {d.author}
+        {d.role && <span className="testi-role" style={fieldStyle(slide, "role")}> — {d.role}</span>}
+      </div>
+    </>
+  );
+}
