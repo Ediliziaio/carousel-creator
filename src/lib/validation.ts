@@ -32,6 +32,11 @@ import type {
   OfferData,
   ObjectionData,
   TipPackData,
+  UrgencyData,
+  BonusStackData,
+  GuaranteeData,
+  FaqData,
+  QuickWinData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -478,6 +483,68 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       d.tips.forEach((t, i) => {
         if (empty(t.title)) err(`tips.${i}.title`, `Tip ${i + 1}: titolo obbligatorio`);
       });
+      break;
+    }
+    case "urgency": {
+      const d = data as UrgencyData;
+      if (empty(d.headline)) err("headline", `Headline: ${REQUIRED}`);
+      else if (d.headline.length > LIMITS.headlineMax)
+        err("headline", `Headline: massimo ${LIMITS.headlineMax} caratteri`);
+      if (empty(d.deadline)) err("deadline", `Countdown: ${REQUIRED}`);
+      if (empty(d.ctaLabel)) err("ctaLabel", `CTA: ${REQUIRED}`);
+      else if (d.ctaLabel.length > LIMITS.buttonMax)
+        err("ctaLabel", `CTA: massimo ${LIMITS.buttonMax} caratteri`);
+      break;
+    }
+    case "bonusStack": {
+      const d = data as BonusStackData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (empty(d.yourPrice)) err("yourPrice", `Prezzo finale: ${REQUIRED}`);
+      if (empty(d.ctaLabel)) err("ctaLabel", `CTA: ${REQUIRED}`);
+      else if (d.ctaLabel.length > LIMITS.buttonMax)
+        err("ctaLabel", `CTA: massimo ${LIMITS.buttonMax} caratteri`);
+      if (!d.bonuses || d.bonuses.length < 1) {
+        err("bonuses", "Bonus: aggiungi almeno 1 bonus");
+      } else {
+        if (d.bonuses.length > 6) err("bonuses", `Bonus: massimo 6 (hai ${d.bonuses.length})`);
+        d.bonuses.forEach((b, i) => {
+          if (empty(b.name)) err(`bonuses.${i}.name`, `Bonus ${i + 1}: nome obbligatorio`);
+          if (empty(b.value)) err(`bonuses.${i}.value`, `Bonus ${i + 1}: valore obbligatorio`);
+        });
+      }
+      break;
+    }
+    case "guarantee": {
+      const d = data as GuaranteeData;
+      if (empty(d.headline)) err("headline", `Headline: ${REQUIRED}`);
+      if (empty(d.body)) err("body", `Testo garanzia: ${REQUIRED}`);
+      break;
+    }
+    case "faq": {
+      const d = data as FaqData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.items || d.items.length < 2) {
+        err("items", `FAQ: servono almeno 2 voci (hai ${d.items?.length ?? 0})`);
+      } else {
+        if (d.items.length > 6) err("items", `FAQ: massimo 6 voci (hai ${d.items.length})`);
+        d.items.forEach((it, i) => {
+          if (empty(it.q)) err(`items.${i}.q`, `FAQ ${i + 1}: domanda obbligatoria`);
+          if (empty(it.a)) err(`items.${i}.a`, `FAQ ${i + 1}: risposta obbligatoria`);
+        });
+      }
+      break;
+    }
+    case "quickWin": {
+      const d = data as QuickWinData;
+      if (empty(d.instruction)) err("instruction", `Istruzione: ${REQUIRED}`);
+      if (!d.steps || d.steps.length < 1) {
+        err("steps", "Step: aggiungi almeno 1 step");
+      } else {
+        if (d.steps.length > 5) err("steps", `Step: massimo 5 (hai ${d.steps.length})`);
+        d.steps.forEach((s, i) => {
+          if (empty(s)) err(`steps.${i}`, `Step ${i + 1}: ${REQUIRED}`);
+        });
+      }
       break;
     }
   }

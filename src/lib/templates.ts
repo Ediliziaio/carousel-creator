@@ -33,7 +33,12 @@ export type TemplateId =
   | "socialProof"
   | "offer"
   | "objection"
-  | "tipPack";
+  | "tipPack"
+  | "urgency"
+  | "bonusStack"
+  | "guarantee"
+  | "faq"
+  | "quickWin";
 
 export interface SplitData {
   eyebrow: string;
@@ -237,6 +242,41 @@ export interface TipPackData {
   tips: { icon?: string; title: string; text: string }[];
   saveLabel?: string;
 }
+export interface UrgencyData {
+  eyebrow?: string;
+  headline: string;
+  deadline: string;
+  unitsLeft?: string;
+  ctaLabel: string;
+}
+export interface BonusStackData {
+  eyebrow: string;
+  title: string;
+  bonuses: { name: string; description?: string; value: string }[];
+  totalValue: string;
+  yourPrice: string;
+  currency?: string;
+  ctaLabel: string;
+}
+export interface GuaranteeData {
+  badge?: string;
+  headline: string;
+  body: string;
+  terms?: string;
+  seal?: string;
+}
+export interface FaqData {
+  eyebrow: string;
+  title: string;
+  items: { q: string; a: string }[];
+}
+export interface QuickWinData {
+  eyebrow?: string;
+  instruction: string;
+  steps: string[];
+  expectedResult?: string;
+  timeBadge?: string;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -270,7 +310,12 @@ export type AnyTemplateData =
   | SocialProofData
   | OfferData
   | ObjectionData
-  | TipPackData;
+  | TipPackData
+  | UrgencyData
+  | BonusStackData
+  | GuaranteeData
+  | FaqData
+  | QuickWinData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -476,6 +521,11 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   offer: { label: "Offerta / Pricing", desc: "Card prezzo con CTA grande" },
   objection: { label: "Obiezione → Risposta", desc: "Bubble chat per scogliere dubbi" },
   tipPack: { label: "Pacchetto consigli", desc: "Mini-card numerate da salvare" },
+  urgency: { label: "Urgenza / Countdown", desc: "Timer XL + scarcity per spinta finale" },
+  bonusStack: { label: "Bonus stack", desc: "Lista bonus con valore cumulativo (VSL)" },
+  guarantee: { label: "Garanzia / Risk reversal", desc: "Sigillo garanzia + promessa anti-rischio" },
+  faq: { label: "FAQ", desc: "Domande & risposte in formato accordion" },
+  quickWin: { label: "Quick win", desc: "Azione rapida da fare ora con step" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -485,6 +535,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "feature", "testimonial",
   "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
   "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
+  "urgency", "bonusStack", "guarantee", "faq", "quickWin",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -799,6 +850,60 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         ],
         saveLabel: "SALVA QUESTO POST",
       } as TipPackData;
+    case "urgency":
+      return {
+        eyebrow: "URGENTE",
+        headline: "Le iscrizioni chiudono tra…",
+        deadline: "23:47:12",
+        unitsLeft: "Solo 7 posti rimasti",
+        ctaLabel: "PRENOTA ORA →",
+      } as UrgencyData;
+    case "bonusStack":
+      return {
+        eyebrow: "COSA RICEVI",
+        title: "Tutto quello che è incluso oggi.",
+        bonuses: [
+          { name: "Corso completo", description: "10 moduli video", value: "297" },
+          { name: "Workbook PDF", description: "120 pagine + esercizi", value: "97" },
+          { name: "Community privata", description: "Accesso a vita", value: "197" },
+          { name: "Call 1:1 onboarding", description: "30 min con il team", value: "150" },
+        ],
+        totalValue: "741",
+        yourPrice: "147",
+        currency: "€",
+        ctaLabel: "VOGLIO TUTTO ORA →",
+      } as BonusStackData;
+    case "guarantee":
+      return {
+        badge: "100% SODDISFATTI",
+        headline: "Garanzia soddisfatti o rimborsati 30 giorni.",
+        body: "Provalo. Se entro 30 giorni non ti convince, ti rimborsiamo tutto. Senza domande, senza giustificazioni.",
+        terms: "Basta una mail. Rimborso entro 48h.",
+        seal: "🛡️",
+      } as GuaranteeData;
+    case "faq":
+      return {
+        eyebrow: "DOMANDE FREQUENTI",
+        title: "Le risposte ai dubbi più comuni.",
+        items: [
+          { q: "Per chi è pensato?", a: "Per chi vuole vendere sui social senza spendere in ads." },
+          { q: "Quanto tempo serve?", a: "Bastano 2 ore a settimana per vedere risultati in 30 giorni." },
+          { q: "C'è una garanzia?", a: "Sì: 30 giorni soddisfatti o rimborsati al 100%." },
+          { q: "Funziona anche per servizi?", a: "Sì, è ottimizzato per coach, consulenti e creator." },
+        ],
+      } as FaqData;
+    case "quickWin":
+      return {
+        eyebrow: "PROVA SUBITO",
+        instruction: "Cambia la bio di Instagram in 60 secondi.",
+        steps: [
+          "Apri il tuo profilo e clicca 'Modifica profilo'",
+          "Scrivi: cosa fai + per chi + risultato (es. 'Aiuto coach a vendere senza ads')",
+          "Aggiungi 1 emoji + link in bio",
+        ],
+        expectedResult: "+30% di click sul link in bio nelle prime 24h.",
+        timeBadge: "60 sec",
+      } as QuickWinData;
   }
 }
 
@@ -1063,6 +1168,56 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "title", label: "Titolo" },
       ];
       d?.tips?.forEach((_, i) => out.push({ path: `tips.${i}.title`, label: `Tip ${i + 1}` }));
+      return out;
+    }
+    case "urgency":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "headline", label: "Headline" },
+        { path: "deadline", label: "Countdown" },
+        { path: "unitsLeft", label: "Posti rimasti" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+    case "bonusStack": {
+      const d = data as BonusStackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "totalValue", label: "Valore totale" },
+        { path: "yourPrice", label: "Prezzo finale" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+      d?.bonuses?.forEach((_, i) => out.push({ path: `bonuses.${i}.name`, label: `Bonus ${i + 1}` }));
+      return out;
+    }
+    case "guarantee":
+      return [
+        { path: "badge", label: "Badge" },
+        { path: "headline", label: "Headline" },
+        { path: "body", label: "Testo" },
+        { path: "terms", label: "Condizioni" },
+      ];
+    case "faq": {
+      const d = data as FaqData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.items?.forEach((_, i) => {
+        out.push({ path: `items.${i}.q`, label: `Domanda ${i + 1}` });
+        out.push({ path: `items.${i}.a`, label: `Risposta ${i + 1}` });
+      });
+      return out;
+    }
+    case "quickWin": {
+      const d = data as QuickWinData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "instruction", label: "Istruzione" },
+        { path: "expectedResult", label: "Risultato atteso" },
+        { path: "timeBadge", label: "Badge tempo" },
+      ];
+      d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}`, label: `Step ${i + 1}` }));
       return out;
     }
   }

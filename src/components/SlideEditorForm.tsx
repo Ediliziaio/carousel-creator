@@ -35,6 +35,11 @@ import type {
   OfferData,
   ObjectionData,
   TipPackData,
+  UrgencyData,
+  BonusStackData,
+  GuaranteeData,
+  FaqData,
+  QuickWinData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -193,6 +198,11 @@ export function SlideEditorForm({ slide }: Props) {
     case "offer":       body = <OfferEditor d={draft as OfferData} set={set as (d: OfferData) => void} {...editorProps} />; break;
     case "objection":   body = <ObjectionEditor d={draft as ObjectionData} set={set as (d: ObjectionData) => void} {...editorProps} />; break;
     case "tipPack":     body = <TipPackEditor d={draft as TipPackData} set={set as (d: TipPackData) => void} {...editorProps} />; break;
+    case "urgency":     body = <UrgencyEditor d={draft as UrgencyData} set={set as (d: UrgencyData) => void} {...editorProps} />; break;
+    case "bonusStack":  body = <BonusStackEditor d={draft as BonusStackData} set={set as (d: BonusStackData) => void} {...editorProps} />; break;
+    case "guarantee":   body = <GuaranteeEditor d={draft as GuaranteeData} set={set as (d: GuaranteeData) => void} {...editorProps} />; break;
+    case "faq":         body = <FaqEditor d={draft as FaqData} set={set as (d: FaqData) => void} {...editorProps} />; break;
+    case "quickWin":    body = <QuickWinEditor d={draft as QuickWinData} set={set as (d: QuickWinData) => void} {...editorProps} />; break;
   }
 
   return (
@@ -1296,6 +1306,177 @@ function TipPackEditor({ d, set, errFor, slideId, overrides }: EditorProps<TipPa
         empty={{ icon: "", title: "", text: "" }}
       />
       <Field label="Etichetta save"><Input value={d.saveLabel ?? ""} onChange={(e) => set({ ...d, saveLabel: e.target.value })} placeholder="SALVA QUESTO POST" /></Field>
+    </div>
+  );
+}
+
+/* ---------------- Urgency ---------------- */
+function UrgencyEditor({ d, set, errFor, slideId, overrides }: EditorProps<UrgencyData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="URGENTE" />
+      </Field>
+      <Field label="Headline" hint={HL_HINT} error={errFor("headline")} slideId={slideId} fieldPath="headline" overrides={overrides}>
+        <Textarea data-field="headline" rows={2} maxLength={LIMITS.headlineMax} value={d.headline} onChange={(e) => set({ ...d, headline: e.target.value })} placeholder="Le iscrizioni chiudono tra…" />
+      </Field>
+      <Field label="Countdown (testo)" hint="Es. 23:47:12 oppure 'tra 2 giorni'" error={errFor("deadline")} slideId={slideId} fieldPath="deadline" overrides={overrides}>
+        <Input data-field="deadline" value={d.deadline} onChange={(e) => set({ ...d, deadline: e.target.value })} placeholder="23:47:12" />
+      </Field>
+      <Field label="Posti rimasti (opzionale)" slideId={slideId} fieldPath="unitsLeft" overrides={overrides}>
+        <Input value={d.unitsLeft ?? ""} onChange={(e) => set({ ...d, unitsLeft: e.target.value })} placeholder="Solo 7 posti rimasti" />
+      </Field>
+      <Field label="Etichetta CTA" error={errFor("ctaLabel")} slideId={slideId} fieldPath="ctaLabel" overrides={overrides}>
+        <Input data-field="ctaLabel" maxLength={LIMITS.buttonMax} value={d.ctaLabel} onChange={(e) => set({ ...d, ctaLabel: e.target.value })} placeholder="PRENOTA ORA →" />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Bonus Stack ---------------- */
+function BonusStackEditor({ d, set, errFor, slideId, overrides }: EditorProps<BonusStackData>) {
+  const bErr = errFor("bonuses");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="COSA RICEVI" />
+      </Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
+        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+      </Field>
+      {bErr && <p data-field="bonuses" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {bErr}</p>}
+      <ArrayField
+        label="Bonus (1–6)"
+        items={d.bonuses}
+        onChange={(arr) => set({ ...d, bonuses: arr })}
+        maxItems={6}
+        counter={<ItemCounter current={d.bonuses.length} min={1} max={6} unit="bonus" />}
+        render={(v, on, i) => {
+          const nameErr = errFor(`bonuses.${i}.name`);
+          const valErr = errFor(`bonuses.${i}.value`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bonus {i + 1}</Label>
+              <div className="grid grid-cols-[1fr_100px] gap-2">
+                <Input data-field={`bonuses.${i}.name`} className={nameErr ? "border-destructive" : ""} value={v.name} onChange={(e) => on({ ...v, name: e.target.value })} placeholder="Nome bonus *" />
+                <Input data-field={`bonuses.${i}.value`} className={valErr ? "border-destructive" : ""} value={v.value} onChange={(e) => on({ ...v, value: e.target.value })} placeholder="297" />
+              </div>
+              <Input value={v.description ?? ""} onChange={(e) => on({ ...v, description: e.target.value })} placeholder="Descrizione (opzionale)" />
+              {(nameErr || valErr) && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {nameErr || valErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ name: "", description: "", value: "" }}
+      />
+      <div className="grid grid-cols-3 gap-2">
+        <Field label="Valore totale" slideId={slideId} fieldPath="totalValue" overrides={overrides}>
+          <Input value={d.totalValue} onChange={(e) => set({ ...d, totalValue: e.target.value })} placeholder="741" />
+        </Field>
+        <Field label="Prezzo finale *" error={errFor("yourPrice")} slideId={slideId} fieldPath="yourPrice" overrides={overrides}>
+          <Input data-field="yourPrice" value={d.yourPrice} onChange={(e) => set({ ...d, yourPrice: e.target.value })} placeholder="147" />
+        </Field>
+        <Field label="Valuta">
+          <Input value={d.currency ?? "€"} onChange={(e) => set({ ...d, currency: e.target.value })} />
+        </Field>
+      </div>
+      <Field label="Etichetta CTA" error={errFor("ctaLabel")} slideId={slideId} fieldPath="ctaLabel" overrides={overrides}>
+        <Input data-field="ctaLabel" maxLength={LIMITS.buttonMax} value={d.ctaLabel} onChange={(e) => set({ ...d, ctaLabel: e.target.value })} placeholder="VOGLIO TUTTO ORA →" />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Guarantee ---------------- */
+function GuaranteeEditor({ d, set, errFor, slideId, overrides }: EditorProps<GuaranteeData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Badge (opzionale)">
+        <Input value={d.badge ?? ""} onChange={(e) => set({ ...d, badge: e.target.value })} placeholder="100% SODDISFATTI" />
+      </Field>
+      <Field label="Sigillo / icona (emoji)" hint="Es. 🛡️ 🔒 ✅">
+        <Input value={d.seal ?? ""} onChange={(e) => set({ ...d, seal: e.target.value })} placeholder="🛡️" />
+      </Field>
+      <Field label="Headline" hint={HL_HINT} error={errFor("headline")} slideId={slideId} fieldPath="headline" overrides={overrides}>
+        <Textarea data-field="headline" rows={2} value={d.headline} onChange={(e) => set({ ...d, headline: e.target.value })} placeholder="Garanzia soddisfatti o rimborsati 30 giorni." />
+      </Field>
+      <Field label="Testo garanzia" error={errFor("body")} slideId={slideId} fieldPath="body" overrides={overrides}>
+        <Textarea data-field="body" rows={4} value={d.body} onChange={(e) => set({ ...d, body: e.target.value })} placeholder="Provalo. Se entro 30 giorni…" />
+      </Field>
+      <Field label="Condizioni (opzionale)" slideId={slideId} fieldPath="terms" overrides={overrides}>
+        <Input value={d.terms ?? ""} onChange={(e) => set({ ...d, terms: e.target.value })} placeholder="Basta una mail. Rimborso entro 48h." />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- FAQ ---------------- */
+function FaqEditor({ d, set, errFor, slideId, overrides }: EditorProps<FaqData>) {
+  const iErr = errFor("items");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="DOMANDE FREQUENTI" />
+      </Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
+        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+      </Field>
+      {iErr && <p data-field="items" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {iErr}</p>}
+      <ArrayField
+        label="Domande (2–6)"
+        items={d.items}
+        onChange={(arr) => set({ ...d, items: arr })}
+        maxItems={6}
+        counter={<ItemCounter current={d.items.length} min={2} max={6} unit="FAQ" />}
+        render={(v, on, i) => {
+          const qErr = errFor(`items.${i}.q`);
+          const aErr = errFor(`items.${i}.a`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">FAQ {i + 1}</Label>
+              <Input data-field={`items.${i}.q`} className={qErr ? "border-destructive" : ""} value={v.q} onChange={(e) => on({ ...v, q: e.target.value })} placeholder="Domanda *" />
+              <Textarea data-field={`items.${i}.a`} className={aErr ? "border-destructive" : ""} rows={2} value={v.a} onChange={(e) => on({ ...v, a: e.target.value })} placeholder="Risposta *" />
+              {(qErr || aErr) && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {qErr || aErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ q: "", a: "" }}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Quick Win ---------------- */
+function QuickWinEditor({ d, set, errFor, slideId, overrides }: EditorProps<QuickWinData>) {
+  const sErr = errFor("steps");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="PROVA SUBITO" />
+      </Field>
+      <Field label="Badge tempo (opzionale)" slideId={slideId} fieldPath="timeBadge" overrides={overrides}>
+        <Input value={d.timeBadge ?? ""} onChange={(e) => set({ ...d, timeBadge: e.target.value })} placeholder="60 sec" />
+      </Field>
+      <Field label="Istruzione" hint={HL_HINT} error={errFor("instruction")} slideId={slideId} fieldPath="instruction" overrides={overrides}>
+        <Textarea data-field="instruction" rows={2} value={d.instruction} onChange={(e) => set({ ...d, instruction: e.target.value })} placeholder="Cambia la bio di Instagram in 60 secondi." />
+      </Field>
+      {sErr && <p data-field="steps" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {sErr}</p>}
+      <ArrayField
+        label="Step (1–5)"
+        items={d.steps}
+        onChange={(arr) => set({ ...d, steps: arr })}
+        maxItems={5}
+        counter={<ItemCounter current={d.steps.length} min={1} max={5} unit="step" />}
+        render={(v, on, i) => {
+          const e = errFor(`steps.${i}`);
+          return (
+            <Input data-field={`steps.${i}`} className={e ? "border-destructive" : ""} value={v} onChange={(ev) => on(ev.target.value)} placeholder={`Step ${i + 1} *`} />
+          );
+        }}
+        empty=""
+      />
+      <Field label="Risultato atteso (opzionale)" slideId={slideId} fieldPath="expectedResult" overrides={overrides}>
+        <Input value={d.expectedResult ?? ""} onChange={(e) => set({ ...d, expectedResult: e.target.value })} placeholder="+30% di click sul link in bio" />
+      </Field>
     </div>
   );
 }
