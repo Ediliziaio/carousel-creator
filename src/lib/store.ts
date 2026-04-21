@@ -9,8 +9,6 @@ import {
   type SlideDataField,
   type TextStyle,
   type SlideCombo,
-  type CtaData,
-  type OfferData,
   DEFAULT_BRAND,
   DEFAULT_EFFECTS,
   makeDefaultSlide,
@@ -418,8 +416,8 @@ export const useCarousel = create<CarouselState>()(
         const state = get();
         let offerCount = 0;
         let ctaCount = 0;
-        const offerDefaults = makeDefaultData("offer") as Record<string, unknown>;
-        const ctaDefaults = makeDefaultData("cta") as Record<string, unknown>;
+        const offerDefaults = makeDefaultData("offer") as unknown as Record<string, unknown>;
+        const ctaDefaults = makeDefaultData("cta") as unknown as Record<string, unknown>;
 
         const applyOfferPatch = (current: Record<string, unknown>): Record<string, unknown> => {
           const next: Record<string, unknown> = { ...current };
