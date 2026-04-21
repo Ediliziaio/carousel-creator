@@ -682,9 +682,9 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData;
 function TestimonialEditor({ d, set, errFor, slideId, overrides }: { d: TestimonialData; set: (d: TestimonialData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} />
+      <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} variant="avatar" />
       <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}><Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
         <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}><Input value={d.role ?? ""} onChange={(e) => set({ ...d, role: e.target.value })} /></Field>
       </div>
