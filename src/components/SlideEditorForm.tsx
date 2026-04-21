@@ -1630,9 +1630,11 @@ function MagazineCoverEditor({ d, set, errFor, slideId, overrides }: EditorProps
 
 function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartAreaData>) {
   const vErr = errFor("values");
+  const xLabelsArr = d.xLabels ?? [];
+  const valuesArr = d.values ?? [];
   const updatePair = (i: number, lb?: string, val?: number) => {
-    const xLabels = [...d.xLabels];
-    const values = [...d.values];
+    const xLabels = [...xLabelsArr];
+    const values = [...valuesArr];
     if (lb !== undefined) xLabels[i] = lb;
     if (val !== undefined) values[i] = val;
     set({ ...d, xLabels, values });
@@ -1640,10 +1642,10 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Unità (es. k)"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
@@ -1663,10 +1665,10 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
       {vErr && <p data-field="values" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {vErr}</p>}
       <ArrayField
         label="Punti (3–24)"
-        items={d.values.map((v, i) => ({ x: d.xLabels[i] ?? "", v }))}
+        items={valuesArr.map((v, i) => ({ x: xLabelsArr[i] ?? "", v }))}
         onChange={(arr) => set({ ...d, xLabels: arr.map((p) => p.x), values: arr.map((p) => p.v) })}
         maxItems={24}
-        counter={<ItemCounter current={d.values.length} min={3} max={24} unit="punti" />}
+        counter={<ItemCounter current={valuesArr.length} min={3} max={24} unit="punti" />}
         render={(v, on, i) => (
           <div className="grid grid-cols-[1fr_100px] gap-2">
             <Input value={v.x} onChange={(e) => { on({ ...v, x: e.target.value }); updatePair(i, e.target.value); }} placeholder="Etichetta X" />
