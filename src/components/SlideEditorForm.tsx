@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUploadField } from "@/components/ImageUploadField";
+import { TextStylePopover } from "@/components/TextStylePopover";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle } from "lucide-react";
 
@@ -127,19 +128,22 @@ export function SlideEditorForm({ slide }: Props) {
     return () => window.removeEventListener("slide:focus-field", handler);
   }, [slide.id]);
 
+  const overrides = slide.textOverrides;
+  const styleProps = { slideId: slide.id, overrides };
+
   let body: React.ReactNode = null;
   switch (slide.template) {
-    case "split":     body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} />; break;
-    case "grid2x2":   body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} />; break;
-    case "bignum":    body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} />; break;
-    case "center":    body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} />; break;
-    case "timeline":  body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} />; break;
-    case "compare":   body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} />; break;
-    case "vocab":     body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} />; break;
-    case "qa":        body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} />; break;
-    case "checklist": body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} />; break;
-    case "stat":      body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} />; break;
-    case "cover":     body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} />; break;
+    case "split":     body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} {...styleProps} />; break;
+    case "grid2x2":   body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} {...styleProps} />; break;
+    case "bignum":    body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} {...styleProps} />; break;
+    case "center":    body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} {...styleProps} />; break;
+    case "timeline":  body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} {...styleProps} />; break;
+    case "compare":   body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} {...styleProps} />; break;
+    case "vocab":     body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} {...styleProps} />; break;
+    case "qa":        body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} {...styleProps} />; break;
+    case "checklist": body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} {...styleProps} />; break;
+    case "stat":      body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} {...styleProps} />; break;
+    case "cover":     body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} {...styleProps} />; break;
   }
 
   return (
@@ -161,13 +165,27 @@ export function SlideEditorForm({ slide }: Props) {
 }
 
 type ErrFor = (field: string) => string | undefined;
+type StyleProps = { slideId: string; overrides?: Record<string, import("@/lib/templates").TextStyle> };
 
-function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, slideId, fieldPath, overrides, children }: {
+  label: string;
+  hint?: string;
+  error?: string;
+  slideId?: string;
+  fieldPath?: string;
+  overrides?: Record<string, import("@/lib/templates").TextStyle>;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
-        {label}{error && " *"}
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
+          {label}{error && " *"}
+        </Label>
+        {slideId && fieldPath && (
+          <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+        )}
+      </div>
       <div className={error ? "[&_input]:border-destructive [&_textarea]:border-destructive [&_input]:focus-visible:ring-destructive [&_textarea]:focus-visible:ring-destructive" : ""}>
         {children}
       </div>
@@ -184,27 +202,41 @@ function Field({ label, hint, error, children }: { label: string; hint?: string;
 const HL_HINT = "Usa {hl}testo{/hl} per evidenziare in colore accent";
 
 /* ---------------- Split ---------------- */
-function SplitEditor({ d, set, errFor }: { d: SplitData; set: (d: SplitData) => void; errFor: ErrFor }) {
+function SplitEditor({ d, set, errFor, slideId, overrides }: { d: SplitData; set: (d: SplitData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <ImageUploadField label="Immagine (opzionale)" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Se presente, sostituisce paragrafi/lista a destra." />
       <ArrayField
         label="Paragrafi"
         items={d.paragraphs ?? []}
         onChange={(arr) => set({ ...d, paragraphs: arr })}
-        render={(v, on) => <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />}
+        render={(v, on, i) => (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
+              <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+            </div>
+            <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />
+          </div>
+        )}
         empty=""
       />
       <ArrayField
         label="Lista"
         items={d.list ?? []}
         onChange={(arr) => set({ ...d, list: arr })}
-        render={(v, on) => (
-          <div className="grid grid-cols-[80px_1fr] gap-2">
-            <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
-            <Input value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Voce" />
+        render={(v, on, i) => (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
+              <TextStylePopover slideId={slideId} fieldPath={`list.${i}.text`} value={overrides?.[`list.${i}.text`]} />
+            </div>
+            <div className="grid grid-cols-[80px_1fr] gap-2">
+              <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
+              <Input value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Voce" />
+            </div>
           </div>
         )}
         empty={{ marker: "", text: "" }}
@@ -214,16 +246,23 @@ function SplitEditor({ d, set, errFor }: { d: SplitData; set: (d: SplitData) => 
 }
 
 /* ---------------- Grid 2x2 ---------------- */
-function GridEditor({ d, set, errFor }: { d: Grid2x2Data; set: (d: Grid2x2Data) => void; errFor: ErrFor }) {
+function GridEditor({ d, set, errFor, slideId, overrides }: { d: Grid2x2Data; set: (d: Grid2x2Data) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">4 Riquadri</Label>
       {d.cells.map((c, i) => {
         const cellErr = errFor(`cells.${i}.title`);
         return (
           <div key={i} className={`space-y-2 rounded-md border p-3 ${cellErr ? "border-destructive" : "border-border"}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Cella {i + 1}</span>
+              <div className="flex gap-1">
+                <TextStylePopover slideId={slideId} fieldPath={`cells.${i}.title`} value={overrides?.[`cells.${i}.title`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`cells.${i}.text`} value={overrides?.[`cells.${i}.text`]} />
+              </div>
+            </div>
             <div className="grid grid-cols-[80px_1fr] gap-2">
               <Input value={c.num} onChange={(e) => { const cells = [...d.cells]; cells[i] = { ...c, num: e.target.value }; set({ ...d, cells }); }} placeholder="01" />
               <Input data-field={`cells.${i}.title`} value={c.title} className={cellErr ? "border-destructive" : ""} onChange={(e) => { const cells = [...d.cells]; cells[i] = { ...c, title: e.target.value }; set({ ...d, cells }); }} placeholder="Titolo *" />
@@ -238,45 +277,57 @@ function GridEditor({ d, set, errFor }: { d: Grid2x2Data; set: (d: Grid2x2Data) 
 }
 
 /* ---------------- BigNum ---------------- */
-function BigNumEditor({ d, set, errFor }: { d: BigNumData; set: (d: BigNumData) => void; errFor: ErrFor }) {
+function BigNumEditor({ d, set, errFor, slideId, overrides }: { d: BigNumData; set: (d: BigNumData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Numero" error={errFor("number")}><Input data-field="number" value={d.number} onChange={(e) => set({ ...d, number: e.target.value })} /></Field>
-        <Field label="Sottotitolo numero"><Input value={d.numberSub} onChange={(e) => set({ ...d, numberSub: e.target.value })} /></Field>
+        <Field label="Numero" error={errFor("number")} slideId={slideId} fieldPath="number" overrides={overrides}><Input data-field="number" value={d.number} onChange={(e) => set({ ...d, number: e.target.value })} /></Field>
+        <Field label="Sottotitolo numero" slideId={slideId} fieldPath="numberSub" overrides={overrides}><Input value={d.numberSub} onChange={(e) => set({ ...d, numberSub: e.target.value })} /></Field>
       </div>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <ArrayField label="Paragrafi" items={d.paragraphs} onChange={(arr) => set({ ...d, paragraphs: arr })}
-        render={(v, on) => <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />} empty="" />
+        render={(v, on, i) => (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
+              <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+            </div>
+            <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />
+          </div>
+        )} empty="" />
     </div>
   );
 }
 
 /* ---------------- Center ---------------- */
-function CenterEditor({ d, set, errFor }: { d: CenterData; set: (d: CenterData) => void; errFor: ErrFor }) {
+function CenterEditor({ d, set, errFor, slideId, overrides }: { d: CenterData; set: (d: CenterData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Frase principale" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={3} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
-      <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Frase principale" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={3} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Sottotitolo" slideId={slideId} fieldPath="sub" overrides={overrides}><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
       <ImageUploadField label="Immagine di sfondo (opzionale)" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Renderizzata sfocata sotto il testo." />
     </div>
   );
 }
 
 /* ---------------- Timeline ---------------- */
-function TimelineEditor({ d, set, errFor }: { d: TimelineData; set: (d: TimelineData) => void; errFor: ErrFor }) {
+function TimelineEditor({ d, set, errFor, slideId, overrides }: { d: TimelineData; set: (d: TimelineData) => void; errFor: ErrFor } & StyleProps) {
   const itemsErr = errFor("items");
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       {itemsErr && <p data-field="items" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {itemsErr}</p>}
       <ArrayField label="Step" items={d.items} onChange={(arr) => set({ ...d, items: arr })}
         render={(v, on, i) => {
           const itemTitleErr = errFor(`items.${i}.title`);
           return (
             <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Step {i + 1}</Label>
+                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+              </div>
               <Input value={v.when} onChange={(e) => on({ ...v, when: e.target.value })} placeholder="GIORNO 01" />
               <Input data-field={`items.${i}.title`} value={v.title} className={itemTitleErr ? "border-destructive" : ""} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo step *" />
               <Textarea rows={2} value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Descrizione" />
@@ -290,17 +341,20 @@ function TimelineEditor({ d, set, errFor }: { d: TimelineData; set: (d: Timeline
 }
 
 /* ---------------- Compare ---------------- */
-function CompareEditor({ d, set, errFor }: { d: CompareData; set: (d: CompareData) => void; errFor: ErrFor }) {
+function CompareEditor({ d, set, errFor, slideId, overrides }: { d: CompareData; set: (d: CompareData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       {(["before", "after"] as const).map((side) => {
         const titleErr = errFor(`${side}.title`);
         const itemsErr = errFor(`${side}.items`);
         return (
           <div key={side} className={`space-y-2 rounded-md border p-3 ${titleErr || itemsErr ? "border-destructive" : "border-border"}`}>
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{side === "before" ? "Prima" : "Dopo (in evidenza)"}</div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{side === "before" ? "Prima" : "Dopo (in evidenza)"}</div>
+              <TextStylePopover slideId={slideId} fieldPath={`${side}.title`} value={overrides?.[`${side}.title`]} />
+            </div>
             <Input value={d[side].tag} onChange={(e) => set({ ...d, [side]: { ...d[side], tag: e.target.value } })} placeholder="TAG" />
             <Input data-field={`${side}.title`} value={d[side].title} className={titleErr ? "border-destructive" : ""} onChange={(e) => set({ ...d, [side]: { ...d[side], title: e.target.value } })} placeholder="Titolo colonna *" />
             {titleErr && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {titleErr}</p>}
@@ -319,21 +373,21 @@ function CompareEditor({ d, set, errFor }: { d: CompareData; set: (d: CompareDat
 }
 
 /* ---------------- Vocab ---------------- */
-function VocabEditor({ d, set, errFor }: { d: VocabData; set: (d: VocabData) => void; errFor: ErrFor }) {
+function VocabEditor({ d, set, errFor, slideId, overrides }: { d: VocabData; set: (d: VocabData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Categoria"><Input value={d.category} onChange={(e) => set({ ...d, category: e.target.value })} /></Field>
-      <Field label="Parola" error={errFor("word")}><Input data-field="word" value={d.word} onChange={(e) => set({ ...d, word: e.target.value })} /></Field>
+      <Field label="Categoria" slideId={slideId} fieldPath="category" overrides={overrides}><Input value={d.category} onChange={(e) => set({ ...d, category: e.target.value })} /></Field>
+      <Field label="Parola" error={errFor("word")} slideId={slideId} fieldPath="word" overrides={overrides}><Input data-field="word" value={d.word} onChange={(e) => set({ ...d, word: e.target.value })} /></Field>
       <Field label="Pronuncia / categoria gramm."><Input value={d.pron} onChange={(e) => set({ ...d, pron: e.target.value })} /></Field>
       <Field label="Etichetta definizione"><Input value={d.defLabel} onChange={(e) => set({ ...d, defLabel: e.target.value })} /></Field>
-      <Field label="Definizione" error={errFor("def")}><Textarea data-field="def" rows={3} value={d.def} onChange={(e) => set({ ...d, def: e.target.value })} /></Field>
-      <Field label="Esempio / citazione"><Textarea rows={2} value={d.example} onChange={(e) => set({ ...d, example: e.target.value })} /></Field>
+      <Field label="Definizione" error={errFor("def")} slideId={slideId} fieldPath="def" overrides={overrides}><Textarea data-field="def" rows={3} value={d.def} onChange={(e) => set({ ...d, def: e.target.value })} /></Field>
+      <Field label="Esempio / citazione" slideId={slideId} fieldPath="example" overrides={overrides}><Textarea rows={2} value={d.example} onChange={(e) => set({ ...d, example: e.target.value })} /></Field>
     </div>
   );
 }
 
 /* ---------------- QA ---------------- */
-function QAEditor({ d, set, errFor }: { d: QAData; set: (d: QAData) => void; errFor: ErrFor }) {
+function QAEditor({ d, set, errFor, slideId, overrides }: { d: QAData; set: (d: QAData) => void; errFor: ErrFor } & StyleProps) {
   const answerErr = errFor("answer");
   return (
     <div className="space-y-4">
@@ -341,24 +395,32 @@ function QAEditor({ d, set, errFor }: { d: QAData; set: (d: QAData) => void; err
         <Field label="Etichetta Q"><Input value={d.qLabel} onChange={(e) => set({ ...d, qLabel: e.target.value })} /></Field>
         <Field label="Etichetta A"><Input value={d.aLabel} onChange={(e) => set({ ...d, aLabel: e.target.value })} /></Field>
       </div>
-      <Field label="Domanda" error={errFor("question")}><Textarea data-field="question" rows={2} value={d.question} onChange={(e) => set({ ...d, question: e.target.value })} /></Field>
+      <Field label="Domanda" error={errFor("question")} slideId={slideId} fieldPath="question" overrides={overrides}><Textarea data-field="question" rows={2} value={d.question} onChange={(e) => set({ ...d, question: e.target.value })} /></Field>
       {answerErr && <p data-field="answer" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {answerErr}</p>}
       <ArrayField label="Risposta (paragrafi)" items={d.answer} onChange={(arr) => set({ ...d, answer: arr })}
         render={(v, on, i) => {
           const pErr = errFor(`answer.${i}`);
-          return <Textarea data-field={`answer.${i}`} rows={2} value={v} className={pErr ? "border-destructive" : ""} onChange={(e) => on(e.target.value)} />;
+          return (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Paragrafo {i + 1}</Label>
+                <TextStylePopover slideId={slideId} fieldPath={`answer.${i}`} value={overrides?.[`answer.${i}`]} />
+              </div>
+              <Textarea data-field={`answer.${i}`} rows={2} value={v} className={pErr ? "border-destructive" : ""} onChange={(e) => on(e.target.value)} />
+            </div>
+          );
         }} empty="" />
     </div>
   );
 }
 
 /* ---------------- Checklist ---------------- */
-function ChecklistEditor({ d, set, errFor }: { d: ChecklistData; set: (d: ChecklistData) => void; errFor: ErrFor }) {
+function ChecklistEditor({ d, set, errFor, slideId, overrides }: { d: ChecklistData; set: (d: ChecklistData) => void; errFor: ErrFor } & StyleProps) {
   const itemsErr = errFor("items");
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Field label="Meta (es. '5 PASSI · 10 MIN')"><Input value={d.meta} onChange={(e) => set({ ...d, meta: e.target.value })} /></Field>
       {itemsErr && <p data-field="items" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {itemsErr}</p>}
       <ArrayField label="Voci" items={d.items} onChange={(arr) => set({ ...d, items: arr })}
@@ -366,9 +428,12 @@ function ChecklistEditor({ d, set, errFor }: { d: ChecklistData; set: (d: Checkl
           const itemTitleErr = errFor(`items.${i}.title`);
           return (
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Switch checked={v.done} onCheckedChange={(c) => on({ ...v, done: c })} />
-                <span className="text-xs text-muted-foreground">Fatto</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Switch checked={v.done} onCheckedChange={(c) => on({ ...v, done: c })} />
+                  <span className="text-xs text-muted-foreground">Fatto</span>
+                </div>
+                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
               </div>
               <Input data-field={`items.${i}.title`} value={v.title} className={itemTitleErr ? "border-destructive" : ""} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Voce *" />
               <Input value={v.note ?? ""} onChange={(e) => on({ ...v, note: e.target.value })} placeholder="Nota (opzionale)" />
@@ -382,27 +447,27 @@ function ChecklistEditor({ d, set, errFor }: { d: ChecklistData; set: (d: Checkl
 }
 
 /* ---------------- Stat ---------------- */
-function StatEditor({ d, set, errFor }: { d: StatData; set: (d: StatData) => void; errFor: ErrFor }) {
+function StatEditor({ d, set, errFor, slideId, overrides }: { d: StatData; set: (d: StatData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Etichetta" error={errFor("label")}><Input data-field="label" value={d.label} onChange={(e) => set({ ...d, label: e.target.value })} /></Field>
+      <Field label="Etichetta" error={errFor("label")} slideId={slideId} fieldPath="label" overrides={overrides}><Input data-field="label" value={d.label} onChange={(e) => set({ ...d, label: e.target.value })} /></Field>
       <div className="grid grid-cols-[1fr_120px] gap-3">
-        <Field label="Valore" error={errFor("value")}><Input data-field="value" value={d.value} onChange={(e) => set({ ...d, value: e.target.value })} /></Field>
+        <Field label="Valore" error={errFor("value")} slideId={slideId} fieldPath="value" overrides={overrides}><Input data-field="value" value={d.value} onChange={(e) => set({ ...d, value: e.target.value })} /></Field>
         <Field label="Unità"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
       </div>
-      <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
+      <Field label="Sottotitolo" slideId={slideId} fieldPath="sub" overrides={overrides}><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
       <Field label="Nota / fonte"><Input value={d.note ?? ""} onChange={(e) => set({ ...d, note: e.target.value })} /></Field>
     </div>
   );
 }
 
 /* ---------------- Cover ---------------- */
-function CoverEditor({ d, set, errFor }: { d: CoverData; set: (d: CoverData) => void; errFor: ErrFor }) {
+function CoverEditor({ d, set, errFor, slideId, overrides }: { d: CoverData; set: (d: CoverData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
-      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
-      <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Sottotitolo" slideId={slideId} fieldPath="sub" overrides={overrides}><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
       <ImageUploadField label="Immagine fullscreen" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} />
     </div>
   );

@@ -1,4 +1,6 @@
 // Template definitions for the carousel layouts
+import type * as React from "react";
+
 export type TemplateId =
   | "split"
   | "grid2x2"
@@ -115,11 +117,35 @@ export const FORMAT_DIMENSIONS: Record<
   landscape: { w: 1920, h: 1080, label: "Landscape",      ratio: "16:9", desc: "X / LinkedIn / YouTube" },
 };
 
+/* ============ Per-field text style overrides (Canva-style) ============ */
+export interface TextStyle {
+  fontFamily?: FontChoice;
+  fontSize?: number;        // px @ canvas scale
+  fontWeight?: Weight;
+  letterSpacing?: number;   // em
+  textAlign?: "left" | "center" | "right";
+  italic?: boolean;
+  uppercase?: boolean;
+  underline?: boolean;
+  color?: string;           // hex
+}
+
 export interface Slide {
   id: string;
   template: TemplateId;
   format: SlideFormat;
   data: SlideDataField;
+  /** Per-field inline style overrides keyed by field path (e.g. "title", "cells.0.title"). */
+  textOverrides?: Record<string, TextStyle>;
+}
+
+/* ============ Reusable template+format combos ============ */
+export interface SlideCombo {
+  id: string;
+  name: string;
+  template: TemplateId;
+  format: SlideFormat;
+  createdAt: number;
 }
 
 /* ============ Brand & Effects ============ */
@@ -357,6 +383,119 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
 
 export function makeDefaultSlide(template: TemplateId, format: SlideFormat = "portrait"): Slide {
   return { id: crypto.randomUUID(), template, format, data: makeDefaultData(template) };
+}
+
+/* ============ Stylable field registry ============ */
+/** List of text fields that can receive a per-field style override, per template. */
+export function getStylableFields(template: TemplateId, data?: AnyTemplateData): { path: string; label: string }[] {
+  switch (template) {
+    case "split": {
+      const d = data as SplitData | undefined;
+      const out: { path: string; label: string }[] = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.paragraphs?.forEach((_, i) => out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }));
+      d?.list?.forEach((_, i) => out.push({ path: `list.${i}.text`, label: `Lista #${i + 1}` }));
+      return out;
+    }
+    case "grid2x2": {
+      const d = data as Grid2x2Data | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.cells?.forEach((_, i) => {
+        out.push({ path: `cells.${i}.title`, label: `Cella ${i + 1} – titolo` });
+        out.push({ path: `cells.${i}.text`, label: `Cella ${i + 1} – testo` });
+      });
+      return out;
+    }
+    case "bignum": {
+      const d = data as BigNumData | undefined;
+      const out = [
+        { path: "number", label: "Numero" },
+        { path: "numberSub", label: "Sottotitolo numero" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.paragraphs?.forEach((_, i) => out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }));
+      return out;
+    }
+    case "center":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Frase principale" },
+        { path: "sub", label: "Sottotitolo" },
+      ];
+    case "timeline": {
+      const d = data as TimelineData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.items?.forEach((_, i) => out.push({ path: `items.${i}.title`, label: `Step ${i + 1}` }));
+      return out;
+    }
+    case "compare":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "before.title", label: "Prima – titolo" },
+        { path: "after.title", label: "Dopo – titolo" },
+      ];
+    case "vocab":
+      return [
+        { path: "category", label: "Categoria" },
+        { path: "word", label: "Parola" },
+        { path: "def", label: "Definizione" },
+        { path: "example", label: "Esempio" },
+      ];
+    case "qa": {
+      const d = data as QAData | undefined;
+      const out = [
+        { path: "question", label: "Domanda" },
+      ];
+      d?.answer?.forEach((_, i) => out.push({ path: `answer.${i}`, label: `Risposta ${i + 1}` }));
+      return out;
+    }
+    case "checklist": {
+      const d = data as ChecklistData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.items?.forEach((_, i) => out.push({ path: `items.${i}.title`, label: `Voce ${i + 1}` }));
+      return out;
+    }
+    case "stat":
+      return [
+        { path: "label", label: "Etichetta" },
+        { path: "value", label: "Valore" },
+        { path: "sub", label: "Sottotitolo" },
+      ];
+    case "cover":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "sub", label: "Sottotitolo" },
+      ];
+  }
+}
+
+/** Convert a TextStyle to inline CSS properties. Returns undefined when no overrides exist. */
+export function textStyleToCss(style: TextStyle | undefined): React.CSSProperties | undefined {
+  if (!style) return undefined;
+  const css: React.CSSProperties = {};
+  if (style.fontFamily) css.fontFamily = `'${style.fontFamily}', system-ui, sans-serif`;
+  if (style.fontSize != null) css.fontSize = `${style.fontSize}px`;
+  if (style.fontWeight != null) css.fontWeight = style.fontWeight;
+  if (style.letterSpacing != null) css.letterSpacing = `${style.letterSpacing}em`;
+  if (style.textAlign) css.textAlign = style.textAlign;
+  if (style.italic) css.fontStyle = "italic";
+  if (style.uppercase) css.textTransform = "uppercase";
+  if (style.underline) css.textDecoration = "underline";
+  if (style.color) css.color = style.color;
+  return Object.keys(css).length > 0 ? css : undefined;
 }
 
 // Render title with {hl}...{/hl} as accent-colored highlights
