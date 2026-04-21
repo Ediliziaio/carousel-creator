@@ -1,79 +1,128 @@
 
 
-# Debounce uniforme + anteprima export WYSIWYG affidabile
+# Tre feature: Effetti dinamici + Preset brand + Persistenza + Anteprima multi-slide
 
-## 1. Debounce 400ms su tutti gli input del form (anche select/upload/switch/array)
+## 1. Effetti grafici "stile Canva/Figma" (animazioni & sfondi avanzati)
 
-**Stato attuale:** `SlideEditorForm` ha già un debounce centralizzato — tutti i campi (Input, Textarea, Switch, ImageUploadField, ArrayField add/remove) passano per `set()` che aggiorna solo `draft` e committa allo store dopo 400ms. ✅
+Estendo `BrandEffects` in `src/lib/templates.ts` con nuove opzioni che vanno oltre i colori statici:
 
-**Gap reale da chiudere:** alcune azioni *non passano* per `set()` e creano snapshot immediati nello store, sporcando l'undo:
-- **Cambio lingua** (`setActiveLang`) — ok, ma se c'è un draft pendente sulla lingua precedente viene perso
-- **`BrandSettingsDialog`** — ogni `<input type="color">`, ogni toggle, ogni `<select>` di font chiama `setBrand({...})` ad ogni keystroke/click → snapshot per ogni movimento del color picker
-- **Logo upload** in BrandDialog — ok come singolo evento
+**Nuovi sfondi dinamici** (rispetto a quelli attuali `none|dots|grid|noise|gradient-mesh`):
+- `gradient-radial` — gradiente radiale soft accent → bgColor
+- `gradient-conic` — sfumatura conica multicolore (accent + secondary)
+- `blob` — 2/3 macchie sfocate organiche (CSS `filter: blur(80px)`) per look "glassmorphism"
+- `stripes` — strisce diagonali sottili
+- `waves` — onde SVG inline animate (statiche al momento dell'export)
 
-**Modifiche:**
+**Nuovi effetti sui contenuti:**
+- `effects.shadow`: `none | soft | hard | colored` — ombre sui blocchi card (grid2x2, compare cells)
+- `effects.cornerStyle`: `sharp | rounded | pill` — controlla il border-radius globale via `--radius`
+- `effects.titleEffect`: `none | outline | shadow-3d | underline-accent | highlight-block` — effetti sui titoli H1
+- `effects.dividerStyle`: `line | dots | wave | gradient` — stile delle separazioni nei template
+- `effects.iconAccent`: boolean — colora di accent gli elementi numerici/decorativi (01, 02, marker)
 
-a) **`SlideEditorForm`**: prima di cambiare `activeLang`, flush sincrono del draft pendente (`update(slide.id, draftRef.current)` se diverso). Garantisce che cambiando lingua non si perdano le modifiche in volo.
+Tutto applicato come classi `.fx-bg-blob`, `.fx-shadow-soft`, `.fx-corner-pill`, `.fx-title-outline` ecc. in `slide-styles.css`. Nessuna animazione runtime (l'export è statico), ma look "design pro".
 
-b) **`BrandSettingsDialog`**: introduco lo stesso pattern draft+debounce 400ms per `setBrand`. Concretamente:
-- stato locale `brandDraft` inizializzato dal brand corrente
-- ogni controllo (color picker, font select, weight slider, effetti toggles) scrive su `brandDraft` 
-- `useEffect` con `setTimeout` 400ms committa `setBrand(brandDraft)` solo se diverso
-- al close del dialog → flush sincrono del pending
-- risultato: muovere il color picker per 2 secondi crea **1 sola entry undo** invece di 30+
+Il dialog Brand → tab "Effetti" viene riorganizzato in **3 sezioni collassabili**: Sfondo · Forme & ombre · Titoli & decori. Ogni effetto ha un mini-thumbnail visuale (24×24) con preview live del look invece del solo dropdown testuale.
 
-c) **`updateSlide` nello store** → invariato (lo store resta sincrono, il debounce vive nei componenti).
+## 2. Preset di brand salvati ("temi")
 
-## 2. Anteprima export "what you see is what you get" (1080×1350 con fonts/logo/immagini)
+Nuovo concetto: un **preset** è uno snapshot di `{ accent, accentSecondary, textColor, bgColor, fontHeading, fontBody, headingWeight, bodyWeight, effects }` (no logo, no testi/lingue — solo "look").
 
-**Problemi attuali in `ExportPreviewDialog` + `export.ts`:**
+**Nuovo store slice** `brandPresets` in `src/lib/store.ts`:
+```ts
+brandPresets: BrandPreset[]
+saveBrandPreset(name: string): void  // snapshot del brand corrente
+applyBrandPreset(id: string): void   // applica solo i campi visivi
+deleteBrandPreset(id: string): void
+renameBrandPreset(id: string, name: string): void
+```
 
-- `ensureFonts()` carica solo **Figtree + JetBrains Mono hardcoded** — se l'utente ha scelto Inter, Playfair, Space Grotesk dal BrandDialog, queste **non vengono caricate** né per la preview né per la cattura. Il rendering finale usa il fallback `system-ui`.
-- La preview (`<SlideRenderer>` scalato) e il nodo di cattura nascosto sono **due DOM separati**: la preview può sembrare ok mentre la cattura ha font diversi se i font non sono pronti.
-- Le immagini dataURL sono già inline (no problema CORS) ma il "warm up" double-render in `captureNode` non aspetta esplicitamente il `decode()` delle `<img>`.
+`BrandPreset = { id, name, createdAt, theme: PresetTheme }` definito in `src/lib/templates.ts`.
 
-**Modifiche:**
+**Preset built-in** (5, sempre disponibili, non eliminabili): "Cyberpunk Cyan", "Editorial Mono", "Sunset Magazine", "Brutalist Black/White", "Pastel Soft" — ognuno con combo colori + font + effetti coerenti.
 
-a) **Font loader dinamico in `src/lib/export.ts`**:
-- nuova funzione `ensureFontsFor(brand: BrandSettings)` che costruisce dinamicamente l'URL Google Fonts in base a `brand.fontHeading` + `brand.fontBody` + i pesi richiesti (`headingWeight`, `bodyWeight`, e i pesi extra usati nel CSS: 400, 600, 700, 800, 900).
-- mantiene il `<link>` esistente con id stabile `carousel-google-fonts` ma **lo rimpiazza** se l'href è cambiato dall'ultima volta
-- attende `document.fonts.load("700 16px <heading>")` e `document.fonts.load("400 16px <body>")` esplicitamente (più affidabile di `fonts.ready` che a volte risolve subito)
-- whitelist di font Google noti; per altri valori, fallback a `system-ui` senza fetch (no errori CORS)
+**UI nuova tab "Preset"** in `BrandSettingsDialog.tsx`:
+- Griglia di card 2-col, ognuna mostra mini-preview (rettangolo con i 4 colori + font name)
+- Hover → bottone "Applica"; sui custom anche "Rinomina" / "Elimina"
+- Bottone "💾 Salva preset corrente" in cima → input per nome → snapshot
+- Apply preset = patch del brand (tramite stesso debounce esistente, una sola entry undo)
 
-b) **Helper `waitForImages(node)`** in `export.ts`:
-- raccoglie tutte le `<img>` dentro il nodo
-- per ognuna: `if (!img.complete) await new Promise(r => img.onload = img.onerror = r)`
-- poi `await img.decode().catch(() => {})` per garantire pixel pronti
-- chiamato prima dei due render in `captureNode`
+I preset custom vengono persistiti insieme al resto del brand (vedi punto 3).
 
-c) **`captureNode(node, brand)`** — nuova firma:
-- accetta `brand` per chiamare `ensureFontsFor(brand)`
-- aggiorno tutti i call site (`downloadSinglePng`, `downloadZipFromNodes`, `ExportPreviewDialog`)
+## 3. Persistenza automatica del brand su localStorage
 
-d) **`ExportPreviewDialog`** — rendere preview e capture identiche:
-- la preview scalata già usa `<SlideRenderer>` reale ✅
-- aggiungo `useEffect` che chiama `ensureFontsFor(brand)` all'apertura del dialog → la preview vede subito i font corretti (no flash di fallback)
-- aggiungo header banner "✓ Font caricati" / spinner "Caricamento font..." finché `document.fonts.check(...)` non è true per le scelte del brand
-- bottone "Scarica" disabilitato finché font + immagini non sono pronti (evita download con render incompleto)
+Aggiungo middleware `persist` di Zustand a `src/lib/store.ts`:
 
-e) **Logo & dataURL immagini**: già inline come `data:` URI, quindi `html-to-image` li serializza correttamente. L'unico fix necessario è il `decode()` esplicito al punto (b) — altrimenti su immagini grandi il primo render può catturare un'immagine non ancora dipinta.
+```ts
+persist(
+  (set, get) => ({ ... }),
+  {
+    name: "carousel-brand-v1",
+    partialize: (s) => ({ brand: s.brand, brandPresets: s.brandPresets }),
+    version: 1,
+  }
+)
+```
+
+**Solo brand + preset** vengono persistiti (no slides, no past/future, no activeId — restano per-sessione/usa-e-getta come da requisito esistente).
+
+**Migrazione/safety:**
+- `version: 1` con `migrate(persistedState, version)` che mergia con `DEFAULT_BRAND` per gestire campi nuovi (es. quando aggiungo `effects.shadow` in punto 1, i brand vecchi su disco non lo avranno → fallback al default)
+- gestione SSR: `skipHydration: true` + chiamata `useCarousel.persist.rehydrate()` in un `useEffect` lato client in `__root.tsx`, per evitare mismatch idratazione TanStack Start
+- toast informativo al primo load se è stato ripristinato un brand salvato: "Brand ripristinato da sessione precedente" con bottone "Reset"
+
+**Hard reset disponibile** in BrandDialog (oltre al reset valori grafici esistente): "Cancella brand salvato" che chiama `useCarousel.persist.clearStorage()` + `setBrand(DEFAULT_BRAND)`.
+
+## 4. Anteprima export multi-slide con thumbnail e ordine
+
+Nuovo componente `src/components/ExportBatchPreviewDialog.tsx` aperto da un nuovo bottone **"Anteprima ZIP"** accanto a "Anteprima" in toolbar (icona `LayoutGrid`).
+
+**Layout del dialog:**
+- Header: titolo "Anteprima export ZIP — N slide · Lingua X"
+- Selettore lingua (se multilang) e selettore "include in ZIP" (default: tutte)
+- **Grid di thumbnail** — ogni slide renderizzata a `1080×1350` ma scalata a ~200×250px:
+  - Numero badge `01`, `02`... in alto a sx (mostra l'ordine finale)
+  - Checkbox in alto a dx per **escludere** dalla selezione (slide deselezionate appaiono opache + barrate, e vengono saltate nello ZIP)
+  - Banner rosso sopra se la slide ha errori di validazione
+  - Click sulla card → apre la stessa slide nella `ExportPreviewDialog` esistente (preview singola dettagliata)
+- **Drag-and-drop riordino** all'interno del dialog (riusa `@dnd-kit` già installato): ogni reorder chiama `reorderSlides(from, to)` dello store → riflesso immediato anche in sidebar
+- Indicatore stato fonts/immagini ("✓ Asset pronti / ⏳ Caricamento") riusando `ensureFontsFor` + check già presenti in `ExportPreviewDialog`
+- Footer: 
+  - Conteggio "X di Y slide selezionate · ~Z MB stimati"
+  - Bottone **"Scarica ZIP"** (disabilitato finché asset non pronti o 0 slide selezionate)
+  - Bottone "Annulla"
+
+**Logica di export "selettiva":**
+- Modifico `downloadZipFromNodes` in `src/lib/export.ts` per accettare opzionalmente una lista di indici da includere (default: tutti). I nomi file usano l'indice **1-based originale** delle slide (slide-03.png anche se è la prima inclusa) per mantenere coerenza con la sidebar — opzione "Rinumera consecutivamente" come checkbox nel dialog.
+- Aggiunta opzione "Una cartella per lingua" se multilang: lo ZIP include tutte le lingue selezionate in sottocartelle `it/slide-01.png`, `en/slide-01.png`. Selettore lingua diventa multi-select.
 
 ## File toccati
 
+**Nuovi:**
+- `src/components/ExportBatchPreviewDialog.tsx` — anteprima multi-slide con DnD + checkbox + export selettivo
+- `src/components/PresetCard.tsx` — card riusabile per preset (mini-preview colori+font)
+- `src/lib/presets.ts` — definizione `BrandPreset`, lista built-in, helper apply/migrate
+
 **Modificati:**
-- `src/components/SlideEditorForm.tsx` — flush draft prima di `setActiveLang`
-- `src/components/BrandSettingsDialog.tsx` — pattern draft+debounce 400ms su tutti i controlli, flush al close
-- `src/lib/export.ts` — `ensureFontsFor(brand)` dinamico, `waitForImages(node)`, `captureNode` accetta brand
-- `src/components/ExportPreviewDialog.tsx` — chiamata `ensureFontsFor` all'apertura, indicatore stato font/immagini, bottone disabilitato finché non pronto
-- `src/components/ExportButton.tsx` — passa `brand` ai call site di `downloadSinglePng` / `downloadZipFromNodes`
+- `src/lib/templates.ts` — estensione `BrandEffects` (shadow, cornerStyle, titleEffect, dividerStyle, iconAccent + nuovi `BgPattern`)
+- `src/lib/store.ts` — middleware `persist` + slice `brandPresets` con relative azioni
+- `src/components/slides/slide-styles.css` — classi per nuovi pattern (`fx-bg-blob`, `fx-bg-conic`, `fx-bg-stripes`, `fx-bg-waves`, `fx-bg-radial`), `fx-shadow-*`, `fx-corner-*`, `fx-title-*`, `fx-divider-*`, `fx-icon-accent` + variabile `--radius`
+- `src/components/slides/SlideRenderer.tsx` — applica le nuove classi `fx-*` alla `slide-frame`
+- `src/components/BrandSettingsDialog.tsx` — nuova tab "Preset", riorganizzazione tab "Effetti" in sezioni con thumbnails, bottone "Cancella brand salvato"
+- `src/components/ExportButton.tsx` — bottone/modalità per aprire l'anteprima ZIP, supporto opzioni `selectedIds` / `langs[]` / `renumber`
+- `src/lib/export.ts` — `downloadZipFromNodes(nodes, baseName, brand, opts?)` con `{ filenameStrategy: "original" | "consecutive", folderPerLang?: { [lang]: HTMLDivElement[] } }`
+- `src/routes/__root.tsx` — `useCarousel.persist.rehydrate()` lato client + toast "Brand ripristinato"
+- `src/routes/index.tsx` — nuovo bottone "Anteprima ZIP" in toolbar
 
 **Non toccati:**
-- `src/lib/store.ts` — resta sincrono, debounce vive nei componenti
-- `src/lib/history.ts` — invariato
-- `src/components/slides/SlideRenderer.tsx` — già usa CSS variables corrette
+- `src/lib/history.ts` — invariato (preset apply usa lo stesso meccanismo di setBrand → entry undo unica)
+- `src/components/SlideEditorForm.tsx` — invariato
+- Logica i18n — invariata
 
 ## Fuori scope
-- Caricamento font self-hosted / WOFF custom (resta solo Google Fonts)
-- Anteprima multi-slide nel dialog (resta solo la slide attiva, come da feature precedente)
-- Conversione immagini esterne (URL http) a dataURL — l'app accetta solo upload locali che già diventano dataURL
+- **Animazioni runtime** (l'export resta PNG statico, no GIF/MP4). Gli "effetti" sono visivi statici stile Figma, non motion design.
+- **Cloud sync dei preset** (resta solo localStorage). Esportabili tramite Export JSON come backup.
+- **Editor visuale** dei preset (si modifica il brand corrente e lo si "salva come preset", non si edita un preset direttamente — più semplice e meno error-prone).
+- **Persistenza delle slide** (resta usa-e-getta, coerente con il pattern attuale).
+- **Anteprima animata della ZIP** (no carousel auto-play nel dialog: è una grid statica per scegliere e riordinare).
 
