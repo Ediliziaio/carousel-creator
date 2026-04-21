@@ -194,9 +194,14 @@ function Index() {
 
         <main className="relative flex flex-1 items-center justify-center overflow-auto bg-[#1a1a1a] p-6">
           {activeSlide ? (
-            <ScaledPreview key={activeSlide.id + activeLang}>
-              <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
-            </ScaledPreview>
+            (() => {
+              const dim = FORMAT_DIMENSIONS[activeSlide.format ?? "portrait"];
+              return (
+                <ScaledPreview key={activeSlide.id + activeLang} w={dim.w} h={dim.h}>
+                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
+                </ScaledPreview>
+              );
+            })()
           ) : (
             <div className="text-muted-foreground">Nessuna slide selezionata</div>
           )}
