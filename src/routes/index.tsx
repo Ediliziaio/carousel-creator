@@ -374,6 +374,29 @@ function Index() {
 
       <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
       <ExportBatchPreviewDialog open={batchOpen} onOpenChange={setBatchOpen} brandTitle={brand.carouselTitle} />
+
+      {guideOpen && flatIssues.length > 0 && (
+        <FixIssuesGuide
+          issues={flatIssues}
+          index={guideIndex}
+          onPrev={() => {
+            const ni = Math.max(0, guideIndex - 1);
+            setGuideIndex(ni);
+            jumpToIssue(flatIssues[ni]);
+          }}
+          onNext={() => {
+            const ni = Math.min(flatIssues.length - 1, guideIndex + 1);
+            setGuideIndex(ni);
+            jumpToIssue(flatIssues[ni]);
+          }}
+          onSkip={() => {
+            const ni = Math.min(flatIssues.length - 1, guideIndex + 1);
+            setGuideIndex(ni);
+            jumpToIssue(flatIssues[ni]);
+          }}
+          onClose={() => setGuideOpen(false)}
+        />
+      )}
     </div>
   );
 }
