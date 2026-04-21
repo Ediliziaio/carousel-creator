@@ -18,13 +18,16 @@ import {
   type TitleEffect,
   type DividerStyle,
   type Weight,
+  type MarketingBadgeStyle,
+  type MarketingGradient,
+  type MarketingIconSet,
   DEFAULT_BRAND,
 } from "@/lib/templates";
 import { langLabel, LANG_NAMES } from "@/lib/i18n";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { PresetCard } from "@/components/PresetCard";
 import { themeFromBrand } from "@/lib/presets";
-import { Settings, X, Star, RotateCcw, Save, Trash, Palette } from "lucide-react";
+import { Settings, X, Star, RotateCcw, Save, Trash, Palette, Wand2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const ACCENT_PRESETS = [
@@ -85,6 +88,22 @@ const DIVIDERS: { value: DividerStyle; label: string }[] = [
 ];
 
 const WEIGHTS: Weight[] = [400, 500, 600, 700, 800, 900];
+
+const MKT_BADGE: { value: MarketingBadgeStyle; label: string }[] = [
+  { value: "filled", label: "Pieno" },
+  { value: "outline", label: "Contorno" },
+  { value: "neon", label: "Neon" },
+];
+const MKT_GRAD: { value: MarketingGradient; label: string }[] = [
+  { value: "none", label: "Nessuno" },
+  { value: "subtle", label: "Sottile" },
+  { value: "bold", label: "Marcato" },
+];
+const MKT_ICO: { value: MarketingIconSet; label: string }[] = [
+  { value: "emoji", label: "Emoji" },
+  { value: "geometric", label: "Geometrico" },
+  { value: "minimal", label: "Minimale" },
+];
 
 export function BrandSettingsDialog() {
   const [open, setOpen] = useState(false);
