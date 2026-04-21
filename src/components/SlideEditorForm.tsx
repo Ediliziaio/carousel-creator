@@ -516,16 +516,22 @@ function CoverEditor({ d, set, errFor, slideId, overrides }: EditorProps<CoverDa
 }
 
 /* ---------------- ArrayField helper ---------------- */
-function ArrayField<T>({ label, items, onChange, render, empty }: {
+function ArrayField<T>({ label, items, onChange, render, empty, maxItems, counter }: {
   label: string;
   items: T[];
   onChange: (arr: T[]) => void;
   render: (value: T, onItemChange: (v: T) => void, index: number) => React.ReactNode;
   empty: T;
+  maxItems?: number;
+  counter?: React.ReactNode;
 }) {
+  const atMax = maxItems !== undefined && items.length >= maxItems;
   return (
     <div className="space-y-2">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+        {counter}
+      </div>
       <div className="space-y-2">
         {items.map((it, i) => (
           <div key={i} className="flex gap-2">
@@ -536,7 +542,14 @@ function ArrayField<T>({ label, items, onChange, render, empty }: {
           </div>
         ))}
       </div>
-      <Button type="button" variant="outline" size="sm" onClick={() => onChange([...items, structuredClone(empty)])}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={atMax}
+        title={atMax ? `Hai raggiunto il massimo di ${maxItems} elementi` : undefined}
+        onClick={() => onChange([...items, structuredClone(empty)])}
+      >
         <Plus className="h-4 w-4 mr-1" /> Aggiungi
       </Button>
     </div>
@@ -544,7 +557,7 @@ function ArrayField<T>({ label, items, onChange, render, empty }: {
 }
 
 /* ---------------- Gallery ---------------- */
-function GalleryEditor({ d, set, errFor, slideId, overrides }: { d: GalleryData; set: (d: GalleryData) => void; errFor: ErrFor } & StyleProps) {
+function GalleryEditor({ d, set, errFor, slideId, overrides }: EditorProps<GalleryData>) {
   const imgsErr = errFor("images");
   return (
     <div className="space-y-4">
@@ -552,9 +565,11 @@ function GalleryEditor({ d, set, errFor, slideId, overrides }: { d: GalleryData;
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       {imgsErr && <p data-field="images" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {imgsErr}</p>}
       <ArrayField
-        label="Immagini (3 consigliate)"
+        label={`Immagini (${LIMITS.gallery.min}–${LIMITS.gallery.max})`}
         items={d.images}
         onChange={(arr) => set({ ...d, images: arr })}
+        maxItems={LIMITS.gallery.max}
+        counter={<ItemCounter current={d.images.filter((im) => im.url).length} min={LIMITS.gallery.min} max={LIMITS.gallery.max} unit="foto" />}
         render={(v, on, i) => (
           <div className="space-y-2 rounded-md border border-border p-2">
             <div className="flex items-center justify-between">
@@ -562,7 +577,7 @@ function GalleryEditor({ d, set, errFor, slideId, overrides }: { d: GalleryData;
               <TextStylePopover slideId={slideId} fieldPath={`images.${i}.caption`} value={overrides?.[`images.${i}.caption`]} />
             </div>
             <ImageUploadField label="" value={v.url} onChange={(url) => on({ ...v, url })} />
-            <Input value={v.caption ?? ""} onChange={(e) => on({ ...v, caption: e.target.value })} placeholder="Didascalia (opzionale)" />
+            <Input value={v.caption ?? ""} onChange={(e) => on({ ...v, caption: e.target.value })} placeholder="Didascalia (opzionale)" maxLength={LIMITS.captionMax} />
           </div>
         )}
         empty={{ url: undefined, caption: "" }}
@@ -572,10 +587,16 @@ function GalleryEditor({ d, set, errFor, slideId, overrides }: { d: GalleryData;
 }
 
 /* ---------------- ImageQuote ---------------- */
-function ImageQuoteEditor({ d, set, errFor, slideId, overrides }: { d: ImageQuoteData; set: (d: ImageQuoteData) => void; errFor: ErrFor } & StyleProps) {
+function ImageQuoteEditor({ d, set, errFor, warnFor, slideId, overrides }: EditorProps<ImageQuoteData>) {
+  const imgWarn = warnFor("imageUrl");
+  const imgErr = errFor("imageUrl");
   return (
     <div className="space-y-4">
-      <ImageUploadField label="Immagine fullscreen" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Renderizzata sotto la citazione." />
+      <div>
+        <ImageUploadField label="Immagine fullscreen" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Renderizzata sotto la citazione." />
+        {imgErr && <p className="mt-1 flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {imgErr}</p>}
+        {!imgErr && imgWarn && <p className="mt-1 flex items-center gap-1 text-[11px] text-sky-500"><Info className="h-3 w-3" /> {imgWarn}</p>}
+      </div>
       <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}><Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} /></Field>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
@@ -586,29 +607,41 @@ function ImageQuoteEditor({ d, set, errFor, slideId, overrides }: { d: ImageQuot
 }
 
 /* ---------------- ChartBar ---------------- */
-function ChartBarEditor({ d, set, errFor, slideId, overrides }: { d: ChartBarData; set: (d: ChartBarData) => void; errFor: ErrFor } & StyleProps) {
+function ChartBarEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartBarData>) {
+  const itemsErr = errFor("items");
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Field label="Unità (opzionale)"><Input value={d.unit ?? ""} placeholder="%, k€…" onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
+      {itemsErr && <p data-field="items" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {itemsErr}</p>}
       <ArrayField
-        label="Voci (max 6)"
+        label={`Voci (${LIMITS.chartBar.min}–${LIMITS.chartBar.max})`}
         items={d.items}
-        onChange={(arr) => set({ ...d, items: arr.slice(0, 6) })}
-        render={(v, on, i) => (
-          <div className="space-y-2 rounded-md border border-border p-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Voce {i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
+        onChange={(arr) => set({ ...d, items: arr.slice(0, LIMITS.chartBar.max) })}
+        maxItems={LIMITS.chartBar.max}
+        counter={<ItemCounter current={d.items.length} min={LIMITS.chartBar.min} max={LIMITS.chartBar.max} unit="voci" />}
+        render={(v, on, i) => {
+          const labelErr = errFor(`items.${i}.label`);
+          const valErr = errFor(`items.${i}.value`);
+          const colorErr = errFor(`items.${i}.color`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Voce {i + 1}</Label>
+                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
+              </div>
+              <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
+                <Input className={`col-span-2 sm:col-span-1 ${labelErr ? "border-destructive" : ""}`} value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
+                <Input type="number" min={0} className={valErr ? "border-destructive" : ""} value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" title="Numero positivo. Es. 42 o 3.5" />
+                <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
+              </div>
+              {(labelErr || valErr || colorErr) && (
+                <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {labelErr || valErr || colorErr}</p>
+              )}
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
-              <Input className="col-span-2 sm:col-span-1" value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
-              <Input type="number" value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" />
-              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
-            </div>
-          </div>
-        )}
+          );
+        }}
         empty={{ label: "Nuovo", value: 0 }}
       />
     </div>
@@ -616,29 +649,41 @@ function ChartBarEditor({ d, set, errFor, slideId, overrides }: { d: ChartBarDat
 }
 
 /* ---------------- ChartDonut ---------------- */
-function ChartDonutEditor({ d, set, errFor, slideId, overrides }: { d: ChartDonutData; set: (d: ChartDonutData) => void; errFor: ErrFor } & StyleProps) {
+function ChartDonutEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartDonutData>) {
+  const segsErr = errFor("segments");
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Field label="Etichetta al centro (opzionale)"><Input value={d.centerLabel ?? ""} onChange={(e) => set({ ...d, centerLabel: e.target.value })} /></Field>
+      {segsErr && <p data-field="segments" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {segsErr}</p>}
       <ArrayField
-        label="Segmenti (max 6)"
+        label={`Segmenti (${LIMITS.chartDonut.min}–${LIMITS.chartDonut.max})`}
         items={d.segments}
-        onChange={(arr) => set({ ...d, segments: arr.slice(0, 6) })}
-        render={(v, on, i) => (
-          <div className="space-y-2 rounded-md border border-border p-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Segmento {i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
+        onChange={(arr) => set({ ...d, segments: arr.slice(0, LIMITS.chartDonut.max) })}
+        maxItems={LIMITS.chartDonut.max}
+        counter={<ItemCounter current={d.segments.length} min={LIMITS.chartDonut.min} max={LIMITS.chartDonut.max} unit="segmenti" />}
+        render={(v, on, i) => {
+          const labelErr = errFor(`segments.${i}.label`);
+          const valErr = errFor(`segments.${i}.value`);
+          const colorErr = errFor(`segments.${i}.color`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Segmento {i + 1}</Label>
+                <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
+              </div>
+              <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
+                <Input className={`col-span-2 sm:col-span-1 ${labelErr ? "border-destructive" : ""}`} value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
+                <Input type="number" min={0} className={valErr ? "border-destructive" : ""} value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" title="Numero positivo. Es. 42 o 3.5" />
+                <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
+              </div>
+              {(labelErr || valErr || colorErr) && (
+                <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {labelErr || valErr || colorErr}</p>
+              )}
             </div>
-            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
-              <Input className="col-span-2 sm:col-span-1" value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
-              <Input type="number" value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" />
-              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
-            </div>
-          </div>
-        )}
+          );
+        }}
         empty={{ label: "Nuovo", value: 0 }}
       />
     </div>
@@ -646,12 +691,14 @@ function ChartDonutEditor({ d, set, errFor, slideId, overrides }: { d: ChartDonu
 }
 
 /* ---------------- ChartLine ---------------- */
-function ChartLineEditor({ d, set, errFor, slideId, overrides }: { d: ChartLineData; set: (d: ChartLineData) => void; errFor: ErrFor } & StyleProps) {
+function ChartLineEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartLineData>) {
+  const valuesErr = errFor("values");
   const updatePoint = (i: number, label: string, value: number) => {
     const xLabels = [...d.xLabels]; const values = [...d.values];
     xLabels[i] = label; values[i] = value;
     set({ ...d, xLabels, values });
   };
+  const atMax = d.values.length >= LIMITS.chartLine.max;
   const addPoint = () => set({ ...d, xLabels: [...d.xLabels, `P${d.xLabels.length + 1}`], values: [...d.values, 0] });
   const removePoint = (i: number) => set({ ...d, xLabels: d.xLabels.filter((_, j) => j !== i), values: d.values.filter((_, j) => j !== i) });
   return (
@@ -660,46 +707,60 @@ function ChartLineEditor({ d, set, errFor, slideId, overrides }: { d: ChartLineD
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Field label="Unità (opzionale)"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
       <div className="space-y-2">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Punti dati</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Punti dati</Label>
+          <ItemCounter current={d.values.length} min={LIMITS.chartLine.min} max={LIMITS.chartLine.max} unit="punti" />
+        </div>
+        {valuesErr && <p data-field="values" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {valuesErr}</p>}
         {d.xLabels.map((lb, i) => (
           <div key={i} className="flex flex-col gap-2 sm:flex-row">
             <Input className="flex-1" value={lb} onChange={(e) => updatePoint(i, e.target.value, d.values[i] ?? 0)} placeholder="Etichetta X" />
             <div className="flex gap-2">
-              <Input className="flex-1 sm:w-24 sm:flex-none" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" />
+              <Input className="flex-1 sm:w-24 sm:flex-none" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" title="Numero. Es. 42 o 3.5" />
               <Button type="button" variant="ghost" size="icon" onClick={() => removePoint(i)}><Trash2 className="h-4 w-4" /></Button>
             </div>
           </div>
         ))}
-        <Button type="button" variant="outline" size="sm" onClick={addPoint}><Plus className="mr-1 h-4 w-4" /> Aggiungi punto</Button>
+        <Button type="button" variant="outline" size="sm" disabled={atMax} title={atMax ? `Massimo ${LIMITS.chartLine.max} punti` : undefined} onClick={addPoint}>
+          <Plus className="mr-1 h-4 w-4" /> Aggiungi punto
+        </Button>
       </div>
     </div>
   );
 }
 
 /* ---------------- Feature ---------------- */
-function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData; set: (d: FeatureData) => void; errFor: ErrFor } & StyleProps) {
+function FeatureEditor({ d, set, errFor, slideId, overrides }: EditorProps<FeatureData>) {
+  const bulletsErr = errFor("bullets");
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <ImageUploadField label="Immagine spotlight" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} />
+      {bulletsErr && <p data-field="bullets" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {bulletsErr}</p>}
       <ArrayField
-        label="Bullet (3 consigliati)"
+        label={`Bullet (${LIMITS.featureBullets.min}–${LIMITS.featureBullets.max})`}
         items={d.bullets}
         onChange={(arr) => set({ ...d, bullets: arr })}
-        render={(v, on, i) => (
-          <div className="space-y-2 rounded-md border border-border p-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bullet {i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
+        maxItems={LIMITS.featureBullets.max}
+        counter={<ItemCounter current={d.bullets.length} min={LIMITS.featureBullets.min} max={LIMITS.featureBullets.max} unit="bullet" />}
+        render={(v, on, i) => {
+          const titleErr = errFor(`bullets.${i}.title`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bullet {i + 1}</Label>
+                <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
+              </div>
+              <div className="grid grid-cols-[60px_1fr] gap-2 sm:grid-cols-[80px_1fr]">
+                <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
+                <Input className={titleErr ? "border-destructive" : ""} value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo *" />
+              </div>
+              <Textarea rows={2} value={v.text ?? ""} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Descrizione (opzionale)" />
+              {titleErr && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {titleErr}</p>}
             </div>
-            <div className="grid grid-cols-[60px_1fr] gap-2 sm:grid-cols-[80px_1fr]">
-              <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
-              <Input value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo" />
-            </div>
-            <Textarea rows={2} value={v.text ?? ""} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Descrizione (opzionale)" />
-          </div>
-        )}
+          );
+        }}
         empty={{ marker: "", title: "", text: "" }}
       />
     </div>
@@ -707,17 +768,20 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData;
 }
 
 /* ---------------- Testimonial ---------------- */
-function TestimonialEditor({ d, set, errFor, slideId, overrides }: { d: TestimonialData; set: (d: TestimonialData) => void; errFor: ErrFor } & StyleProps) {
+function TestimonialEditor({ d, set, errFor, slideId, overrides }: EditorProps<TestimonialData>) {
   return (
     <div className="space-y-4">
       <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} variant="avatar" />
-      <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}><Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} /></Field>
+      <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}>
+        <Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} />
+      </Field>
+      <p className="text-[10px] text-muted-foreground">{d.quote.length}/{LIMITS.quoteMax} caratteri (min {LIMITS.quoteMin})</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
+        <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" maxLength={LIMITS.authorMax} value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
         <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}><Input value={d.role ?? ""} onChange={(e) => set({ ...d, role: e.target.value })} /></Field>
       </div>
-      <Field label="Rating (0-5, opzionale)">
-        <Input type="number" min={0} max={5} value={d.rating ?? 0} onChange={(e) => set({ ...d, rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })} />
+      <Field label="Rating (0-5, opzionale)" error={errFor("rating")}>
+        <Input type="number" min={0} max={5} step={1} value={d.rating ?? 0} onChange={(e) => set({ ...d, rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })} />
       </Field>
     </div>
   );
