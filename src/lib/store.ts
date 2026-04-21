@@ -181,6 +181,8 @@ export const useCarousel = create<CarouselState>()(
       templateCategoryOrder: [...DEFAULT_CATEGORY_ORDER],
       templatesPerCategory: { ...DEFAULT_TEMPLATES_PER_CATEGORY },
       lastFontSizeByFieldType: {},
+      strictExport: true,
+      validationOverlay: true,
       past: [],
       future: [],
 
