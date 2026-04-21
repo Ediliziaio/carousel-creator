@@ -141,18 +141,39 @@ export async function downloadSinglePng(
   return saveBlob(blob, filename);
 }
 
+export interface ZipEntry {
+  /** Path inside the ZIP (e.g. "slide-01.png" or "it/slide-01.png"). */
+  path: string;
+  node: HTMLElement;
+}
+
+/** Generic ZIP builder — caller controls naming/folders. */
+export async function downloadZipFromEntries(
+  entries: ZipEntry[],
+  baseName: string,
+  brand: BrandSettings,
+  onProgress?: (done: number, total: number) => void,
+): Promise<SaveMethod> {
+  const zip = new JSZip();
+  for (let i = 0; i < entries.length; i++) {
+    const { path, node } = entries[i];
+    const dataUrl = await captureNode(node, brand);
+    const base64 = dataUrl.split(",")[1];
+    zip.file(path, base64, { base64: true });
+    onProgress?.(i + 1, entries.length);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  return saveBlob(blob, `${baseName}.zip`);
+}
+
 export async function downloadZipFromNodes(
   nodes: HTMLElement[],
   baseName: string,
   brand: BrandSettings,
 ): Promise<SaveMethod> {
-  const zip = new JSZip();
-  for (let i = 0; i < nodes.length; i++) {
-    const dataUrl = await captureNode(nodes[i], brand);
-    const base64 = dataUrl.split(",")[1];
-    const num = (i + 1).toString().padStart(2, "0");
-    zip.file(`slide-${num}.png`, base64, { base64: true });
-  }
-  const blob = await zip.generateAsync({ type: "blob" });
-  return saveBlob(blob, `${baseName}.zip`);
+  const entries: ZipEntry[] = nodes.map((node, i) => ({
+    path: `slide-${(i + 1).toString().padStart(2, "0")}.png`,
+    node,
+  }));
+  return downloadZipFromEntries(entries, baseName, brand);
 }
