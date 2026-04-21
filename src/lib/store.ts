@@ -40,7 +40,7 @@ interface CarouselState {
   setActiveLang: (code: string) => void;
   setDefaultLanguage: (code: string) => void;
 
-  addSlide: (template: TemplateId) => void;
+  addSlide: (template: TemplateId, format?: SlideFormat) => void;
   removeSlide: (id: string) => void;
   duplicateSlide: (id: string) => void;
   updateSlide: (id: string, data: AnyTemplateData) => void;
