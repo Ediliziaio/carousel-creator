@@ -137,9 +137,9 @@ export const useCarousel = create<CarouselState>()(
           return withHistory(s, { brand: { ...s.brand, defaultLanguage: code } });
         }),
 
-      addSlide: (template) =>
+      addSlide: (template, format = "portrait") =>
         set((s) => {
-          const slide = makeDefaultSlide(template);
+          const slide = makeDefaultSlide(template, format);
           return withHistory(s, { slides: [...s.slides, slide], activeId: slide.id });
         }),
 
