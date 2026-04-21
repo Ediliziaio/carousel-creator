@@ -243,7 +243,8 @@ function ItemCounter({ current, min, max, unit = "elementi" }: { current: number
 const HL_HINT = "Usa {hl}testo{/hl} per evidenziare in colore accent";
 
 /* ---------------- Split ---------------- */
-function SplitEditor({ d, set, errFor, slideId, overrides }: { d: SplitData; set: (d: SplitData) => void; errFor: ErrFor } & StyleProps) {
+/* ---------------- Split ---------------- */
+function SplitEditor({ d, set, errFor, slideId, overrides }: EditorProps<SplitData>) {
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
@@ -287,7 +288,7 @@ function SplitEditor({ d, set, errFor, slideId, overrides }: { d: SplitData; set
 }
 
 /* ---------------- Grid 2x2 ---------------- */
-function GridEditor({ d, set, errFor, slideId, overrides }: { d: Grid2x2Data; set: (d: Grid2x2Data) => void; errFor: ErrFor } & StyleProps) {
+function GridEditor({ d, set, errFor, slideId, overrides }: EditorProps<Grid2x2Data>) {
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
@@ -318,7 +319,7 @@ function GridEditor({ d, set, errFor, slideId, overrides }: { d: Grid2x2Data; se
 }
 
 /* ---------------- BigNum ---------------- */
-function BigNumEditor({ d, set, errFor, slideId, overrides }: { d: BigNumData; set: (d: BigNumData) => void; errFor: ErrFor } & StyleProps) {
+function BigNumEditor({ d, set, errFor, slideId, overrides }: EditorProps<BigNumData>) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
@@ -341,7 +342,7 @@ function BigNumEditor({ d, set, errFor, slideId, overrides }: { d: BigNumData; s
 }
 
 /* ---------------- Center ---------------- */
-function CenterEditor({ d, set, errFor, slideId, overrides }: { d: CenterData; set: (d: CenterData) => void; errFor: ErrFor } & StyleProps) {
+function CenterEditor({ d, set, errFor, slideId, overrides }: EditorProps<CenterData>) {
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
@@ -353,7 +354,7 @@ function CenterEditor({ d, set, errFor, slideId, overrides }: { d: CenterData; s
 }
 
 /* ---------------- Timeline ---------------- */
-function TimelineEditor({ d, set, errFor, slideId, overrides }: { d: TimelineData; set: (d: TimelineData) => void; errFor: ErrFor } & StyleProps) {
+function TimelineEditor({ d, set, errFor, slideId, overrides }: EditorProps<TimelineData>) {
   const itemsErr = errFor("items");
   return (
     <div className="space-y-4">
@@ -382,7 +383,7 @@ function TimelineEditor({ d, set, errFor, slideId, overrides }: { d: TimelineDat
 }
 
 /* ---------------- Compare ---------------- */
-function CompareEditor({ d, set, errFor, slideId, overrides }: { d: CompareData; set: (d: CompareData) => void; errFor: ErrFor } & StyleProps) {
+function CompareEditor({ d, set, errFor, slideId, overrides }: EditorProps<CompareData>) {
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
@@ -414,7 +415,7 @@ function CompareEditor({ d, set, errFor, slideId, overrides }: { d: CompareData;
 }
 
 /* ---------------- Vocab ---------------- */
-function VocabEditor({ d, set, errFor, slideId, overrides }: { d: VocabData; set: (d: VocabData) => void; errFor: ErrFor } & StyleProps) {
+function VocabEditor({ d, set, errFor, slideId, overrides }: EditorProps<VocabData>) {
   return (
     <div className="space-y-4">
       <Field label="Categoria" slideId={slideId} fieldPath="category" overrides={overrides}><Input value={d.category} onChange={(e) => set({ ...d, category: e.target.value })} /></Field>
@@ -428,7 +429,7 @@ function VocabEditor({ d, set, errFor, slideId, overrides }: { d: VocabData; set
 }
 
 /* ---------------- QA ---------------- */
-function QAEditor({ d, set, errFor, slideId, overrides }: { d: QAData; set: (d: QAData) => void; errFor: ErrFor } & StyleProps) {
+function QAEditor({ d, set, errFor, slideId, overrides }: EditorProps<QAData>) {
   const answerErr = errFor("answer");
   return (
     <div className="space-y-4">
@@ -456,7 +457,7 @@ function QAEditor({ d, set, errFor, slideId, overrides }: { d: QAData; set: (d: 
 }
 
 /* ---------------- Checklist ---------------- */
-function ChecklistEditor({ d, set, errFor, slideId, overrides }: { d: ChecklistData; set: (d: ChecklistData) => void; errFor: ErrFor } & StyleProps) {
+function ChecklistEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChecklistData>) {
   const itemsErr = errFor("items");
   return (
     <div className="space-y-4">
@@ -488,7 +489,7 @@ function ChecklistEditor({ d, set, errFor, slideId, overrides }: { d: ChecklistD
 }
 
 /* ---------------- Stat ---------------- */
-function StatEditor({ d, set, errFor, slideId, overrides }: { d: StatData; set: (d: StatData) => void; errFor: ErrFor } & StyleProps) {
+function StatEditor({ d, set, errFor, slideId, overrides }: EditorProps<StatData>) {
   return (
     <div className="space-y-4">
       <Field label="Etichetta" error={errFor("label")} slideId={slideId} fieldPath="label" overrides={overrides}><Input data-field="label" value={d.label} onChange={(e) => set({ ...d, label: e.target.value })} /></Field>
@@ -503,7 +504,7 @@ function StatEditor({ d, set, errFor, slideId, overrides }: { d: StatData; set: 
 }
 
 /* ---------------- Cover ---------------- */
-function CoverEditor({ d, set, errFor, slideId, overrides }: { d: CoverData; set: (d: CoverData) => void; errFor: ErrFor } & StyleProps) {
+function CoverEditor({ d, set, errFor, slideId, overrides }: EditorProps<CoverData>) {
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
