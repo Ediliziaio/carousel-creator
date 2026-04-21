@@ -13,6 +13,8 @@ import { ExportBatchPreviewDialog } from "@/components/ExportBatchPreviewDialog"
 import { CarouselPresetDialog } from "@/components/CarouselPresetDialog";
 import { QuickOfferEditor } from "@/components/QuickOfferEditor";
 import { ContentImportDialog } from "@/components/ContentImportDialog";
+import { HookOfferMicroEditor } from "@/components/HookOfferMicroEditor";
+import { FixIssuesGuide, type FlatIssue } from "@/components/FixIssuesGuide";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,18 +62,60 @@ function Index() {
     [slides, activeLang, brand.defaultLanguage],
   );
 
-  const goToFirstError = () => {
-    const first = validationIssues[0];
-    if (!first) return;
-    setActive(first.slideId);
+  const flatIssues: FlatIssue[] = useMemo(
+    () =>
+      validationIssues.flatMap((v) =>
+        v.errors.map((e) => ({
+          slideId: v.slideId,
+          slideIndex: v.slideIndex,
+          templateLabel: v.templateLabel,
+          field: e.field,
+          message: e.message,
+          severity: e.severity,
+        })),
+      ),
+    [validationIssues],
+  );
+
+  const jumpToIssue = (issue: FlatIssue | undefined) => {
+    if (!issue) return;
+    setActive(issue.slideId);
     setTimeout(() => {
       window.dispatchEvent(
         new CustomEvent("slide:focus-field", {
-          detail: { slideId: first.slideId, field: first.firstField },
+          detail: { slideId: issue.slideId, field: issue.field },
         }),
       );
     }, 60);
   };
+
+  const goToFirstError = () => jumpToIssue(flatIssues[0]);
+
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideIndex, setGuideIndex] = useState(0);
+
+  const startGuide = () => {
+    if (flatIssues.length === 0) return;
+    setGuideOpen(true);
+    setGuideIndex(0);
+    jumpToIssue(flatIssues[0]);
+  };
+
+  // Clamp guide index when issues list shrinks; auto-close on completion
+  useEffect(() => {
+    if (!guideOpen) return;
+    if (flatIssues.length === 0) {
+      setGuideOpen(false);
+      toast.success("Tutti i campi sono completi ✔");
+      return;
+    }
+    if (guideIndex >= flatIssues.length) {
+      const ni = flatIssues.length - 1;
+      setGuideIndex(ni);
+      jumpToIssue(flatIssues[ni]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flatIssues.length, guideOpen]);
 
   const [editorTab, setEditorTab] = useState<string>("form");
   const [previewOpen, setPreviewOpen] = useState(false);
