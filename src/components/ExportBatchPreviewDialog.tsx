@@ -313,23 +313,27 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
         </div>
 
         <div className="max-h-[55vh] overflow-auto bg-[#1a1a1a] p-4">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={slides.map((s) => s.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-                {slides.map((s, i) => (
-                  <Thumbnail
-                    key={s.id}
-                    slideId={s.id}
-                    index={i}
-                    selected={selectedIds.has(s.id)}
-                    onToggle={() => toggle(s.id)}
-                    invalid={!validateSlide(s, selectedLangs[0], brand.defaultLanguage).valid}
-                    lang={selectedLangs[0] ?? brand.defaultLanguage}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          {mounted ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={slides.map((s) => s.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+                  {slides.map((s, i) => (
+                    <Thumbnail
+                      key={s.id}
+                      slideId={s.id}
+                      index={i}
+                      selected={selectedIds.has(s.id)}
+                      onToggle={() => toggle(s.id)}
+                      invalid={!validateSlide(s, selectedLangs[0], brand.defaultLanguage).valid}
+                      lang={selectedLangs[0] ?? brand.defaultLanguage}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className="text-sm text-muted-foreground">Caricamento...</div>
+          )}
         </div>
 
         <DialogFooter className="flex-col gap-2 border-t border-border px-6 py-3 sm:flex-row sm:items-center">
