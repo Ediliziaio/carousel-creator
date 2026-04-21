@@ -10,8 +10,11 @@ import type {
   QAData,
   ChecklistData,
   StatData,
+  CoverData,
+  AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
+import { getSlideData } from "./i18n";
 
 export interface FieldError {
   field: string;
@@ -34,16 +37,16 @@ export interface SlideValidationResult {
 const empty = (s?: string) => !s || !s.trim();
 const REQUIRED = "campo obbligatorio";
 
-export function validateSlide(slide: Slide): SlideValidation {
+export function validateSlideData(template: Slide["template"], data: AnyTemplateData): SlideValidation {
   const errors: FieldError[] = [];
-  switch (slide.template) {
+  switch (template) {
     case "split": {
-      const d = slide.data as SplitData;
+      const d = data as SplitData;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       break;
     }
     case "grid2x2": {
-      const d = slide.data as Grid2x2Data;
+      const d = data as Grid2x2Data;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       d.cells.forEach((c, i) => {
         if (empty(c.title))
@@ -52,18 +55,18 @@ export function validateSlide(slide: Slide): SlideValidation {
       break;
     }
     case "bignum": {
-      const d = slide.data as BigNumData;
+      const d = data as BigNumData;
       if (empty(d.number)) errors.push({ field: "number", message: `Numero: ${REQUIRED}` });
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       break;
     }
     case "center": {
-      const d = slide.data as CenterData;
+      const d = data as CenterData;
       if (empty(d.title)) errors.push({ field: "title", message: `Frase principale: ${REQUIRED}` });
       break;
     }
     case "timeline": {
-      const d = slide.data as TimelineData;
+      const d = data as TimelineData;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       if (!d.items.some((it) => !empty(it.title))) {
         const firstIdx = d.items.length > 0 ? 0 : -1;
@@ -74,7 +77,7 @@ export function validateSlide(slide: Slide): SlideValidation {
       break;
     }
     case "compare": {
-      const d = slide.data as CompareData;
+      const d = data as CompareData;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       if (empty(d.before.title))
         errors.push({ field: "before.title", message: `Colonna 'Prima' — Titolo: ${REQUIRED}` });
@@ -95,13 +98,13 @@ export function validateSlide(slide: Slide): SlideValidation {
       break;
     }
     case "vocab": {
-      const d = slide.data as VocabData;
+      const d = data as VocabData;
       if (empty(d.word)) errors.push({ field: "word", message: `Parola: ${REQUIRED}` });
       if (empty(d.def)) errors.push({ field: "def", message: `Definizione: ${REQUIRED}` });
       break;
     }
     case "qa": {
-      const d = slide.data as QAData;
+      const d = data as QAData;
       if (empty(d.question)) errors.push({ field: "question", message: `Domanda: ${REQUIRED}` });
       if (!d.answer.some((p) => !empty(p))) {
         const firstIdx = d.answer.length > 0 ? 0 : -1;
@@ -112,7 +115,7 @@ export function validateSlide(slide: Slide): SlideValidation {
       break;
     }
     case "checklist": {
-      const d = slide.data as ChecklistData;
+      const d = data as ChecklistData;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       if (!d.items.some((it) => !empty(it.title))) {
         const firstIdx = d.items.length > 0 ? 0 : -1;
@@ -123,19 +126,33 @@ export function validateSlide(slide: Slide): SlideValidation {
       break;
     }
     case "stat": {
-      const d = slide.data as StatData;
+      const d = data as StatData;
       if (empty(d.value)) errors.push({ field: "value", message: `Valore: ${REQUIRED}` });
       if (empty(d.label)) errors.push({ field: "label", message: `Etichetta: ${REQUIRED}` });
+      break;
+    }
+    case "cover": {
+      const d = data as CoverData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
       break;
     }
   }
   return { valid: errors.length === 0, errors };
 }
 
-export function validateAllSlides(slides: Slide[]): SlideValidationResult[] {
+export function validateSlide(slide: Slide, lang?: string, defaultLang?: string): SlideValidation {
+  const data = getSlideData(slide, lang ?? defaultLang ?? "it", defaultLang ?? "it");
+  return validateSlideData(slide.template, data);
+}
+
+export function validateAllSlides(
+  slides: Slide[],
+  lang?: string,
+  defaultLang?: string,
+): SlideValidationResult[] {
   return slides
     .map((s, i) => {
-      const v = validateSlide(s);
+      const v = validateSlide(s, lang, defaultLang);
       return {
         slideId: s.id,
         slideIndex: i,
@@ -147,7 +164,6 @@ export function validateAllSlides(slides: Slide[]): SlideValidationResult[] {
     .filter((r) => r.errors.length > 0);
 }
 
-/** Lookup helper: get error for a specific field path on a slide. */
-export function getFieldError(slide: Slide, field: string): string | undefined {
-  return validateSlide(slide).errors.find((e) => e.field === field)?.message;
+export function getFieldError(slide: Slide, field: string, lang?: string, defaultLang?: string): string | undefined {
+  return validateSlide(slide, lang, defaultLang).errors.find((e) => e.field === field)?.message;
 }
