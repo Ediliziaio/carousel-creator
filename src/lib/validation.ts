@@ -11,6 +11,13 @@ import type {
   ChecklistData,
   StatData,
   CoverData,
+  GalleryData,
+  ImageQuoteData,
+  ChartBarData,
+  ChartDonutData,
+  ChartLineData,
+  FeatureData,
+  TestimonialData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -134,6 +141,52 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
     case "cover": {
       const d = data as CoverData;
       if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      break;
+    }
+    case "gallery": {
+      const d = data as GalleryData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      if (!d.images.some((im) => im.url)) {
+        errors.push({ field: "images", message: "Galleria: aggiungi almeno un'immagine" });
+      }
+      break;
+    }
+    case "imageQuote": {
+      const d = data as ImageQuoteData;
+      if (empty(d.quote)) errors.push({ field: "quote", message: `Citazione: ${REQUIRED}` });
+      if (empty(d.author)) errors.push({ field: "author", message: `Autore: ${REQUIRED}` });
+      break;
+    }
+    case "chartBar": {
+      const d = data as ChartBarData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      if (!d.items.length) errors.push({ field: "items", message: "Aggiungi almeno una voce" });
+      break;
+    }
+    case "chartDonut": {
+      const d = data as ChartDonutData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      if (!d.segments.length) errors.push({ field: "segments", message: "Aggiungi almeno un segmento" });
+      break;
+    }
+    case "chartLine": {
+      const d = data as ChartLineData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      if (!d.values.length) errors.push({ field: "values", message: "Aggiungi almeno un valore" });
+      break;
+    }
+    case "feature": {
+      const d = data as FeatureData;
+      if (empty(d.title)) errors.push({ field: "title", message: `Titolo: ${REQUIRED}` });
+      if (!d.bullets.some((b) => !empty(b.title))) {
+        errors.push({ field: "bullets", message: "Aggiungi almeno un bullet" });
+      }
+      break;
+    }
+    case "testimonial": {
+      const d = data as TestimonialData;
+      if (empty(d.quote)) errors.push({ field: "quote", message: `Citazione: ${REQUIRED}` });
+      if (empty(d.author)) errors.push({ field: "author", message: `Autore: ${REQUIRED}` });
       break;
     }
   }

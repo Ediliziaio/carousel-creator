@@ -42,6 +42,7 @@ interface Props {
 const CATEGORY_LABELS: Record<string, string> = {
   text: "Testo & Titolo",
   data: "Liste & Dati",
+  media: "Media & Grafici",
   ref: "Riferimento",
 };
 

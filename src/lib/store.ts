@@ -24,12 +24,35 @@ import {
 import { type CarouselSnapshot, pushSnapshot, snapshot } from "./history";
 import { setSlideData, getSlideData } from "./i18n";
 
-const DEFAULT_CATEGORY_ORDER = ["text", "data", "ref"];
+const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
-  text: ["cover", "center", "split", "bignum"],
-  data: ["grid2x2", "timeline", "checklist", "stat", "compare"],
-  ref:  ["vocab", "qa"],
+  text:  ["cover", "center", "split", "bignum"],
+  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine"],
+  media: ["gallery", "imageQuote", "feature", "testimonial"],
+  ref:   ["vocab", "qa"],
 };
+
+/** Merge persisted picker state with defaults so newly-added templates/categories appear. */
+function mergePickerState(
+  persistedOrder: string[] | undefined,
+  persistedTemplates: Record<string, TemplateId[]> | undefined,
+): { templateCategoryOrder: string[]; templatesPerCategory: Record<string, TemplateId[]> } {
+  const order = persistedOrder ?? [...DEFAULT_CATEGORY_ORDER];
+  // Append any default categories the user is missing (e.g. "media" added later).
+  for (const cat of DEFAULT_CATEGORY_ORDER) {
+    if (!order.includes(cat)) order.push(cat);
+  }
+  const templates: Record<string, TemplateId[]> = { ...(persistedTemplates ?? {}) };
+  for (const cat of DEFAULT_CATEGORY_ORDER) {
+    const defaults = DEFAULT_TEMPLATES_PER_CATEGORY[cat];
+    const existing = templates[cat] ?? [];
+    // Append missing defaults at the end, preserving user order.
+    const merged = [...existing];
+    for (const t of defaults) if (!merged.includes(t)) merged.push(t);
+    templates[cat] = merged;
+  }
+  return { templateCategoryOrder: order, templatesPerCategory: templates };
+}
 
 interface CarouselState {
   brand: BrandSettings;
@@ -373,13 +396,14 @@ export const useCarousel = create<CarouselState>()(
           templatesPerCategory: Record<string, TemplateId[]>;
         }> | undefined;
         const customPresets = ps?.brandPresets ?? [];
+        const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
         return {
           ...currentState,
           brand: mergeBrand(ps?.brand),
           brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => !p.builtIn)],
           slideCombos: ps?.slideCombos ?? [],
-          templateCategoryOrder: ps?.templateCategoryOrder ?? [...DEFAULT_CATEGORY_ORDER],
-          templatesPerCategory: ps?.templatesPerCategory ?? { ...DEFAULT_TEMPLATES_PER_CATEGORY },
+          templateCategoryOrder: picker.templateCategoryOrder,
+          templatesPerCategory: picker.templatesPerCategory,
         };
       },
     },
