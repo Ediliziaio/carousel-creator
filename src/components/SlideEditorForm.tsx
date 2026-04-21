@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useCarousel } from "@/lib/store";
 import type { Slide, SplitData, Grid2x2Data, BigNumData, CenterData, TimelineData, CompareData, VocabData, QAData, ChecklistData, StatData } from "@/lib/templates";
-import { validateSlide, type FieldError } from "@/lib/validation";
+import { validateSlide } from "@/lib/validation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
