@@ -13,6 +13,13 @@ import {
   type ChecklistData,
   type StatData,
   type CoverData,
+  type GalleryData,
+  type ImageQuoteData,
+  type ChartBarData,
+  type ChartDonutData,
+  type ChartLineData,
+  type FeatureData,
+  type TestimonialData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -103,7 +110,7 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
           <span className="count">{counter}</span>
         </header>
 
-        <div className="body">{renderBody(slide, data)}</div>
+        <div className="body">{renderBody(slide, data, brand)}</div>
 
         <footer className="foot-row">
           <span className="handle-inline">{brand.handle}</span>
@@ -115,19 +122,26 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
   );
 }
 
-function renderBody(slide: Slide, data: unknown) {
+function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
   switch (slide.template) {
-    case "split":      return <Split slide={slide} d={data as SplitData} />;
-    case "grid2x2":    return <Grid slide={slide} d={data as Grid2x2Data} />;
-    case "bignum":     return <BigNum slide={slide} d={data as BigNumData} />;
-    case "center":     return <Center slide={slide} d={data as CenterData} />;
-    case "timeline":   return <Timeline slide={slide} d={data as TimelineData} />;
-    case "compare":    return <Compare slide={slide} d={data as CompareData} />;
-    case "vocab":      return <Vocab slide={slide} d={data as VocabData} />;
-    case "qa":         return <QA slide={slide} d={data as QAData} />;
-    case "checklist":  return <Checklist slide={slide} d={data as ChecklistData} />;
-    case "stat":       return <Stat slide={slide} d={data as StatData} />;
-    case "cover":      return <Cover slide={slide} d={data as CoverData} />;
+    case "split":       return <Split slide={slide} d={data as SplitData} />;
+    case "grid2x2":     return <Grid slide={slide} d={data as Grid2x2Data} />;
+    case "bignum":      return <BigNum slide={slide} d={data as BigNumData} />;
+    case "center":      return <Center slide={slide} d={data as CenterData} />;
+    case "timeline":    return <Timeline slide={slide} d={data as TimelineData} />;
+    case "compare":     return <Compare slide={slide} d={data as CompareData} />;
+    case "vocab":       return <Vocab slide={slide} d={data as VocabData} />;
+    case "qa":          return <QA slide={slide} d={data as QAData} />;
+    case "checklist":   return <Checklist slide={slide} d={data as ChecklistData} />;
+    case "stat":        return <Stat slide={slide} d={data as StatData} />;
+    case "cover":       return <Cover slide={slide} d={data as CoverData} />;
+    case "gallery":     return <Gallery slide={slide} d={data as GalleryData} />;
+    case "imageQuote":  return <ImageQuote slide={slide} d={data as ImageQuoteData} />;
+    case "chartBar":    return <ChartBar slide={slide} d={data as ChartBarData} brand={brand} />;
+    case "chartDonut":  return <ChartDonut slide={slide} d={data as ChartDonutData} brand={brand} />;
+    case "chartLine":   return <ChartLine slide={slide} d={data as ChartLineData} brand={brand} />;
+    case "feature":     return <Feature slide={slide} d={data as FeatureData} />;
+    case "testimonial": return <Testimonial slide={slide} d={data as TestimonialData} />;
   }
 }
 
