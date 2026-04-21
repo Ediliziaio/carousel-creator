@@ -34,6 +34,11 @@ import {
   type OfferData,
   type ObjectionData,
   type TipPackData,
+  type UrgencyData,
+  type BonusStackData,
+  type GuaranteeData,
+  type FaqData,
+  type QuickWinData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -197,6 +202,11 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "offer":       return <Offer slide={slide} d={data as OfferData} />;
     case "objection":   return <Objection slide={slide} d={data as ObjectionData} />;
     case "tipPack":     return <TipPack slide={slide} d={data as TipPackData} />;
+    case "urgency":     return <Urgency slide={slide} d={data as UrgencyData} />;
+    case "bonusStack":  return <BonusStack slide={slide} d={data as BonusStackData} />;
+    case "guarantee":   return <Guarantee slide={slide} d={data as GuaranteeData} />;
+    case "faq":         return <Faq slide={slide} d={data as FaqData} />;
+    case "quickWin":    return <QuickWin slide={slide} d={data as QuickWinData} />;
   }
 }
 
