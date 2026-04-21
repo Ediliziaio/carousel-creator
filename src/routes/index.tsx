@@ -19,10 +19,11 @@ import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
-      { title: "Carousel Generator — 1080×1350 PNG" },
-      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG 1080×1350." },
+      { title: "Carousel Generator — multi-formato PNG" },
+      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG in 4 formati." },
     ],
   }),
   component: Index,
