@@ -233,13 +233,16 @@ function Index() {
 
       <div
         aria-hidden
-        style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}
+        style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}
       >
-        {slides.map((s, i) => (
-          <div key={s.id} ref={setExportRef(s.id)} style={{ width: 1080, height: 1350 }}>
-            <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
-          </div>
-        ))}
+        {slides.map((s, i) => {
+          const dim = FORMAT_DIMENSIONS[s.format ?? "portrait"];
+          return (
+            <div key={s.id} ref={setExportRef(s.id)} style={{ width: dim.w, height: dim.h }}>
+              <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
+            </div>
+          );
+        })}
       </div>
 
       <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
