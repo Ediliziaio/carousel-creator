@@ -117,6 +117,9 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
   const setActiveLang = useCarousel((s) => s.setActiveLang);
   const activeLang = useCarousel((s) => s.activeLang);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLangs, setSelectedLangs] = useState<string[]>([brand.defaultLanguage]);
   const [folderPerLang, setFolderPerLang] = useState(true);
