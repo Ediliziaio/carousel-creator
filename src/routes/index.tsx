@@ -147,7 +147,7 @@ function Index() {
         {/* Right editor */}
         <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-card">
           {activeSlide ? (
-            <Tabs defaultValue="form" className="flex h-full flex-col">
+            <Tabs value={editorTab} onValueChange={setEditorTab} className="flex h-full flex-col">
               <div className="border-b border-border p-3">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="form">Form</TabsTrigger>
