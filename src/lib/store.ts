@@ -550,6 +550,8 @@ export const useCarousel = create<CarouselState>()(
         templateCategoryOrder: s.templateCategoryOrder,
         templatesPerCategory: s.templatesPerCategory,
         lastFontSizeByFieldType: s.lastFontSizeByFieldType,
+        strictExport: s.strictExport,
+        validationOverlay: s.validationOverlay,
       }),
       merge: (persistedState, currentState) => {
         const ps = persistedState as Partial<{
@@ -559,6 +561,8 @@ export const useCarousel = create<CarouselState>()(
           templateCategoryOrder: string[];
           templatesPerCategory: Record<string, TemplateId[]>;
           lastFontSizeByFieldType: Record<string, number>;
+          strictExport: boolean;
+          validationOverlay: boolean;
         }> | undefined;
         const customPresets = ps?.brandPresets ?? [];
         const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
@@ -570,6 +574,8 @@ export const useCarousel = create<CarouselState>()(
           templateCategoryOrder: picker.templateCategoryOrder,
           templatesPerCategory: picker.templatesPerCategory,
           lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
+          strictExport: ps?.strictExport ?? true,
+          validationOverlay: ps?.validationOverlay ?? true,
         };
       },
     },
