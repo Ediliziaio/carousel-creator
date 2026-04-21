@@ -366,12 +366,13 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
         </DialogFooter>
 
         {/* Hidden capture nodes — one per (lang, slide) */}
-        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}>
+        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
           {selectedLangs.flatMap((lng) =>
             selectedSlides.map((sl) => {
               const idx = slides.findIndex((x) => x.id === sl.id);
+              const dim = FORMAT_DIMENSIONS[sl.format ?? "portrait"];
               return (
-                <div key={`${lng}-${sl.id}`} ref={setCaptureRef(`${lng}-${sl.id}`)} style={{ width: 1080, height: 1350 }}>
+                <div key={`${lng}-${sl.id}`} ref={setCaptureRef(`${lng}-${sl.id}`)} style={{ width: dim.w, height: dim.h }}>
                   <SlideRenderer slide={sl} brand={brand} index={idx} total={slides.length} lang={lng} />
                 </div>
               );
