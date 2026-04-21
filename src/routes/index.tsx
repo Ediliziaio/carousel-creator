@@ -10,12 +10,16 @@ import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
 import { ExportBatchPreviewDialog } from "@/components/ExportBatchPreviewDialog";
+import { CarouselPresetDialog } from "@/components/CarouselPresetDialog";
+import { QuickOfferEditor } from "@/components/QuickOfferEditor";
+import { ContentImportDialog } from "@/components/ContentImportDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy } from "lucide-react";
+import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy, ShieldCheck, ShieldOff, AlertTriangle } from "lucide-react";
 import { FORMAT_DIMENSIONS } from "@/lib/templates";
+import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -43,9 +47,31 @@ function Index() {
   const activeLang = useCarousel((s) => s.activeLang);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
   const duplicateSlide = useCarousel((s) => s.duplicateSlide);
+  const setActive = useCarousel((s) => s.setActive);
+  const strictExport = useCarousel((s) => s.strictExport);
+  const validationOverlay = useCarousel((s) => s.validationOverlay);
+  const setValidationOverlay = useCarousel((s) => s.setValidationOverlay);
 
   const activeIndex = useMemo(() => slides.findIndex((s) => s.id === activeId), [slides, activeId]);
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
+
+  const validationIssues = useMemo(
+    () => validateAllSlides(slides, activeLang, brand.defaultLanguage),
+    [slides, activeLang, brand.defaultLanguage],
+  );
+
+  const goToFirstError = () => {
+    const first = validationIssues[0];
+    if (!first) return;
+    setActive(first.slideId);
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("slide:focus-field", {
+          detail: { slideId: first.slideId, field: first.firstField },
+        }),
+      );
+    }, 60);
+  };
 
   const [editorTab, setEditorTab] = useState<string>("form");
   const [previewOpen, setPreviewOpen] = useState(false);
