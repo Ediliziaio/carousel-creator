@@ -396,6 +396,7 @@ export const useCarousel = create<CarouselState>()(
         slideCombos: s.slideCombos,
         templateCategoryOrder: s.templateCategoryOrder,
         templatesPerCategory: s.templatesPerCategory,
+        lastFontSizeByFieldType: s.lastFontSizeByFieldType,
       }),
       merge: (persistedState, currentState) => {
         const ps = persistedState as Partial<{
@@ -404,6 +405,7 @@ export const useCarousel = create<CarouselState>()(
           slideCombos: SlideCombo[];
           templateCategoryOrder: string[];
           templatesPerCategory: Record<string, TemplateId[]>;
+          lastFontSizeByFieldType: Record<string, number>;
         }> | undefined;
         const customPresets = ps?.brandPresets ?? [];
         const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
@@ -414,6 +416,7 @@ export const useCarousel = create<CarouselState>()(
           slideCombos: ps?.slideCombos ?? [],
           templateCategoryOrder: picker.templateCategoryOrder,
           templatesPerCategory: picker.templatesPerCategory,
+          lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
         };
       },
     },
