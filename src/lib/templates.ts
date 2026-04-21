@@ -1007,6 +1007,93 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         expectedResult: "+30% di click sul link in bio nelle prime 24h.",
         timeBadge: "60 sec",
       } as QuickWinData;
+    case "mediaHero":
+      return {
+        imageUrl: undefined,
+        eyebrow: "STORY",
+        title: "Il viaggio che cambia tutto.",
+        subtitle: "Una foto, una promessa.",
+        ctaLabel: "SCOPRI →",
+        overlayIntensity: "strong",
+      } as MediaHeroData;
+    case "polaroidStack":
+      return {
+        eyebrow: "MOODBOARD",
+        title: "Tre momenti, una storia.",
+        polaroids: [
+          { url: undefined, caption: "Backstage", date: "Mag 2025" },
+          { url: undefined, caption: "Il primo cliente", date: "Giu 2025" },
+          { url: undefined, caption: "Il lancio", date: "Lug 2025" },
+        ],
+      } as PolaroidStackData;
+    case "splitDuo":
+      return {
+        eyebrow: "CONFRONTO",
+        leftImage: { url: undefined, label: "PRIMA" },
+        rightImage: { url: undefined, label: "DOPO" },
+        centerBadge: "VS",
+        caption: "Lo stesso brand, due mondi.",
+      } as SplitDuoData;
+    case "magazineCover":
+      return {
+        masthead: "VOGUE",
+        issueLabel: "N° 12 · Nov 2025",
+        imageUrl: undefined,
+        mainHeadline: "La nuova era del personal brand.",
+        coverLines: [
+          { text: "Come Maria ha 10x il fatturato", pageRef: "p. 32" },
+          { text: "5 trend che cambieranno il 2026", pageRef: "p. 48" },
+          { text: "Intervista esclusiva", pageRef: "p. 12" },
+          { text: "Speciale: AI per creator", pageRef: "p. 62" },
+        ],
+      } as MagazineCoverData;
+    case "chartArea":
+      return {
+        eyebrow: "ANDAMENTO",
+        title: "Crescita organica 2025.",
+        xLabels: ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug"],
+        values: [12, 18, 22, 31, 28, 44, 58],
+        unit: "k",
+        peakLabel: "Picco virale",
+        trend: "up",
+      } as ChartAreaData;
+    case "chartCompareBar":
+      return {
+        eyebrow: "POSIZIONAMENTO",
+        title: "Noi vs i competitor.",
+        seriesA: { label: "BRAND A" },
+        seriesB: { label: "BRAND B" },
+        rows: [
+          { label: "Engagement rate", valueA: 8.4, valueB: 3.1 },
+          { label: "Costo per lead", valueA: 12, valueB: 38 },
+          { label: "Tempo risposta", valueA: 2, valueB: 18 },
+          { label: "Satisfaction", valueA: 94, valueB: 71 },
+        ],
+        unit: "",
+      } as ChartCompareBarData;
+    case "kpiGrid":
+      return {
+        eyebrow: "DASHBOARD Q4",
+        title: "I numeri che contano.",
+        kpis: [
+          { label: "Revenue", value: "84.2", unit: "k€", delta: "+24%", trend: "up", spark: [12, 18, 22, 28, 34, 41, 52] },
+          { label: "Nuovi clienti", value: "247", delta: "+12%", trend: "up", spark: [10, 12, 14, 18, 22, 24, 28] },
+          { label: "Churn rate", value: "2.1", unit: "%", delta: "-0.4%", trend: "down", spark: [4, 3.5, 3, 2.8, 2.5, 2.3, 2.1] },
+          { label: "NPS score", value: "72", delta: "+5", trend: "up", spark: [60, 62, 65, 67, 68, 70, 72] },
+        ],
+      } as KpiGridData;
+    case "funnelChart":
+      return {
+        eyebrow: "FUNNEL",
+        title: "Da visitatore a cliente.",
+        stages: [
+          { label: "Visitatori sito", value: "10.000", conversionPercent: "100%" },
+          { label: "Lead acquisiti", value: "1.200", conversionPercent: "12%" },
+          { label: "Demo prenotate", value: "320", conversionPercent: "27%" },
+          { label: "Clienti chiusi", value: "84", conversionPercent: "26%" },
+        ],
+        summary: "Conversione totale 0,84% — sopra benchmark settore.",
+      } as FunnelChartData;
   }
 }
 
@@ -1321,6 +1408,77 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "timeBadge", label: "Badge tempo" },
       ];
       d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}`, label: `Step ${i + 1}` }));
+      return out;
+    }
+    case "mediaHero":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "subtitle", label: "Sottotitolo" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+    case "polaroidStack": {
+      const d = data as PolaroidStackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.polaroids?.forEach((_, i) => out.push({ path: `polaroids.${i}.caption`, label: `Polaroid ${i + 1} – caption` }));
+      return out;
+    }
+    case "splitDuo":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "leftImage.label", label: "Etichetta sinistra" },
+        { path: "rightImage.label", label: "Etichetta destra" },
+        { path: "centerBadge", label: "Badge centrale" },
+        { path: "caption", label: "Caption" },
+      ];
+    case "magazineCover": {
+      const d = data as MagazineCoverData | undefined;
+      const out = [
+        { path: "masthead", label: "Masthead" },
+        { path: "issueLabel", label: "Numero / Data" },
+        { path: "mainHeadline", label: "Headline" },
+      ];
+      d?.coverLines?.forEach((_, i) => out.push({ path: `coverLines.${i}.text`, label: `Cover line ${i + 1}` }));
+      return out;
+    }
+    case "chartArea":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "peakLabel", label: "Etichetta picco" },
+      ];
+    case "chartCompareBar": {
+      const d = data as ChartCompareBarData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.rows?.forEach((_, i) => out.push({ path: `rows.${i}.label`, label: `Riga ${i + 1}` }));
+      return out;
+    }
+    case "kpiGrid": {
+      const d = data as KpiGridData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.kpis?.forEach((_, i) => {
+        out.push({ path: `kpis.${i}.label`, label: `KPI ${i + 1} – label` });
+        out.push({ path: `kpis.${i}.value`, label: `KPI ${i + 1} – valore` });
+      });
+      return out;
+    }
+    case "funnelChart": {
+      const d = data as FunnelChartData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "summary", label: "Sintesi" },
+      ];
+      d?.stages?.forEach((_, i) => out.push({ path: `stages.${i}.label`, label: `Stadio ${i + 1}` }));
       return out;
     }
   }
