@@ -117,26 +117,26 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
 
 function renderBody(slide: Slide, data: unknown) {
   switch (slide.template) {
-    case "split":      return <Split d={data as SplitData} />;
-    case "grid2x2":    return <Grid d={data as Grid2x2Data} />;
-    case "bignum":     return <BigNum d={data as BigNumData} />;
-    case "center":     return <Center d={data as CenterData} />;
-    case "timeline":   return <Timeline d={data as TimelineData} />;
-    case "compare":    return <Compare d={data as CompareData} />;
-    case "vocab":      return <Vocab d={data as VocabData} />;
-    case "qa":         return <QA d={data as QAData} />;
-    case "checklist":  return <Checklist d={data as ChecklistData} />;
-    case "stat":       return <Stat d={data as StatData} />;
-    case "cover":      return <Cover d={data as CoverData} />;
+    case "split":      return <Split slide={slide} d={data as SplitData} />;
+    case "grid2x2":    return <Grid slide={slide} d={data as Grid2x2Data} />;
+    case "bignum":     return <BigNum slide={slide} d={data as BigNumData} />;
+    case "center":     return <Center slide={slide} d={data as CenterData} />;
+    case "timeline":   return <Timeline slide={slide} d={data as TimelineData} />;
+    case "compare":    return <Compare slide={slide} d={data as CompareData} />;
+    case "vocab":      return <Vocab slide={slide} d={data as VocabData} />;
+    case "qa":         return <QA slide={slide} d={data as QAData} />;
+    case "checklist":  return <Checklist slide={slide} d={data as ChecklistData} />;
+    case "stat":       return <Stat slide={slide} d={data as StatData} />;
+    case "cover":      return <Cover slide={slide} d={data as CoverData} />;
   }
 }
 
-function Split({ d }: { d: SplitData }) {
+function Split({ slide, d }: { slide: Slide; d: SplitData }) {
   return (
     <>
       <div className="col-left">
-        {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-        <h1><HL text={d.title} /></h1>
+        {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
         <div className="underline" />
       </div>
       <div className="col-right">
@@ -144,11 +144,15 @@ function Split({ d }: { d: SplitData }) {
           <img src={d.imageUrl} alt="" className="right-image" />
         ) : (
           <>
-            {d.paragraphs?.map((p, i) => <p key={i} className="right-para">{p}</p>)}
+            {d.paragraphs?.map((p, i) => (
+              <p key={i} className="right-para" style={fieldStyle(slide, `paragraphs.${i}`)}>{p}</p>
+            ))}
             {d.list && d.list.length > 0 && (
               <ul className="right-list">
                 {d.list.map((it, i) => (
-                  <li key={i}><b>{it.marker}</b>{it.text}</li>
+                  <li key={i} style={fieldStyle(slide, `list.${i}.text`)}>
+                    <b>{it.marker}</b>{it.text}
+                  </li>
                 ))}
               </ul>
             )}
@@ -159,17 +163,17 @@ function Split({ d }: { d: SplitData }) {
   );
 }
 
-function Grid({ d }: { d: Grid2x2Data }) {
+function Grid({ slide, d }: { slide: Slide; d: Grid2x2Data }) {
   return (
     <>
-      {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-      <h1><HL text={d.title} /></h1>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
       <div className="grid-2x2">
         {d.cells.slice(0, 4).map((c, i) => (
           <div key={i} className="grid-cell">
             <div className="num">{c.num}</div>
-            <h3>{c.title}</h3>
-            <p>{c.text}</p>
+            <h3 style={fieldStyle(slide, `cells.${i}.title`)}>{c.title}</h3>
+            <p style={fieldStyle(slide, `cells.${i}.text`)}>{c.text}</p>
           </div>
         ))}
       </div>
@@ -177,22 +181,24 @@ function Grid({ d }: { d: Grid2x2Data }) {
   );
 }
 
-function BigNum({ d }: { d: BigNumData }) {
+function BigNum({ slide, d }: { slide: Slide; d: BigNumData }) {
   return (
     <>
-      <div className="big-num">
+      <div className="big-num" style={fieldStyle(slide, "number")}>
         {d.number}
-        {d.numberSub && <span className="sub">{d.numberSub}</span>}
+        {d.numberSub && <span className="sub" style={fieldStyle(slide, "numberSub")}>{d.numberSub}</span>}
       </div>
       <div className="right-content">
-        <h1><HL text={d.title} /></h1>
-        {d.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+        <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+        {d.paragraphs.map((p, i) => (
+          <p key={i} style={fieldStyle(slide, `paragraphs.${i}`)}>{p}</p>
+        ))}
       </div>
     </>
   );
 }
 
-function Center({ d }: { d: CenterData }) {
+function Center({ slide, d }: { slide: Slide; d: CenterData }) {
   return (
     <>
       {d.imageUrl && (
@@ -201,24 +207,24 @@ function Center({ d }: { d: CenterData }) {
           <div className="veil" />
         </div>
       )}
-      {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-      <h1><HL text={d.title} /></h1>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
       <div className="deco" />
-      {d.sub && <div className="sub">{d.sub}</div>}
+      {d.sub && <div className="sub" style={fieldStyle(slide, "sub")}>{d.sub}</div>}
     </>
   );
 }
 
-function Timeline({ d }: { d: TimelineData }) {
+function Timeline({ slide, d }: { slide: Slide; d: TimelineData }) {
   return (
     <>
-      {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-      <h1><HL text={d.title} /></h1>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
       <div className="timeline">
         {d.items.map((it, i) => (
           <div key={i} className="tl-item">
             {it.when && <span className="when">{it.when}</span>}
-            <h3>{it.title}</h3>
+            <h3 style={fieldStyle(slide, `items.${i}.title`)}>{it.title}</h3>
             <p>{it.text}</p>
           </div>
         ))}
@@ -227,20 +233,20 @@ function Timeline({ d }: { d: TimelineData }) {
   );
 }
 
-function Compare({ d }: { d: CompareData }) {
+function Compare({ slide, d }: { slide: Slide; d: CompareData }) {
   return (
     <>
-      {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-      <h1><HL text={d.title} /></h1>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
       <div className="compare">
         <div className="col">
           <div className="tag">{d.before.tag}</div>
-          <h3>{d.before.title}</h3>
+          <h3 style={fieldStyle(slide, "before.title")}>{d.before.title}</h3>
           <ul>{d.before.items.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </div>
         <div className="col after">
           <div className="tag">{d.after.tag}</div>
-          <h3>{d.after.title}</h3>
+          <h3 style={fieldStyle(slide, "after.title")}>{d.after.title}</h3>
           <ul>{d.after.items.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </div>
       </div>
@@ -248,47 +254,49 @@ function Compare({ d }: { d: CompareData }) {
   );
 }
 
-function Vocab({ d }: { d: VocabData }) {
+function Vocab({ slide, d }: { slide: Slide; d: VocabData }) {
   return (
     <>
-      <div className="cat">{d.category}</div>
-      <p className="word">{d.word}</p>
+      <div className="cat" style={fieldStyle(slide, "category")}>{d.category}</div>
+      <p className="word" style={fieldStyle(slide, "word")}>{d.word}</p>
       <div className="pron">{d.pron}</div>
       <div className="hr" />
       <div className="def-label">{d.defLabel}</div>
-      <p className="def">{d.def}</p>
-      <p className="ex">{d.example}</p>
+      <p className="def" style={fieldStyle(slide, "def")}>{d.def}</p>
+      <p className="ex" style={fieldStyle(slide, "example")}>{d.example}</p>
     </>
   );
 }
 
-function QA({ d }: { d: QAData }) {
+function QA({ slide, d }: { slide: Slide; d: QAData }) {
   return (
     <>
       <div className="q-block">
         <div className="q-label">{d.qLabel}</div>
-        <div className="q-text">{d.question}</div>
+        <div className="q-text" style={fieldStyle(slide, "question")}>{d.question}</div>
       </div>
       <div className="a-block">
         <div className="a-label">{d.aLabel}</div>
-        <div className="a-text">{d.answer.map((p, i) => <p key={i}>{p}</p>)}</div>
+        <div className="a-text">
+          {d.answer.map((p, i) => <p key={i} style={fieldStyle(slide, `answer.${i}`)}>{p}</p>)}
+        </div>
       </div>
     </>
   );
 }
 
-function Checklist({ d }: { d: ChecklistData }) {
+function Checklist({ slide, d }: { slide: Slide; d: ChecklistData }) {
   return (
     <>
-      {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-      <h1><HL text={d.title} /></h1>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
       {d.meta && <div className="list-meta">{d.meta}</div>}
       <ul className="checklist">
         {d.items.map((it, i) => (
           <li key={i}>
             <div className={`check ${it.done ? "on" : ""}`}>{it.done ? "✓" : ""}</div>
             <div>
-              <div className={`item-title ${it.done ? "done" : ""}`}>{it.title}</div>
+              <div className={`item-title ${it.done ? "done" : ""}`} style={fieldStyle(slide, `items.${i}.title`)}>{it.title}</div>
               {it.note && <div className="item-note">{it.note}</div>}
             </div>
           </li>
@@ -298,21 +306,21 @@ function Checklist({ d }: { d: ChecklistData }) {
   );
 }
 
-function Stat({ d }: { d: StatData }) {
+function Stat({ slide, d }: { slide: Slide; d: StatData }) {
   return (
     <>
-      {d.label && <div className="stat-label">{d.label}</div>}
-      <div className="stat">
+      {d.label && <div className="stat-label" style={fieldStyle(slide, "label")}>{d.label}</div>}
+      <div className="stat" style={fieldStyle(slide, "value")}>
         {d.value}
         {d.unit && <span className="u">{d.unit}</span>}
       </div>
-      {d.sub && <p className="stat-sub">{d.sub}</p>}
+      {d.sub && <p className="stat-sub" style={fieldStyle(slide, "sub")}>{d.sub}</p>}
       {d.note && <div className="stat-note">{d.note}</div>}
     </>
   );
 }
 
-function Cover({ d }: { d: CoverData }) {
+function Cover({ slide, d }: { slide: Slide; d: CoverData }) {
   return (
     <>
       <div className={`cover-bg ${d.imageUrl ? "" : "empty"}`}>
@@ -320,9 +328,9 @@ function Cover({ d }: { d: CoverData }) {
         {d.imageUrl && <div className="veil" />}
       </div>
       <div className="cover-content">
-        {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
-        <h1><HL text={d.title} /></h1>
-        {d.sub && <div className="sub">{d.sub}</div>}
+        {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+        {d.sub && <div className="sub" style={fieldStyle(slide, "sub")}>{d.sub}</div>}
       </div>
     </>
   );
