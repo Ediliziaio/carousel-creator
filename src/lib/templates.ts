@@ -25,7 +25,15 @@ export type TemplateId =
   | "prosCons"
   | "quoteBig"
   | "roadmap"
-  | "cta";
+  | "cta"
+  | "hook"
+  | "problemSolution"
+  | "mistakes"
+  | "framework"
+  | "socialProof"
+  | "offer"
+  | "objection"
+  | "tipPack";
 
 export interface SplitData {
   eyebrow: string;
