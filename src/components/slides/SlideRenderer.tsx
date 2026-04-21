@@ -14,6 +14,7 @@ import {
   type StatData,
   type CoverData,
   renderHighlighted,
+  FORMAT_DIMENSIONS,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
 
