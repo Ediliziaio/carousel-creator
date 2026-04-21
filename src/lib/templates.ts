@@ -343,6 +343,10 @@ export type CornerStyle = "sharp" | "rounded" | "pill";
 export type TitleEffect = "none" | "outline" | "shadow-3d" | "underline-accent" | "highlight-block";
 export type DividerStyle = "line" | "dots" | "wave" | "gradient";
 
+export type MarketingBadgeStyle = "filled" | "outline" | "neon";
+export type MarketingGradient = "none" | "subtle" | "bold";
+export type MarketingIconSet = "emoji" | "geometric" | "minimal";
+
 export interface BrandEffects {
   bgPattern: BgPattern;
   accentGlow: boolean;
@@ -354,6 +358,12 @@ export interface BrandEffects {
   titleEffect: TitleEffect;
   dividerStyle: DividerStyle;
   iconAccent: boolean;
+  /** Style for marketing template badges (offer, socialProof). */
+  marketingBadgeStyle?: MarketingBadgeStyle;
+  /** Intensity of gradients for marketing templates (hook, cta, offer). */
+  marketingGradientIntensity?: MarketingGradient;
+  /** Icon set used by marketing templates (mistakes, prosCons, tips). */
+  marketingIconSet?: MarketingIconSet;
 }
 
 export const DEFAULT_EFFECTS: BrandEffects = {
@@ -367,6 +377,9 @@ export const DEFAULT_EFFECTS: BrandEffects = {
   titleEffect: "none",
   dividerStyle: "line",
   iconAccent: false,
+  marketingBadgeStyle: "filled",
+  marketingGradientIntensity: "subtle",
+  marketingIconSet: "emoji",
 };
 
 export type FontChoice =
