@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid } from "lucide-react";
+import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
