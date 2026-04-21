@@ -850,6 +850,60 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         ],
         saveLabel: "SALVA QUESTO POST",
       } as TipPackData;
+    case "urgency":
+      return {
+        eyebrow: "URGENTE",
+        headline: "Le iscrizioni chiudono tra…",
+        deadline: "23:47:12",
+        unitsLeft: "Solo 7 posti rimasti",
+        ctaLabel: "PRENOTA ORA →",
+      } as UrgencyData;
+    case "bonusStack":
+      return {
+        eyebrow: "COSA RICEVI",
+        title: "Tutto quello che è incluso oggi.",
+        bonuses: [
+          { name: "Corso completo", description: "10 moduli video", value: "297" },
+          { name: "Workbook PDF", description: "120 pagine + esercizi", value: "97" },
+          { name: "Community privata", description: "Accesso a vita", value: "197" },
+          { name: "Call 1:1 onboarding", description: "30 min con il team", value: "150" },
+        ],
+        totalValue: "741",
+        yourPrice: "147",
+        currency: "€",
+        ctaLabel: "VOGLIO TUTTO ORA →",
+      } as BonusStackData;
+    case "guarantee":
+      return {
+        badge: "100% SODDISFATTI",
+        headline: "Garanzia soddisfatti o rimborsati 30 giorni.",
+        body: "Provalo. Se entro 30 giorni non ti convince, ti rimborsiamo tutto. Senza domande, senza giustificazioni.",
+        terms: "Basta una mail. Rimborso entro 48h.",
+        seal: "🛡️",
+      } as GuaranteeData;
+    case "faq":
+      return {
+        eyebrow: "DOMANDE FREQUENTI",
+        title: "Le risposte ai dubbi più comuni.",
+        items: [
+          { q: "Per chi è pensato?", a: "Per chi vuole vendere sui social senza spendere in ads." },
+          { q: "Quanto tempo serve?", a: "Bastano 2 ore a settimana per vedere risultati in 30 giorni." },
+          { q: "C'è una garanzia?", a: "Sì: 30 giorni soddisfatti o rimborsati al 100%." },
+          { q: "Funziona anche per servizi?", a: "Sì, è ottimizzato per coach, consulenti e creator." },
+        ],
+      } as FaqData;
+    case "quickWin":
+      return {
+        eyebrow: "PROVA SUBITO",
+        instruction: "Cambia la bio di Instagram in 60 secondi.",
+        steps: [
+          "Apri il tuo profilo e clicca 'Modifica profilo'",
+          "Scrivi: cosa fai + per chi + risultato (es. 'Aiuto coach a vendere senza ads')",
+          "Aggiungi 1 emoji + link in bio",
+        ],
+        expectedResult: "+30% di click sul link in bio nelle prime 24h.",
+        timeBadge: "60 sec",
+      } as QuickWinData;
   }
 }
 
