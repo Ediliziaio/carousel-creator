@@ -40,6 +40,14 @@ import type {
   GuaranteeData,
   FaqData,
   QuickWinData,
+  MediaHeroData,
+  PolaroidStackData,
+  SplitDuoData,
+  MagazineCoverData,
+  ChartAreaData,
+  ChartCompareBarData,
+  KpiGridData,
+  FunnelChartData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -203,6 +211,14 @@ export function SlideEditorForm({ slide }: Props) {
     case "guarantee":   body = <GuaranteeEditor d={draft as GuaranteeData} set={set as (d: GuaranteeData) => void} {...editorProps} />; break;
     case "faq":         body = <FaqEditor d={draft as FaqData} set={set as (d: FaqData) => void} {...editorProps} />; break;
     case "quickWin":    body = <QuickWinEditor d={draft as QuickWinData} set={set as (d: QuickWinData) => void} {...editorProps} />; break;
+    case "mediaHero":   body = <MediaHeroEditor d={draft as MediaHeroData} set={set as (d: MediaHeroData) => void} {...editorProps} />; break;
+    case "polaroidStack": body = <PolaroidStackEditor d={draft as PolaroidStackData} set={set as (d: PolaroidStackData) => void} {...editorProps} />; break;
+    case "splitDuo":    body = <SplitDuoEditor d={draft as SplitDuoData} set={set as (d: SplitDuoData) => void} {...editorProps} />; break;
+    case "magazineCover": body = <MagazineCoverEditor d={draft as MagazineCoverData} set={set as (d: MagazineCoverData) => void} {...editorProps} />; break;
+    case "chartArea":   body = <ChartAreaEditor d={draft as ChartAreaData} set={set as (d: ChartAreaData) => void} {...editorProps} />; break;
+    case "chartCompareBar": body = <ChartCompareBarEditor d={draft as ChartCompareBarData} set={set as (d: ChartCompareBarData) => void} {...editorProps} />; break;
+    case "kpiGrid":     body = <KpiGridEditor d={draft as KpiGridData} set={set as (d: KpiGridData) => void} {...editorProps} />; break;
+    case "funnelChart": body = <FunnelChartEditor d={draft as FunnelChartData} set={set as (d: FunnelChartData) => void} {...editorProps} />; break;
   }
 
   return (
