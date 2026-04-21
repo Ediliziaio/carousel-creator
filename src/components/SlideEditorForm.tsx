@@ -201,12 +201,15 @@ function Field({ label, hint, error, warning, slideId, fieldPath, overrides, chi
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
           {label}{error && " *"}
         </Label>
         {slideId && fieldPath && (
-          <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+          <div className="flex items-center gap-1">
+            <FontSizeSlider slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+            <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+          </div>
         )}
       </div>
       <div className={error ? "[&_input]:border-destructive [&_textarea]:border-destructive [&_input]:focus-visible:ring-destructive [&_textarea]:focus-visible:ring-destructive" : ""}>
