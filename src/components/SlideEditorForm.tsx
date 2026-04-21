@@ -1,38 +1,53 @@
+import { useMemo } from "react";
 import { useCarousel } from "@/lib/store";
 import type { Slide, SplitData, Grid2x2Data, BigNumData, CenterData, TimelineData, CompareData, VocabData, QAData, ChecklistData, StatData } from "@/lib/templates";
+import { validateSlide, type FieldError } from "@/lib/validation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, AlertCircle } from "lucide-react";
 
 interface Props { slide: Slide }
 
 export function SlideEditorForm({ slide }: Props) {
   const update = useCarousel((s) => s.updateSlide);
   const set = (data: Slide["data"]) => update(slide.id, data);
+  const errors = useMemo(() => validateSlide(slide).errors, [slide]);
+  const errFor = (field: string) => errors.find((e) => e.field === field)?.message;
 
   switch (slide.template) {
-    case "split":     return <SplitEditor d={slide.data as SplitData} set={set} />;
-    case "grid2x2":   return <GridEditor d={slide.data as Grid2x2Data} set={set} />;
-    case "bignum":    return <BigNumEditor d={slide.data as BigNumData} set={set} />;
-    case "center":    return <CenterEditor d={slide.data as CenterData} set={set} />;
-    case "timeline":  return <TimelineEditor d={slide.data as TimelineData} set={set} />;
-    case "compare":   return <CompareEditor d={slide.data as CompareData} set={set} />;
-    case "vocab":     return <VocabEditor d={slide.data as VocabData} set={set} />;
-    case "qa":        return <QAEditor d={slide.data as QAData} set={set} />;
-    case "checklist": return <ChecklistEditor d={slide.data as ChecklistData} set={set} />;
-    case "stat":      return <StatEditor d={slide.data as StatData} set={set} />;
+    case "split":     return <SplitEditor d={slide.data as SplitData} set={set} errFor={errFor} />;
+    case "grid2x2":   return <GridEditor d={slide.data as Grid2x2Data} set={set} errFor={errFor} />;
+    case "bignum":    return <BigNumEditor d={slide.data as BigNumData} set={set} errFor={errFor} />;
+    case "center":    return <CenterEditor d={slide.data as CenterData} set={set} errFor={errFor} />;
+    case "timeline":  return <TimelineEditor d={slide.data as TimelineData} set={set} errFor={errFor} />;
+    case "compare":   return <CompareEditor d={slide.data as CompareData} set={set} errFor={errFor} />;
+    case "vocab":     return <VocabEditor d={slide.data as VocabData} set={set} errFor={errFor} />;
+    case "qa":        return <QAEditor d={slide.data as QAData} set={set} errFor={errFor} />;
+    case "checklist": return <ChecklistEditor d={slide.data as ChecklistData} set={set} errFor={errFor} />;
+    case "stat":      return <StatEditor d={slide.data as StatData} set={set} errFor={errFor} />;
   }
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+type ErrFor = (field: string) => string | undefined;
+
+function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
-      {children}
-      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+      <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
+        {label}{error && " *"}
+      </Label>
+      <div className={error ? "[&_input]:border-destructive [&_textarea]:border-destructive [&_input]:focus-visible:ring-destructive [&_textarea]:focus-visible:ring-destructive" : ""}>
+        {children}
+      </div>
+      {error && (
+        <p className="flex items-center gap-1 text-[11px] text-destructive">
+          <AlertCircle className="h-3 w-3" /> {error}
+        </p>
+      )}
+      {hint && !error && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }
