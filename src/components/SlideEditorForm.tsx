@@ -32,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { TextStylePopover } from "@/components/TextStylePopover";
+import { FontSizeSlider } from "@/components/FontSizeSlider";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle, Info } from "lucide-react";
 import { LIMITS } from "@/lib/validation";
