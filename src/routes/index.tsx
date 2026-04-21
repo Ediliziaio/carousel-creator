@@ -173,7 +173,11 @@ function Index() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => activeSlide && duplicateSlide(activeSlide.id)}
+            onClick={() => {
+              if (!activeSlide) return;
+              duplicateSlide(activeSlide.id);
+              toast.success("Slide duplicata");
+            }}
             disabled={!activeSlide}
             title="Duplica slide attiva"
           >
