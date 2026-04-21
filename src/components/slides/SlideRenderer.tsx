@@ -14,9 +14,15 @@ import {
   type StatData,
   type CoverData,
   renderHighlighted,
+  textStyleToCss,
   FORMAT_DIMENSIONS,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
+
+/** Helper: returns inline style object for a given field path on a slide (or undefined). */
+function fieldStyle(slide: Slide, path: string): React.CSSProperties | undefined {
+  return textStyleToCss(slide.textOverrides?.[path]);
+}
 
 interface SlideRendererProps {
   slide: Slide;
