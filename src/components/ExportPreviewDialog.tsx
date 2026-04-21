@@ -202,8 +202,8 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           </Button>
         </DialogFooter>
         {/* Hidden full-size capture node — what actually gets exported */}
-        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}>
-          <div ref={captureRef} style={{ width: 1080, height: 1350 }}>
+        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
+          <div ref={captureRef} style={{ width: dim.w, height: dim.h }}>
             <SlideRenderer slide={slide} brand={brand} index={slideIndex} total={slides.length} lang={lang} />
           </div>
         </div>
