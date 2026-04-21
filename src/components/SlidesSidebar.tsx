@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META, FORMAT_DIMENSIONS, type TemplateId, type SlideFormat } from "@/lib/templates";
-import { validateSlide } from "@/lib/validation";
+import { validateSlide, validateAllSlides } from "@/lib/validation";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { NewSlideDialog } from "@/components/NewSlideDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Copy, Trash2, GripVertical } from "lucide-react";
+import { Plus, Copy, Trash2, GripVertical, AlertTriangle } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -68,7 +68,8 @@ function SlideRow({ slideId, index, draggable }: SlideRowProps) {
   const sl = slides[index];
   if (!sl) return null;
   const active = sl.id === activeId;
-  const invalid = !validateSlide(sl, lang, defLang).valid;
+  const validation = validateSlide(sl, lang, defLang);
+  const errorCount = validation.errors.filter((e) => (e.severity ?? "error") === "error").length;
   const fmt = sl.format ?? "portrait";
   const ratio = FORMAT_DIMENSIONS[fmt].ratio;
 
@@ -105,11 +106,13 @@ function SlideRow({ slideId, index, draggable }: SlideRowProps) {
           <MiniPreview index={index} />
           <div className="mt-1 flex items-center justify-between gap-2 px-1">
             <span className="flex items-center gap-1.5 text-xs font-medium">
-              {invalid && (
+              {errorCount > 0 && (
                 <span
-                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
-                  title="Campi obbligatori mancanti"
-                />
+                  className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground"
+                  title={validation.errors.map((e) => `• ${e.message}`).join("\n")}
+                >
+                  {errorCount}
+                </span>
               )}
               {(index + 1).toString().padStart(2, "0")} · {TEMPLATE_META[sl.template].label}
             </span>
