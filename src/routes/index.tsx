@@ -277,7 +277,7 @@ function Index() {
               const dim = FORMAT_DIMENSIONS[activeSlide.format ?? "portrait"];
               return (
                 <ScaledPreview key={activeSlide.id + activeLang} w={dim.w} h={dim.h}>
-                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
+                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} showValidation={validationOverlay} />
                 </ScaledPreview>
               );
             })()
