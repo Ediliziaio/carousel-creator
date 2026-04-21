@@ -1,128 +1,100 @@
 
 
-# Tre feature: Effetti dinamici + Preset brand + Persistenza + Anteprima multi-slide
+# Fix errori + Multi-formato slide stile Canva
 
-## 1. Effetti grafici "stile Canva/Figma" (animazioni & sfondi avanzati)
+## 1. Fix hydration mismatch DndContext (errore console al boot)
 
-Estendo `BrandEffects` in `src/lib/templates.ts` con nuove opzioni che vanno oltre i colori statici:
+**Causa:** `SlidesSidebar` usa `@dnd-kit` con auto-generated `aria-describedby` ID che differisce tra SSR e client (`DndDescribedBy-4` vs `-0`). Soluzione standard: rendere il DnD solo lato client.
 
-**Nuovi sfondi dinamici** (rispetto a quelli attuali `none|dots|grid|noise|gradient-mesh`):
-- `gradient-radial` — gradiente radiale soft accent → bgColor
-- `gradient-conic` — sfumatura conica multicolore (accent + secondary)
-- `blob` — 2/3 macchie sfocate organiche (CSS `filter: blur(80px)`) per look "glassmorphism"
-- `stripes` — strisce diagonali sottili
-- `waves` — onde SVG inline animate (statiche al momento dell'export)
+**Fix:** in `SlidesSidebar.tsx` aggiungo `useEffect` con flag `mounted` — finché non montato, renderizzo la lista delle slide **senza** `DndContext`/`SortableContext` (solo i bottoni statici). Dopo il mount, attivo il drag-and-drop. Stesso pattern per `ExportBatchPreviewDialog` (anche lì c'è DnD).
 
-**Nuovi effetti sui contenuti:**
-- `effects.shadow`: `none | soft | hard | colored` — ombre sui blocchi card (grid2x2, compare cells)
-- `effects.cornerStyle`: `sharp | rounded | pill` — controlla il border-radius globale via `--radius`
-- `effects.titleEffect`: `none | outline | shadow-3d | underline-accent | highlight-block` — effetti sui titoli H1
-- `effects.dividerStyle`: `line | dots | wave | gradient` — stile delle separazioni nei template
-- `effects.iconAccent`: boolean — colora di accent gli elementi numerici/decorativi (01, 02, marker)
+Risultato: nessuna divergenza SSR↔client, nessun warning di idratazione.
 
-Tutto applicato come classi `.fx-bg-blob`, `.fx-shadow-soft`, `.fx-corner-pill`, `.fx-title-outline` ecc. in `slide-styles.css`. Nessuna animazione runtime (l'export è statico), ma look "design pro".
+## 2. Fix "Error in route match" all'avvio
 
-Il dialog Brand → tab "Effetti" viene riorganizzato in **3 sezioni collassabili**: Sfondo · Forme & ombre · Titoli & decori. Ogni effetto ha un mini-thumbnail visuale (24×24) con preview live del look invece del solo dropdown testuale.
+**Causa probabile:** `useCarousel` viene letto durante SSR ma lo store ha `skipHydration: true`. Su SSR i selettori restituiscono lo stato di default, sul client dopo `rehydrate()` cambiano → mismatch su titolo carosello, lingue, ecc.
 
-## 2. Preset di brand salvati ("temi")
+**Fix:** in `routes/index.tsx` aggiungo lo stesso pattern `mounted` per il `<header>` e per il blocco di `SlideRenderer` nascosto usato per export — uso dei valori `DEFAULT_BRAND` durante SSR e passo a quelli dello store solo dopo mount. In alternativa più semplice: imposto `ssr: false` sulla route `/` via `createFileRoute("/")({ ssr: false, ... })` — TanStack Start supporta esplicitamente questo flag per route che dipendono da stato browser-only (localStorage). Scelgo questa via, più pulita e meno invasiva.
 
-Nuovo concetto: un **preset** è uno snapshot di `{ accent, accentSecondary, textColor, bgColor, fontHeading, fontBody, headingWeight, bodyWeight, effects }` (no logo, no testi/lingue — solo "look").
+## 3. Formato slide stile Canva (Portrait / Square / Stories / Custom)
 
-**Nuovo store slice** `brandPresets` in `src/lib/store.ts`:
+Nuovo concetto: ogni slide ha un **formato** indipendente.
+
+**Estensione modello dati** (`src/lib/templates.ts`):
 ```ts
-brandPresets: BrandPreset[]
-saveBrandPreset(name: string): void  // snapshot del brand corrente
-applyBrandPreset(id: string): void   // applica solo i campi visivi
-deleteBrandPreset(id: string): void
-renameBrandPreset(id: string, name: string): void
+export type SlideFormat = "portrait" | "square" | "story" | "landscape";
+export const FORMAT_DIMENSIONS: Record<SlideFormat, { w: number; h: number; label: string; ratio: string }> = {
+  portrait:  { w: 1080, h: 1350, label: "Post verticale",  ratio: "4:5"  },
+  square:    { w: 1080, h: 1080, label: "Post quadrato",    ratio: "1:1"  },
+  story:     { w: 1080, h: 1920, label: "Storia / Reel",    ratio: "9:16" },
+  landscape: { w: 1920, h: 1080, label: "Landscape / X",    ratio: "16:9" },
+};
+export interface Slide { id: string; template: TemplateId; format: SlideFormat; data: SlideDataField; }
 ```
 
-`BrandPreset = { id, name, createdAt, theme: PresetTheme }` definito in `src/lib/templates.ts`.
+`makeDefaultSlide(template, format = "portrait")` accetta il formato. Migrazione: slide esistenti senza `format` → trattate come `"portrait"` di default (in `mergeBrand` / `loadJSON` faccio fill-in).
 
-**Preset built-in** (5, sempre disponibili, non eliminabili): "Cyberpunk Cyan", "Editorial Mono", "Sunset Magazine", "Brutalist Black/White", "Pastel Soft" — ognuno con combo colori + font + effetti coerenti.
+**Rendering dinamico** (`src/components/slides/SlideRenderer.tsx` + `slide-styles.css`):
+- `.slide-frame` non hardcoda più `width: 1080px; height: 1350px` — diventa variabile via `--slide-w`, `--slide-h` iniettate inline dal renderer in base al formato della slide
+- `.slide-inner` si adatta proporzionalmente: padding/scale calcolati come funzione del formato (story ha più altezza → contenuto stretchato verticalmente; landscape → due colonne più larghe)
+- Per i template che hanno layout fissi grid (es. `tpl-grid2x2`), aggiungo varianti `.fmt-story .tpl-grid2x2` con grid 1×4 verticale invece di 2×2 — più sensato in 9:16
 
-**UI nuova tab "Preset"** in `BrandSettingsDialog.tsx`:
-- Griglia di card 2-col, ognuna mostra mini-preview (rettangolo con i 4 colori + font name)
-- Hover → bottone "Applica"; sui custom anche "Rinomina" / "Elimina"
-- Bottone "💾 Salva preset corrente" in cima → input per nome → snapshot
-- Apply preset = patch del brand (tramite stesso debounce esistente, una sola entry undo)
+**Picker nuova slide stile Canva** (`SlidesSidebar.tsx`):
+- Sostituisco l'attuale `DropdownMenu` con un **`Dialog`** "Nuova slide" più ricco
+- Layout 2 colonne:
+  - **Sinistra**: scelta del formato (4 card con anteprima proporzionale: Portrait 4:5, Square 1:1, Story 9:16, Landscape 16:9) — selezionabili
+  - **Destra**: griglia 2×col di template (i 12 esistenti) con mini-thumbnail visiva, label e descrizione
+- Footer: bottone "Crea slide" che chiama `addSlide(template, format)`
+- Default sensato: il formato selezionato persiste nella sessione (state locale del componente, non nello store) così se l'utente ne crea 5 di seguito non deve ri-cliccare
 
-I preset custom vengono persistiti insieme al resto del brand (vedi punto 3).
+**Sidebar miniature responsive al formato:**
+- `MiniPreview` calcola `scale` in base al formato (story → height 280, square → 200×200, ecc.) mantenendo larghezza max 200px
+- Badge del formato (es. "9:16") accanto al numero della slide
 
-## 3. Persistenza automatica del brand su localStorage
+**Anteprima principale:**
+- `ScaledPreview` in `routes/index.tsx` riceve dimensioni `w/h` invece di hardcoded 1080/1350 — già usa `getBoundingClientRect`, basta parametrizzare i divisori
 
-Aggiungo middleware `persist` di Zustand a `src/lib/store.ts`:
+**Export/PNG:**
+- `src/lib/export.ts` cattura il nodo già con dimensioni reali → funziona automaticamente. I file mantengono nome + dimensione corretta del formato.
+- Nel filename includo il formato: `slide-01-1080x1350.png` per chiarezza
 
-```ts
-persist(
-  (set, get) => ({ ... }),
-  {
-    name: "carousel-brand-v1",
-    partialize: (s) => ({ brand: s.brand, brandPresets: s.brandPresets }),
-    version: 1,
-  }
-)
-```
+**Validazione (`src/lib/validation.ts`):** invariata, controlla solo i contenuti.
 
-**Solo brand + preset** vengono persistiti (no slides, no past/future, no activeId — restano per-sessione/usa-e-getta come da requisito esistente).
+**Default iniziale:** le 2 slide di partenza restano `portrait` per coerenza.
 
-**Migrazione/safety:**
-- `version: 1` con `migrate(persistedState, version)` che mergia con `DEFAULT_BRAND` per gestire campi nuovi (es. quando aggiungo `effects.shadow` in punto 1, i brand vecchi su disco non lo avranno → fallback al default)
-- gestione SSR: `skipHydration: true` + chiamata `useCarousel.persist.rehydrate()` in un `useEffect` lato client in `__root.tsx`, per evitare mismatch idratazione TanStack Start
-- toast informativo al primo load se è stato ripristinato un brand salvato: "Brand ripristinato da sessione precedente" con bottone "Reset"
+## 4. UX picker nuove slide — categorizzazione
 
-**Hard reset disponibile** in BrandDialog (oltre al reset valori grafici esistente): "Cancella brand salvato" che chiama `useCarousel.persist.clearStorage()` + `setBrand(DEFAULT_BRAND)`.
+Raggruppo i 12 template in 3 categorie nel picker (tab interne):
+- **Testo & Titolo**: cover, center, split, bignum
+- **Liste & Dati**: grid2x2, timeline, checklist, stat, compare
+- **Riferimento**: vocab, qa
 
-## 4. Anteprima export multi-slide con thumbnail e ordine
-
-Nuovo componente `src/components/ExportBatchPreviewDialog.tsx` aperto da un nuovo bottone **"Anteprima ZIP"** accanto a "Anteprima" in toolbar (icona `LayoutGrid`).
-
-**Layout del dialog:**
-- Header: titolo "Anteprima export ZIP — N slide · Lingua X"
-- Selettore lingua (se multilang) e selettore "include in ZIP" (default: tutte)
-- **Grid di thumbnail** — ogni slide renderizzata a `1080×1350` ma scalata a ~200×250px:
-  - Numero badge `01`, `02`... in alto a sx (mostra l'ordine finale)
-  - Checkbox in alto a dx per **escludere** dalla selezione (slide deselezionate appaiono opache + barrate, e vengono saltate nello ZIP)
-  - Banner rosso sopra se la slide ha errori di validazione
-  - Click sulla card → apre la stessa slide nella `ExportPreviewDialog` esistente (preview singola dettagliata)
-- **Drag-and-drop riordino** all'interno del dialog (riusa `@dnd-kit` già installato): ogni reorder chiama `reorderSlides(from, to)` dello store → riflesso immediato anche in sidebar
-- Indicatore stato fonts/immagini ("✓ Asset pronti / ⏳ Caricamento") riusando `ensureFontsFor` + check già presenti in `ExportPreviewDialog`
-- Footer: 
-  - Conteggio "X di Y slide selezionate · ~Z MB stimati"
-  - Bottone **"Scarica ZIP"** (disabilitato finché asset non pronti o 0 slide selezionate)
-  - Bottone "Annulla"
-
-**Logica di export "selettiva":**
-- Modifico `downloadZipFromNodes` in `src/lib/export.ts` per accettare opzionalmente una lista di indici da includere (default: tutti). I nomi file usano l'indice **1-based originale** delle slide (slide-03.png anche se è la prima inclusa) per mantenere coerenza con la sidebar — opzione "Rinumera consecutivamente" come checkbox nel dialog.
-- Aggiunta opzione "Una cartella per lingua" se multilang: lo ZIP include tutte le lingue selezionate in sottocartelle `it/slide-01.png`, `en/slide-01.png`. Selettore lingua diventa multi-select.
+Ogni card template mostra una **mini-anteprima generata** (riusando `SlideRenderer` con dati di default a `scale 0.15`) — esattamente quello che vede l'utente cliccando, no icone generiche. Costo: 12 mini-render una volta sola al mount del dialog.
 
 ## File toccati
 
 **Nuovi:**
-- `src/components/ExportBatchPreviewDialog.tsx` — anteprima multi-slide con DnD + checkbox + export selettivo
-- `src/components/PresetCard.tsx` — card riusabile per preset (mini-preview colori+font)
-- `src/lib/presets.ts` — definizione `BrandPreset`, lista built-in, helper apply/migrate
+- `src/components/NewSlideDialog.tsx` — modal "Nuova slide" con format-picker + template-picker visivo
 
 **Modificati:**
-- `src/lib/templates.ts` — estensione `BrandEffects` (shadow, cornerStyle, titleEffect, dividerStyle, iconAccent + nuovi `BgPattern`)
-- `src/lib/store.ts` — middleware `persist` + slice `brandPresets` con relative azioni
-- `src/components/slides/slide-styles.css` — classi per nuovi pattern (`fx-bg-blob`, `fx-bg-conic`, `fx-bg-stripes`, `fx-bg-waves`, `fx-bg-radial`), `fx-shadow-*`, `fx-corner-*`, `fx-title-*`, `fx-divider-*`, `fx-icon-accent` + variabile `--radius`
-- `src/components/slides/SlideRenderer.tsx` — applica le nuove classi `fx-*` alla `slide-frame`
-- `src/components/BrandSettingsDialog.tsx` — nuova tab "Preset", riorganizzazione tab "Effetti" in sezioni con thumbnails, bottone "Cancella brand salvato"
-- `src/components/ExportButton.tsx` — bottone/modalità per aprire l'anteprima ZIP, supporto opzioni `selectedIds` / `langs[]` / `renumber`
-- `src/lib/export.ts` — `downloadZipFromNodes(nodes, baseName, brand, opts?)` con `{ filenameStrategy: "original" | "consecutive", folderPerLang?: { [lang]: HTMLDivElement[] } }`
-- `src/routes/__root.tsx` — `useCarousel.persist.rehydrate()` lato client + toast "Brand ripristinato"
-- `src/routes/index.tsx` — nuovo bottone "Anteprima ZIP" in toolbar
+- `src/lib/templates.ts` — aggiunta `SlideFormat`, `FORMAT_DIMENSIONS`, campo `format` su `Slide`, `makeDefaultSlide(template, format)`
+- `src/lib/store.ts` — `addSlide(template, format)`, migrazione slide legacy in `loadJSON` e in `merge` del persist (fill `format = "portrait"`)
+- `src/components/slides/SlideRenderer.tsx` — passa `--slide-w`/`--slide-h` come CSS vars + classe `fmt-{format}`
+- `src/components/slides/slide-styles.css` — `.slide-frame` usa `width: var(--slide-w)`/`height: var(--slide-h)`; varianti `.fmt-square`, `.fmt-story`, `.fmt-landscape` per template che cambiano layout (grid2x2, split, compare)
+- `src/components/SlidesSidebar.tsx` — sostituisce dropdown con `NewSlideDialog`, fix hydration con `mounted` flag, mini-preview adattiva al formato, badge formato
+- `src/components/ExportBatchPreviewDialog.tsx` — fix hydration con `mounted` flag, thumbnail adattive al formato
+- `src/routes/index.tsx` — `ssr: false` sulla route, `ScaledPreview` parametrizzato w/h, hidden export refs usano dimensioni dal formato
+- `src/lib/export.ts` — filename con dimensioni reali del formato della slide
+- `src/lib/validation.ts` — nessuna modifica strutturale
 
 **Non toccati:**
-- `src/lib/history.ts` — invariato (preset apply usa lo stesso meccanismo di setBrand → entry undo unica)
-- `src/components/SlideEditorForm.tsx` — invariato
-- Logica i18n — invariata
+- `src/components/SlideEditorForm.tsx` — il form edita i dati, agnostico al formato
+- `src/lib/i18n.ts`, `src/lib/history.ts`, `src/lib/presets.ts` — invariati
+- `src/components/BrandSettingsDialog.tsx` — il brand è globale, non per-formato
 
 ## Fuori scope
-- **Animazioni runtime** (l'export resta PNG statico, no GIF/MP4). Gli "effetti" sono visivi statici stile Figma, non motion design.
-- **Cloud sync dei preset** (resta solo localStorage). Esportabili tramite Export JSON come backup.
-- **Editor visuale** dei preset (si modifica il brand corrente e lo si "salva come preset", non si edita un preset direttamente — più semplice e meno error-prone).
-- **Persistenza delle slide** (resta usa-e-getta, coerente con il pattern attuale).
-- **Anteprima animata della ZIP** (no carousel auto-play nel dialog: è una grid statica per scegliere e riordinare).
+- **Resize/conversione automatica** di una slide da un formato all'altro mantenendo il layout perfetto (i template si adattano via CSS, no algoritmo di reflow del contenuto)
+- **Posizionamento libero degli elementi** stile Canva (l'editor resta template-driven, non free-form canvas)
+- **Anteprima animata multi-formato** (resta export PNG statico)
+- **Formati custom arbitrari** (i 4 preset coprono i casi reali: post, square, story, landscape — aggiungere "custom WxH" introduce edge case CSS molto pesanti)
 
