@@ -20,6 +20,13 @@ import type {
   ChartLineData,
   FeatureData,
   TestimonialData,
+  MythData,
+  ProcessData,
+  ProsConsData,
+  QuoteBigData,
+  RoadmapData,
+  RoadmapStatus,
+  CtaData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -164,6 +171,12 @@ export function SlideEditorForm({ slide }: Props) {
     case "chartLine":   body = <ChartLineEditor d={draft as ChartLineData} set={set as (d: ChartLineData) => void} {...editorProps} />; break;
     case "feature":     body = <FeatureEditor d={draft as FeatureData} set={set as (d: FeatureData) => void} {...editorProps} />; break;
     case "testimonial": body = <TestimonialEditor d={draft as TestimonialData} set={set as (d: TestimonialData) => void} {...editorProps} />; break;
+    case "myth":        body = <MythEditor d={draft as MythData} set={set as (d: MythData) => void} {...editorProps} />; break;
+    case "process":     body = <ProcessEditor d={draft as ProcessData} set={set as (d: ProcessData) => void} {...editorProps} />; break;
+    case "prosCons":    body = <ProsConsEditor d={draft as ProsConsData} set={set as (d: ProsConsData) => void} {...editorProps} />; break;
+    case "quoteBig":    body = <QuoteBigEditor d={draft as QuoteBigData} set={set as (d: QuoteBigData) => void} {...editorProps} />; break;
+    case "roadmap":     body = <RoadmapEditor d={draft as RoadmapData} set={set as (d: RoadmapData) => void} {...editorProps} />; break;
+    case "cta":         body = <CtaEditor d={draft as CtaData} set={set as (d: CtaData) => void} {...editorProps} />; break;
   }
 
   return (
@@ -822,6 +835,204 @@ function TestimonialEditor({ d, set, errFor, slideId, overrides }: EditorProps<T
       <Field label="Rating (0-5, opzionale)" error={errFor("rating")}>
         <Input type="number" min={0} max={5} step={1} value={d.rating ?? 0} onChange={(e) => set({ ...d, rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })} />
       </Field>
+    </div>
+  );
+}
+
+/* ---------------- Myth ---------------- */
+function MythEditor({ d, set, errFor, slideId, overrides }: EditorProps<MythData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mito (falso)</div>
+        <Input value={d.myth.label} onChange={(e) => set({ ...d, myth: { ...d.myth, label: e.target.value } })} placeholder="MITO" />
+        <Field label="Testo del mito" error={errFor("myth.text")} slideId={slideId} fieldPath="myth.text" overrides={overrides}>
+          <Textarea data-field="myth.text" rows={2} value={d.myth.text} onChange={(e) => set({ ...d, myth: { ...d.myth, text: e.target.value } })} />
+        </Field>
+      </div>
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Realtà (vero)</div>
+        <Input value={d.reality.label} onChange={(e) => set({ ...d, reality: { ...d.reality, label: e.target.value } })} placeholder="REALTÀ" />
+        <Field label="Testo della realtà" error={errFor("reality.text")} slideId={slideId} fieldPath="reality.text" overrides={overrides}>
+          <Textarea data-field="reality.text" rows={2} value={d.reality.text} onChange={(e) => set({ ...d, reality: { ...d.reality, text: e.target.value } })} />
+        </Field>
+      </div>
+      <Field label="Fonte (opzionale)"><Input value={d.source ?? ""} onChange={(e) => set({ ...d, source: e.target.value })} placeholder="FONTE — REPORT 2025" /></Field>
+    </div>
+  );
+}
+
+/* ---------------- Process ---------------- */
+function ProcessEditor({ d, set, errFor, slideId, overrides }: EditorProps<ProcessData>) {
+  const stepsErr = errFor("steps");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      {stepsErr && <p data-field="steps" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {stepsErr}</p>}
+      <ArrayField
+        label={`Step (${LIMITS.processSteps.min}–${LIMITS.processSteps.max})`}
+        items={d.steps}
+        onChange={(arr) => set({ ...d, steps: arr })}
+        maxItems={LIMITS.processSteps.max}
+        counter={<ItemCounter current={d.steps.length} min={LIMITS.processSteps.min} max={LIMITS.processSteps.max} unit="step" />}
+        render={(v, on, i) => {
+          const titleErr = errFor(`steps.${i}.title`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Step {i + 1}</Label>
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`steps.${i}.title`} value={overrides?.[`steps.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`steps.${i}.title`} value={overrides?.[`steps.${i}.title`]} />
+                </div>
+              </div>
+              <div className="grid grid-cols-[80px_1fr] gap-2">
+                <Input value={v.number ?? ""} onChange={(e) => on({ ...v, number: e.target.value })} placeholder={`0${i + 1}`} />
+                <Input data-field={`steps.${i}.title`} className={titleErr ? "border-destructive" : ""} value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo step *" />
+              </div>
+              <Textarea rows={2} value={v.desc} onChange={(e) => on({ ...v, desc: e.target.value })} placeholder="Descrizione" />
+              {titleErr && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {titleErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ number: "", title: "", desc: "" }}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Pros & Cons ---------------- */
+function ProsConsEditor({ d, set, errFor, slideId, overrides }: EditorProps<ProsConsData>) {
+  const prosErr = errFor("pros");
+  const consErr = errFor("cons");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Etichetta PRO"><Input value={d.prosLabel ?? "PRO"} onChange={(e) => set({ ...d, prosLabel: e.target.value })} /></Field>
+        <Field label="Etichetta CONTRO"><Input value={d.consLabel ?? "CONTRO"} onChange={(e) => set({ ...d, consLabel: e.target.value })} /></Field>
+      </div>
+      {prosErr && <p data-field="pros" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {prosErr}</p>}
+      <ArrayField
+        label={`PRO (${LIMITS.prosCons.min}–${LIMITS.prosCons.max})`}
+        items={d.pros}
+        onChange={(arr) => set({ ...d, pros: arr })}
+        maxItems={LIMITS.prosCons.max}
+        counter={<ItemCounter current={d.pros.length} min={LIMITS.prosCons.min} max={LIMITS.prosCons.max} unit="pro" />}
+        render={(v, on, i) => {
+          const e = errFor(`pros.${i}`);
+          return <Input data-field={`pros.${i}`} className={e ? "border-destructive" : ""} value={v} onChange={(ev) => on(ev.target.value)} placeholder={`Pro ${i + 1}`} />;
+        }}
+        empty=""
+      />
+      {consErr && <p data-field="cons" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {consErr}</p>}
+      <ArrayField
+        label={`CONTRO (${LIMITS.prosCons.min}–${LIMITS.prosCons.max})`}
+        items={d.cons}
+        onChange={(arr) => set({ ...d, cons: arr })}
+        maxItems={LIMITS.prosCons.max}
+        counter={<ItemCounter current={d.cons.length} min={LIMITS.prosCons.min} max={LIMITS.prosCons.max} unit="contro" />}
+        render={(v, on, i) => {
+          const e = errFor(`cons.${i}`);
+          return <Input data-field={`cons.${i}`} className={e ? "border-destructive" : ""} value={v} onChange={(ev) => on(ev.target.value)} placeholder={`Contro ${i + 1}`} />;
+        }}
+        empty=""
+      />
+    </div>
+  );
+}
+
+/* ---------------- Quote Big ---------------- */
+function QuoteBigEditor({ d, set, errFor, slideId, overrides }: EditorProps<QuoteBigData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Citazione" hint={`min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri`} error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}>
+        <Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} />
+      </Field>
+      <p className="text-[10px] text-muted-foreground">{d.quote.length}/{LIMITS.quoteMax}</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" maxLength={LIMITS.authorMax} value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
+        <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}><Input value={d.role ?? ""} onChange={(e) => set({ ...d, role: e.target.value })} /></Field>
+      </div>
+      <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} variant="avatar" />
+    </div>
+  );
+}
+
+/* ---------------- Roadmap ---------------- */
+function RoadmapEditor({ d, set, errFor, slideId, overrides }: EditorProps<RoadmapData>) {
+  const msErr = errFor("milestones");
+  const STATUS_LABELS: Record<RoadmapStatus, string> = {
+    done: "✓ Completato",
+    progress: "● In corso",
+    planned: "○ Pianificato",
+  };
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      {msErr && <p data-field="milestones" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {msErr}</p>}
+      <ArrayField
+        label={`Milestone (${LIMITS.roadmap.min}–${LIMITS.roadmap.max})`}
+        items={d.milestones}
+        onChange={(arr) => set({ ...d, milestones: arr })}
+        maxItems={LIMITS.roadmap.max}
+        counter={<ItemCounter current={d.milestones.length} min={LIMITS.roadmap.min} max={LIMITS.roadmap.max} unit="milestone" />}
+        render={(v, on, i) => {
+          const titleErr = errFor(`milestones.${i}.title`);
+          const periodErr = errFor(`milestones.${i}.period`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Milestone {i + 1}</Label>
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`milestones.${i}.title`} value={overrides?.[`milestones.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`milestones.${i}.title`} value={overrides?.[`milestones.${i}.title`]} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                  value={v.status}
+                  onChange={(e) => on({ ...v, status: e.target.value as RoadmapStatus })}
+                >
+                  {(Object.keys(STATUS_LABELS) as RoadmapStatus[]).map((s) => (
+                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                  ))}
+                </select>
+                <Input data-field={`milestones.${i}.period`} className={periodErr ? "border-destructive" : ""} value={v.period} onChange={(e) => on({ ...v, period: e.target.value })} placeholder="Q1 2026 *" />
+              </div>
+              <Input data-field={`milestones.${i}.title`} className={titleErr ? "border-destructive" : ""} value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo *" />
+              <Textarea rows={2} value={v.desc} onChange={(e) => on({ ...v, desc: e.target.value })} placeholder="Descrizione" />
+              {(titleErr || periodErr) && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {titleErr || periodErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ status: "planned" as RoadmapStatus, period: "", title: "", desc: "" }}
+      />
+    </div>
+  );
+}
+
+/* ---------------- CTA ---------------- */
+function CtaEditor({ d, set, errFor, slideId, overrides }: EditorProps<CtaData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Headline" hint={HL_HINT} error={errFor("headline")} slideId={slideId} fieldPath="headline" overrides={overrides}>
+        <Textarea data-field="headline" rows={2} maxLength={LIMITS.headlineMax} value={d.headline} onChange={(e) => set({ ...d, headline: e.target.value })} />
+      </Field>
+      <Field label="Sottotitolo (opzionale)" slideId={slideId} fieldPath="subtitle" overrides={overrides}>
+        <Textarea rows={2} value={d.subtitle ?? ""} onChange={(e) => set({ ...d, subtitle: e.target.value })} />
+      </Field>
+      <Field label="Etichetta bottone" error={errFor("buttonLabel")} slideId={slideId} fieldPath="buttonLabel" overrides={overrides}>
+        <Input data-field="buttonLabel" maxLength={LIMITS.buttonMax} value={d.buttonLabel} onChange={(e) => set({ ...d, buttonLabel: e.target.value })} placeholder="SALVA ORA →" />
+      </Field>
+      <Field label="Handle / URL (opzionale)"><Input value={d.handle ?? ""} onChange={(e) => set({ ...d, handle: e.target.value })} placeholder="@nomeutente" /></Field>
     </div>
   );
 }
