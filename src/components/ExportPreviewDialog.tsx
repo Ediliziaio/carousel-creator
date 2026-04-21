@@ -156,6 +156,18 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
             <Info label="Brand" value={brand.brand} />
             {brand.logoDataUrl && <Info label="Logo" value="Sì" />}
             <div className="rounded-md border border-border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Asset</div>
+              {assetsReady ? (
+                <div className="mt-1 flex items-center gap-1 text-sm text-emerald-500">
+                  <Check className="h-3.5 w-3.5" /> Font e immagini pronti
+                </div>
+              ) : (
+                <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Caricamento font...
+                </div>
+              )}
+            </div>
+            <div className="rounded-md border border-border p-3">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Validazione</div>
               {validation.valid ? (
                 <div className="mt-1 text-sm text-emerald-500">✓ Tutti i campi sono compilati</div>
@@ -181,9 +193,9 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             <X className="mr-1 h-4 w-4" /> Annulla
           </Button>
-          <Button onClick={onDownload} disabled={busy}>
+          <Button onClick={onDownload} disabled={busy || !assetsReady}>
             {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
-            Scarica questa PNG
+            {assetsReady ? "Scarica questa PNG" : "Caricamento font..."}
           </Button>
         </DialogFooter>
         {/* Hidden full-size capture node — what actually gets exported */}
