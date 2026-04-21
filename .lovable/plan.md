@@ -1,122 +1,79 @@
 
 
-# Editor caroselli — feature pack avanzato
+# Debounce uniforme + anteprima export WYSIWYG affidabile
 
-Sei feature da aggiungere per portare l'editor a un livello pro: branding completo, drag-and-drop, undo/redo, multilingua, anteprima export e effetti speciali sulle slide.
+## 1. Debounce 400ms su tutti gli input del form (anche select/upload/switch/array)
 
-## 1. Branding esteso (colori, font, logo, "grassetti")
+**Stato attuale:** `SlideEditorForm` ha già un debounce centralizzato — tutti i campi (Input, Textarea, Switch, ImageUploadField, ArrayField add/remove) passano per `set()` che aggiorna solo `draft` e committa allo store dopo 400ms. ✅
 
-Estendo `BrandSettings` in `src/lib/templates.ts` con nuovi campi:
-- `accent` (già presente) → colore principale
-- **`accentSecondary`** → secondo colore per gradienti / highlight alternativi
-- **`textColor`** + **`bgColor`** → personalizza foreground/background base della slide
-- **`headingWeight`** (`600 | 700 | 800 | 900`) e **`bodyWeight`** (`400 | 500 | 600`) → controllo del "grassetto"
-- **`fontHeading`** e **`fontBody`** scelti da una lista curata (Figtree, Inter, Space Grotesk, Playfair, JetBrains Mono…) — caricati on-demand da Google Fonts
-- **`logoDataUrl`** → logo aziendale caricato dall'utente (mostrato nell'header al posto del solo testo brand)
+**Gap reale da chiudere:** alcune azioni *non passano* per `set()` e creano snapshot immediati nello store, sporcando l'undo:
+- **Cambio lingua** (`setActiveLang`) — ok, ma se c'è un draft pendente sulla lingua precedente viene perso
+- **`BrandSettingsDialog`** — ogni `<input type="color">`, ogni toggle, ogni `<select>` di font chiama `setBrand({...})` ad ogni keystroke/click → snapshot per ogni movimento del color picker
+- **Logo upload** in BrandDialog — ok come singolo evento
 
-Tutti questi valori vengono iniettati come **CSS variables** sul `slide-frame` (`--cyan`, `--cyan-2`, `--text`, `--bg`, `--font-heading`, `--font-body`, `--w-h`, `--w-b`) e `slide-styles.css` viene aggiornato per usarle ovunque (titoli usano `font-family: var(--font-heading); font-weight: var(--w-h)`).
+**Modifiche:**
 
-`BrandSettingsDialog.tsx` viene esteso con sezioni: **Colori**, **Tipografia**, **Logo** (upload con preview, drag-and-drop file, conversione a dataURL), **Reset al default**.
+a) **`SlideEditorForm`**: prima di cambiare `activeLang`, flush sincrono del draft pendente (`update(slide.id, draftRef.current)` se diverso). Garantisce che cambiando lingua non si perdano le modifiche in volo.
 
-## 2. Upload immagini nelle slide
+b) **`BrandSettingsDialog`**: introduco lo stesso pattern draft+debounce 400ms per `setBrand`. Concretamente:
+- stato locale `brandDraft` inizializzato dal brand corrente
+- ogni controllo (color picker, font select, weight slider, effetti toggles) scrive su `brandDraft` 
+- `useEffect` con `setTimeout` 400ms committa `setBrand(brandDraft)` solo se diverso
+- al close del dialog → flush sincrono del pending
+- risultato: muovere il color picker per 2 secondi crea **1 sola entry undo** invece di 30+
 
-Aggiungo a 3 template che hanno senso visivamente:
-- **`split`** → campo opzionale `imageUrl` (a destra al posto della lista, se presente)
-- **`center`** → background image opzionale con overlay scuro
-- **`cover`** *(nuovo template)* → slide copertina con immagine fullscreen + titolo
+c) **`updateSlide` nello store** → invariato (lo store resta sincrono, il debounce vive nei componenti).
 
-Componente riutilizzabile **`ImageUploadField`** in `src/components/ImageUploadField.tsx`:
-- accetta drag-and-drop o click-to-upload
-- valida tipo (PNG/JPG/WEBP) e size (max 5MB)
-- converte in dataURL (no upload server, coerente con "usa-e-getta")
-- mostra preview + bottone "Rimuovi"
-- l'export PNG include automaticamente le immagini (html-to-image le serializza già)
+## 2. Anteprima export "what you see is what you get" (1080×1350 con fonts/logo/immagini)
 
-## 3. Effetti speciali sulle slide
+**Problemi attuali in `ExportPreviewDialog` + `export.ts`:**
 
-Aggiungo a `BrandSettings` un campo **`effects`** con questi toggle/scelte:
-- **`bgPattern`**: `none | dots | grid | noise | gradient-mesh` — pattern di sfondo SVG/CSS
-- **`accentGlow`**: boolean — aggiunge `box-shadow: 0 0 40px var(--cyan)` a numeri grandi e elementi accent
-- **`textGradient`**: boolean — titoli renderizzati con `background-clip: text` su gradiente accent → accentSecondary
-- **`grain`**: boolean — overlay rumore tipo film
-- **`borderStyle`**: `none | thin | thick | dashed | glow` — bordo della slide
+- `ensureFonts()` carica solo **Figtree + JetBrains Mono hardcoded** — se l'utente ha scelto Inter, Playfair, Space Grotesk dal BrandDialog, queste **non vengono caricate** né per la preview né per la cattura. Il rendering finale usa il fallback `system-ui`.
+- La preview (`<SlideRenderer>` scalato) e il nodo di cattura nascosto sono **due DOM separati**: la preview può sembrare ok mentre la cattura ha font diversi se i font non sono pronti.
+- Le immagini dataURL sono già inline (no problema CORS) ma il "warm up" double-render in `captureNode` non aspetta esplicitamente il `decode()` delle `<img>`.
 
-Tutti gli effetti applicati via classi `fx-{name}` su `slide-frame`, definite in `slide-styles.css`. Sezione "Effetti" nel dialog Brand.
+**Modifiche:**
 
-## 4. Riordino drag-and-drop nella sidebar
+a) **Font loader dinamico in `src/lib/export.ts`**:
+- nuova funzione `ensureFontsFor(brand: BrandSettings)` che costruisce dinamicamente l'URL Google Fonts in base a `brand.fontHeading` + `brand.fontBody` + i pesi richiesti (`headingWeight`, `bodyWeight`, e i pesi extra usati nel CSS: 400, 600, 700, 800, 900).
+- mantiene il `<link>` esistente con id stabile `carousel-google-fonts` ma **lo rimpiazza** se l'href è cambiato dall'ultima volta
+- attende `document.fonts.load("700 16px <heading>")` e `document.fonts.load("400 16px <body>")` esplicitamente (più affidabile di `fonts.ready` che a volte risolve subito)
+- whitelist di font Google noti; per altri valori, fallback a `system-ui` senza fetch (no errori CORS)
 
-Sostituisco i bottoni ↑/↓ in `SlidesSidebar.tsx` con vero drag-and-drop usando **`@dnd-kit/core`** + **`@dnd-kit/sortable`** (libreria già usata in molti progetti shadcn, leggera, accessibile).
+b) **Helper `waitForImages(node)`** in `export.ts`:
+- raccoglie tutte le `<img>` dentro il nodo
+- per ognuna: `if (!img.complete) await new Promise(r => img.onload = img.onerror = r)`
+- poi `await img.decode().catch(() => {})` per garantire pixel pronti
+- chiamato prima dei due render in `captureNode`
 
-Ogni miniatura diventa un `SortableItem` con handle "::" a sinistra. `onDragEnd` chiama `reorderSlides(from, to)` già presente nello store. Mantengo i bottoni duplica/elimina, rimuovo solo le frecce.
+c) **`captureNode(node, brand)`** — nuova firma:
+- accetta `brand` per chiamare `ensureFontsFor(brand)`
+- aggiorno tutti i call site (`downloadSinglePng`, `downloadZipFromNodes`, `ExportPreviewDialog`)
 
-## 5. Undo / Redo nello store
+d) **`ExportPreviewDialog`** — rendere preview e capture identiche:
+- la preview scalata già usa `<SlideRenderer>` reale ✅
+- aggiungo `useEffect` che chiama `ensureFontsFor(brand)` all'apertura del dialog → la preview vede subito i font corretti (no flash di fallback)
+- aggiungo header banner "✓ Font caricati" / spinner "Caricamento font..." finché `document.fonts.check(...)` non è true per le scelte del brand
+- bottone "Scarica" disabilitato finché font + immagini non sono pronti (evita download con render incompleto)
 
-Estendo `src/lib/store.ts` con history stack:
-- aggiungo `past: CarouselSnapshot[]`, `future: CarouselSnapshot[]`
-- ogni mutazione (`updateSlide`, `addSlide`, `removeSlide`, `duplicateSlide`, `reorderSlides`, `setBrand`, `loadJSON`) salva snapshot precedente in `past` e svuota `future`
-- nuove azioni `undo()` e `redo()` che spostano snapshot tra past/present/future
-- limite history a 50 step per non gonfiare RAM
-- snapshot include `{ brand, slides }` (no `activeId`, evita "rumore")
-
-In toolbar (`src/routes/index.tsx`) aggiungo bottoni **Undo** (⌘Z) e **Redo** (⌘⇧Z) con `lucide-react` Undo2/Redo2. Hook `useEffect` registra shortcut da tastiera. Bottoni disabilitati quando past/future vuoti.
-
-Per evitare snapshot per ogni keystroke nel form, applico **debounce 400ms** sugli `updateSlide` consecutivi sulla stessa slide (debounce nel componente `SlideEditorForm`, non nello store — lo store resta sincrono).
-
-## 6. Multilingua per slide + export per lingua
-
-Estendo lo schema slide per supportare contenuti localizzati:
-- nuovo campo `BrandSettings.languages: string[]` (default `["it"]`, l'utente può aggiungere `en`, `es`, `fr`…)
-- nuovo campo `BrandSettings.defaultLanguage: string`
-- in ogni `Slide` la `data` diventa: o un singolo oggetto (legacy/single-lang), o `{ __i18n: true, byLang: Record<string, TemplateData> }`
-- helper `getSlideData(slide, lang)` che ritorna i dati per la lingua richiesta, con fallback alla `defaultLanguage`
-
-UI:
-- nel dialog Brand sezione **"Lingue"**: lista chips, aggiungi/rimuovi
-- in `SlideEditorForm.tsx` uno **switcher di lingua** in cima al form quando ci sono >1 lingue: tab `IT | EN | ES`. Modificando i campi si scrive solo nella lingua attiva
-- il rendering della preview usa la lingua attualmente selezionata nello switcher
-- nel dropdown **Export** compare un sottomenu per scegliere la lingua quando ce ne sono multiple. ZIP per multilingua può essere `carosello-it.zip` / `carosello-en.zip` separati, o un singolo ZIP con cartelle per lingua (scelta nel dialog export)
-
-Migrazione dati esistenti: la prima volta che l'utente aggiunge una seconda lingua, la slide viene convertita da formato single al formato `__i18n` con la lingua corrente come chiave iniziale.
-
-## 7. Anteprima di esportazione per singola slide
-
-Nuovo bottone **"Anteprima export"** accanto a "Export" in toolbar (icona `Eye`). Apre un `Dialog` (shadcn) che mostra:
-- preview della slide attiva renderizzata a **dimensione reale** (1080×1350) ma scalata per stare nel viewport del dialog
-- info sopra: nome file (`{slug}-slide-NN.png`), risoluzione, lingua selezionata, brand applicato
-- check di validazione inline (warning se ci sono errori, con possibilità di andare al campo)
-- bottoni **"Scarica questa PNG"** (esporta solo la slide vista) e **"Annulla"**
-
-Il render preview usa lo stesso identico DOM che verrà catturato dall'export (componente `SlideRenderer` con il `slide-frame` reale), garantendo che "what you see is what you get".
-
-Componente nuovo: `src/components/ExportPreviewDialog.tsx`.
+e) **Logo & dataURL immagini**: già inline come `data:` URI, quindi `html-to-image` li serializza correttamente. L'unico fix necessario è il `decode()` esplicito al punto (b) — altrimenti su immagini grandi il primo render può catturare un'immagine non ancora dipinta.
 
 ## File toccati
 
-**Nuovi:**
-- `src/components/ImageUploadField.tsx`
-- `src/components/ExportPreviewDialog.tsx`
-- `src/lib/i18n.ts` *(helper getSlideData / migrate / getLangs)*
-- `src/lib/history.ts` *(snapshot/undo/redo logic estratta dallo store)*
-
 **Modificati:**
-- `src/lib/templates.ts` — estensione `BrandSettings` (effects, fonts, logo, languages, secondary color, weights), nuovo template `cover`, campo `imageUrl` opzionale per `split` e `center`
-- `src/lib/store.ts` — past/future history, undo/redo, lang attiva, integrazione i18n
-- `src/components/slides/slide-styles.css` — variabili CSS aggiuntive, classi `.fx-*` per effetti, supporto `--font-heading/body` e pesi
-- `src/components/slides/SlideRenderer.tsx` — applica effetti, logo nell'header, gestione `imageUrl`, nuovo template `cover`
-- `src/components/BrandSettingsDialog.tsx` — sezioni Colori/Tipografia/Logo/Effetti/Lingue
-- `src/components/SlidesSidebar.tsx` — drag-and-drop con @dnd-kit
-- `src/components/SlideEditorForm.tsx` — language switcher, integrazione `ImageUploadField`, debounce updateSlide
-- `src/components/ExportButton.tsx` — sottomenu per lingua quando multilingua
-- `src/lib/export.ts` — funzione `exportForLanguage(lang)`, supporto cartelle nello ZIP per export multilingua
-- `src/lib/validation.ts` — valida la lingua attiva (o tutte, opzionale)
-- `src/routes/index.tsx` — bottoni Undo/Redo + shortcut, bottone Anteprima export, language picker globale
+- `src/components/SlideEditorForm.tsx` — flush draft prima di `setActiveLang`
+- `src/components/BrandSettingsDialog.tsx` — pattern draft+debounce 400ms su tutti i controlli, flush al close
+- `src/lib/export.ts` — `ensureFontsFor(brand)` dinamico, `waitForImages(node)`, `captureNode` accetta brand
+- `src/components/ExportPreviewDialog.tsx` — chiamata `ensureFontsFor` all'apertura, indicatore stato font/immagini, bottone disabilitato finché non pronto
+- `src/components/ExportButton.tsx` — passa `brand` ai call site di `downloadSinglePng` / `downloadZipFromNodes`
 
-## Dipendenze da aggiungere
-- `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+**Non toccati:**
+- `src/lib/store.ts` — resta sincrono, debounce vive nei componenti
+- `src/lib/history.ts` — invariato
+- `src/components/slides/SlideRenderer.tsx` — già usa CSS variables corrette
 
 ## Fuori scope
-- Sincronizzazione cloud / persistenza dei contenuti (resta usa-e-getta, ma export/import JSON copre il backup)
-- Traduzione automatica AI tra lingue (l'utente compila ogni lingua a mano)
-- Editor visuale di posizionamento immagini (le immagini occupano slot fissi nei template)
-- Storico undo persistente tra reload (resta in memoria)
+- Caricamento font self-hosted / WOFF custom (resta solo Google Fonts)
+- Anteprima multi-slide nel dialog (resta solo la slide attiva, come da feature precedente)
+- Conversione immagini esterne (URL http) a dataURL — l'app accetta solo upload locali che già diventano dataURL
 
