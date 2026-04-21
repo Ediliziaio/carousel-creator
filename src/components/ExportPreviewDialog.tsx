@@ -36,21 +36,24 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
   const [busy, setBusy] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
 
+  const fmt = slide?.format ?? "portrait";
+  const dim = FORMAT_DIMENSIONS[fmt];
+
   useEffect(() => {
     if (!open) return;
     const el = containerRef.current;
     if (!el) return;
     const compute = () => {
       const rect = el.getBoundingClientRect();
-      const sx = (rect.width - 16) / 1080;
-      const sy = (rect.height - 16) / 1350;
-      setScale(Math.max(0.1, Math.min(sx, sy)));
+      const sx = (rect.width - 16) / dim.w;
+      const sy = (rect.height - 16) / dim.h;
+      setScale(Math.max(0.05, Math.min(sx, sy)));
     };
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [open]);
+  }, [open, dim.w, dim.h]);
 
   // Preload fonts + check images for the dialog so preview matches export.
   useEffect(() => {
