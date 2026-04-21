@@ -8,17 +8,20 @@ import { JsonEditor } from "@/components/JsonEditor";
 import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
+import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, FileJson } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Upload, FileJson, Undo2, Redo2, Eye } from "lucide-react";
+import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Carousel Generator — 1080×1350 PNG" },
-      { name: "description", content: "Crea caroselli Instagram con 10 template editoriali ed esporta in PNG 1080×1350." },
+      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG 1080×1350." },
     ],
   }),
   component: Index,
@@ -30,30 +33,57 @@ function Index() {
   const brand = useCarousel((s) => s.brand);
   const setBrand = useCarousel((s) => s.setBrand);
   const loadJSON = useCarousel((s) => s.loadJSON);
+  const undo = useCarousel((s) => s.undo);
+  const redo = useCarousel((s) => s.redo);
+  const past = useCarousel((s) => s.past);
+  const future = useCarousel((s) => s.future);
+  const activeLang = useCarousel((s) => s.activeLang);
+  const setActiveLang = useCarousel((s) => s.setActiveLang);
 
   const activeIndex = useMemo(() => slides.findIndex((s) => s.id === activeId), [slides, activeId]);
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
 
   const [editorTab, setEditorTab] = useState<string>("form");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Force-switch to form tab when focus-field event fires
   useEffect(() => {
     const handler = () => setEditorTab("form");
     window.addEventListener("slide:focus-field", handler);
     return () => window.removeEventListener("slide:focus-field", handler);
   }, []);
 
-  // Inject Google Fonts once on mount
+  // Keyboard shortcuts: ⌘Z / ⌘⇧Z
   useEffect(() => {
-    if (document.getElementById("carousel-google-fonts")) return;
-    const link = document.createElement("link");
-    link.id = "carousel-google-fonts";
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap";
-    document.head.appendChild(link);
-  }, []);
+    const handler = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!meta) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [undo, redo]);
 
-  // Hidden export refs (one per slide, full 1080x1350 size)
+  // Inject Google Fonts dynamically based on selected fonts
+  useEffect(() => {
+    const id = "carousel-google-fonts";
+    let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
+    const families = new Set(["Figtree:wght@400;500;600;700;800;900", "JetBrains Mono:wght@400;500;700"]);
+    const w = "wght@400;500;600;700;800;900";
+    [brand.fontHeading, brand.fontBody].forEach((f) => {
+      if (f === "Figtree" || f === "JetBrains Mono") return;
+      families.add(`${f}:${w}`);
+    });
+    link.href = "https://fonts.googleapis.com/css2?" + Array.from(families).map((f) => "family=" + f.replace(/ /g, "+")).join("&") + "&display=swap";
+  }, [brand.fontHeading, brand.fontBody]);
+
   const exportRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const setExportRef = (id: string) => (el: HTMLDivElement | null) => {
     if (el) exportRefs.current.set(id, el);
@@ -95,7 +125,6 @@ function Index() {
 
   return (
     <div className="flex h-screen w-full flex-col bg-background text-foreground">
-      {/* Toolbar */}
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-md bg-primary" />
@@ -107,6 +136,27 @@ function Index() {
           className="ml-2 h-8 max-w-xs"
           placeholder="Titolo carosello"
         />
+
+        <div className="ml-2 flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={past.length === 0} title="Annulla (⌘Z)">
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={future.length === 0} title="Ripeti (⌘⇧Z)">
+            <Redo2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {brand.languages.length > 1 && (
+          <Select value={activeLang} onValueChange={setActiveLang}>
+            <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {brand.languages.map((l) => (
+                <SelectItem key={l} value={l}>{langLabel(l)}{l === brand.defaultLanguage && " ★"}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <div className="ml-auto flex items-center gap-2">
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
@@ -114,6 +164,9 @@ function Index() {
           </Button>
           <Button variant="outline" size="sm" onClick={onExportJson}>
             <FileJson className="mr-1 h-4 w-4" /> Export JSON
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} disabled={!activeSlide}>
+            <Eye className="mr-1 h-4 w-4" /> Anteprima
           </Button>
           <ExportButton
             exportRefs={exportRefs}
@@ -129,22 +182,19 @@ function Index() {
         <ExportErrorBanner message={exportError} onDismiss={() => setExportError(null)} />
       )}
 
-      {/* Main 3-col layout */}
       <div className="flex min-h-0 flex-1">
         <SlidesSidebar />
 
-        {/* Center preview */}
         <main className="relative flex flex-1 items-center justify-center overflow-auto bg-[#1a1a1a] p-6">
           {activeSlide ? (
-            <ScaledPreview key={activeSlide.id}>
-              <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} />
+            <ScaledPreview key={activeSlide.id + activeLang}>
+              <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
             </ScaledPreview>
           ) : (
             <div className="text-muted-foreground">Nessuna slide selezionata</div>
           )}
         </main>
 
-        {/* Right editor */}
         <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-card">
           {activeSlide ? (
             <Tabs value={editorTab} onValueChange={setEditorTab} className="flex h-full flex-col">
@@ -169,17 +219,18 @@ function Index() {
         </aside>
       </div>
 
-      {/* Hidden export-size renders (1080x1350) */}
       <div
         aria-hidden
         style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}
       >
         {slides.map((s, i) => (
           <div key={s.id} ref={setExportRef(s.id)} style={{ width: 1080, height: 1350 }}>
-            <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} />
+            <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
           </div>
         ))}
       </div>
+
+      <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
     </div>
   );
 }
@@ -205,13 +256,7 @@ function ScaledPreview({ children }: { children: React.ReactNode }) {
 
   return (
     <div ref={containerRef} className="flex h-full w-full items-center justify-center">
-      <div
-        style={{
-          width: 1080 * scale,
-          height: 1350 * scale,
-          position: "relative",
-        }}
-      >
+      <div style={{ width: 1080 * scale, height: 1350 * scale, position: "relative" }}>
         <div
           style={{
             width: 1080,

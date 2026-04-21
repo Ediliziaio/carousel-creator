@@ -1,4 +1,4 @@
-// Template definitions for the 10 carousel layouts
+// Template definitions for the carousel layouts
 export type TemplateId =
   | "split"
   | "grid2x2"
@@ -9,18 +9,20 @@ export type TemplateId =
   | "vocab"
   | "qa"
   | "checklist"
-  | "stat";
+  | "stat"
+  | "cover";
 
 export interface SplitData {
   eyebrow: string;
-  title: string; // supports {hl}word{/hl}
+  title: string;
   paragraphs?: string[];
   list?: { marker: string; text: string }[];
+  imageUrl?: string;
 }
 export interface Grid2x2Data {
   eyebrow: string;
   title: string;
-  cells: { num: string; title: string; text: string }[]; // 4 items
+  cells: { num: string; title: string; text: string }[];
 }
 export interface BigNumData {
   number: string;
@@ -32,6 +34,7 @@ export interface CenterData {
   eyebrow: string;
   title: string;
   sub?: string;
+  imageUrl?: string;
 }
 export interface TimelineData {
   eyebrow: string;
@@ -56,7 +59,7 @@ export interface QAData {
   qLabel: string;
   question: string;
   aLabel: string;
-  answer: string[]; // paragraphs
+  answer: string[];
 }
 export interface ChecklistData {
   eyebrow: string;
@@ -71,39 +74,120 @@ export interface StatData {
   sub?: string;
   note?: string;
 }
+export interface CoverData {
+  eyebrow: string;
+  title: string;
+  sub?: string;
+  imageUrl?: string;
+}
 
-export type SlideData =
-  | { template: "split"; data: SplitData }
-  | { template: "grid2x2"; data: Grid2x2Data }
-  | { template: "bignum"; data: BigNumData }
-  | { template: "center"; data: CenterData }
-  | { template: "timeline"; data: TimelineData }
-  | { template: "compare"; data: CompareData }
-  | { template: "vocab"; data: VocabData }
-  | { template: "qa"; data: QAData }
-  | { template: "checklist"; data: ChecklistData }
-  | { template: "stat"; data: StatData };
+export type AnyTemplateData =
+  | SplitData
+  | Grid2x2Data
+  | BigNumData
+  | CenterData
+  | TimelineData
+  | CompareData
+  | VocabData
+  | QAData
+  | ChecklistData
+  | StatData
+  | CoverData;
+
+/** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
+export interface I18nWrapper<T = AnyTemplateData> {
+  __i18n: true;
+  byLang: Record<string, T>;
+}
+
+export type SlideDataField<T = AnyTemplateData> = T | I18nWrapper<T>;
 
 export interface Slide {
   id: string;
   template: TemplateId;
-  data: SplitData | Grid2x2Data | BigNumData | CenterData | TimelineData | CompareData | VocabData | QAData | ChecklistData | StatData;
+  data: SlideDataField;
 }
+
+/* ============ Brand & Effects ============ */
+
+export type BgPattern = "none" | "dots" | "grid" | "noise" | "gradient-mesh";
+export type BorderStyle = "none" | "thin" | "thick" | "dashed" | "glow";
+
+export interface BrandEffects {
+  bgPattern: BgPattern;
+  accentGlow: boolean;
+  textGradient: boolean;
+  grain: boolean;
+  borderStyle: BorderStyle;
+}
+
+export const DEFAULT_EFFECTS: BrandEffects = {
+  bgPattern: "none",
+  accentGlow: false,
+  textGradient: false,
+  grain: false,
+  borderStyle: "none",
+};
+
+export type FontChoice =
+  | "Figtree"
+  | "Inter"
+  | "Space Grotesk"
+  | "Playfair Display"
+  | "JetBrains Mono"
+  | "Poppins"
+  | "DM Sans"
+  | "Manrope";
+
+export const FONT_OPTIONS: FontChoice[] = [
+  "Figtree",
+  "Inter",
+  "Space Grotesk",
+  "Playfair Display",
+  "JetBrains Mono",
+  "Poppins",
+  "DM Sans",
+  "Manrope",
+];
+
+export type Weight = 400 | 500 | 600 | 700 | 800 | 900;
 
 export interface BrandSettings {
   brand: string;
   handle: string;
-  accent: string; // hex
+  accent: string;
+  accentSecondary: string;
+  textColor: string;
+  bgColor: string;
   carouselTitle: string;
   footerCta: string;
+  fontHeading: FontChoice;
+  fontBody: FontChoice;
+  headingWeight: Weight;
+  bodyWeight: Weight;
+  logoDataUrl?: string;
+  effects: BrandEffects;
+  languages: string[];
+  defaultLanguage: string;
 }
 
 export const DEFAULT_BRAND: BrandSettings = {
   brand: "AI CON EDO",
   handle: "@edoardo_barravecchia",
   accent: "#00E5FF",
+  accentSecondary: "#B24BF3",
+  textColor: "#F5F5F5",
+  bgColor: "#0A0A0A",
   carouselTitle: "Nuovo carosello",
   footerCta: "SCORRI →",
+  fontHeading: "Figtree",
+  fontBody: "Figtree",
+  headingWeight: 800,
+  bodyWeight: 400,
+  logoDataUrl: undefined,
+  effects: { ...DEFAULT_EFFECTS },
+  languages: ["it"],
+  defaultLanguage: "it",
 };
 
 export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> = {
@@ -117,18 +201,18 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   qa: { label: "Q & A", desc: "Domanda e risposta" },
   checklist: { label: "Checklist", desc: "Caselle da spuntare" },
   stat: { label: "Dato singolo", desc: "Numero enorme + descrizione" },
+  cover: { label: "Cover immagine", desc: "Immagine fullscreen + titolo" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
   "split", "grid2x2", "bignum", "center", "timeline",
-  "compare", "vocab", "qa", "checklist", "stat",
+  "compare", "vocab", "qa", "checklist", "stat", "cover",
 ];
 
-export function makeDefaultSlide(template: TemplateId): Slide {
-  const id = crypto.randomUUID();
+export function makeDefaultData(template: TemplateId): AnyTemplateData {
   switch (template) {
     case "split":
-      return { id, template, data: {
+      return {
         eyebrow: "Cover",
         title: "Titolo della cover con {hl}parole chiave.{/hl}",
         paragraphs: ["Sottotitolo con il gancio principale. Una o due frasi."],
@@ -137,9 +221,9 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           { marker: "02", text: "Elemento indice" },
           { marker: "03", text: "Elemento indice" },
         ],
-      }};
+      } as SplitData;
     case "grid2x2":
-      return { id, template, data: {
+      return {
         eyebrow: "Concetti chiave",
         title: "Quattro pilastri.",
         cells: [
@@ -148,9 +232,9 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           { num: "03", title: "Scala", text: "Lo stesso flusso per 1 o 1000 casi." },
           { num: "04", title: "Controllo", text: "Tracci ogni passaggio e correggi al volo." },
         ],
-      }};
+      } as Grid2x2Data;
     case "bignum":
-      return { id, template, data: {
+      return {
         number: "01",
         numberSub: "PRIMO PASSO",
         title: "Definisci l'obiettivo.",
@@ -158,15 +242,15 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           "Senza un risultato chiaro, l'AI ti darà output bellissimi ma inutili.",
           "Scrivi in una frase cosa vuoi ottenere.",
         ],
-      }};
+      } as BigNumData;
     case "center":
-      return { id, template, data: {
+      return {
         eyebrow: "Idea forte",
         title: "L'AI non sostituisce te. Sostituisce chi non la usa.",
         sub: "Una riflessione semplice ma scomoda.",
-      }};
+      } as CenterData;
     case "timeline":
-      return { id, template, data: {
+      return {
         eyebrow: "Roadmap",
         title: "Da zero a produzione.",
         items: [
@@ -175,25 +259,25 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           { when: "GIORNO 07", title: "Test reali", text: "Dati veri, feedback veri." },
           { when: "GIORNO 14", title: "Live", text: "Pubblichi e misuri." },
         ],
-      }};
+      } as TimelineData;
     case "compare":
-      return { id, template, data: {
+      return {
         eyebrow: "Confronto",
         title: "Prima e dopo l'AI.",
         before: { tag: "PRIMA", title: "Lavoro manuale", items: ["Ore di copia-incolla", "Errori di battitura", "Output inconsistente"] },
         after:  { tag: "DOPO",  title: "Flusso AI",      items: ["Minuti, non ore", "Zero refusi", "Output sempre uguale"] },
-      }};
+      } as CompareData;
     case "vocab":
-      return { id, template, data: {
+      return {
         category: "GLOSSARIO",
         word: "Prompt",
         pron: "/prɒmpt/ — sostantivo",
         defLabel: "DEFINIZIONE",
         def: "Istruzione testuale data a un modello di intelligenza artificiale per ottenere un output specifico.",
         example: "Un buon prompt vale più di un buon modello.",
-      }};
+      } as VocabData;
     case "qa":
-      return { id, template, data: {
+      return {
         qLabel: "Q.",
         question: "L'AI mi ruberà il lavoro?",
         aLabel: "A.",
@@ -201,9 +285,9 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           "No. Te lo cambierà.",
           "I lavori ripetitivi spariscono. Quelli che richiedono giudizio, gusto e contesto restano — e valgono di più.",
         ],
-      }};
+      } as QAData;
     case "checklist":
-      return { id, template, data: {
+      return {
         eyebrow: "Setup",
         title: "Prima di iniziare.",
         meta: "5 PASSI · 10 MIN",
@@ -214,16 +298,27 @@ export function makeDefaultSlide(template: TemplateId): Slide {
           { done: false, title: "Output salvato" },
           { done: false, title: "Iterazione" },
         ],
-      }};
+      } as ChecklistData;
     case "stat":
-      return { id, template, data: {
+      return {
         label: "PRODUTTIVITÀ",
         value: "10",
         unit: "x",
         sub: "Il tempo che risparmi ogni settimana usando l'AI nei flussi giusti.",
         note: "FONTE — TEST INTERNO 2025",
-      }};
+      } as StatData;
+    case "cover":
+      return {
+        eyebrow: "Cover",
+        title: "Il titolo della tua copertina.",
+        sub: "Sottotitolo opzionale.",
+        imageUrl: undefined,
+      } as CoverData;
   }
+}
+
+export function makeDefaultSlide(template: TemplateId): Slide {
+  return { id: crypto.randomUUID(), template, data: makeDefaultData(template) };
 }
 
 // Render title with {hl}...{/hl} as accent-colored highlights

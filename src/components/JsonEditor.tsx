@@ -1,22 +1,27 @@
 import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useCarousel } from "@/lib/store";
-import type { Slide } from "@/lib/templates";
+import { getSlideData } from "@/lib/i18n";
+import type { Slide, AnyTemplateData } from "@/lib/templates";
 
 export function JsonEditor({ slide }: { slide: Slide }) {
   const update = useCarousel((s) => s.updateSlide);
-  const [text, setText] = useState(() => JSON.stringify(slide.data, null, 2));
+  const lang = useCarousel((s) => s.activeLang);
+  const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
+  const data = getSlideData(slide, lang, defaultLang);
+
+  const [text, setText] = useState(() => JSON.stringify(data, null, 2));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setText(JSON.stringify(slide.data, null, 2));
+    setText(JSON.stringify(data, null, 2));
     setError(null);
-  }, [slide.id, slide.data]);
+  }, [slide.id, data]);
 
   const onChange = (v: string) => {
     setText(v);
     try {
-      const parsed = JSON.parse(v);
+      const parsed = JSON.parse(v) as AnyTemplateData;
       update(slide.id, parsed);
       setError(null);
     } catch (e) {

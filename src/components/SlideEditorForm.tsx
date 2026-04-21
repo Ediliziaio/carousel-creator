@@ -1,29 +1,97 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCarousel } from "@/lib/store";
-import type { Slide, SplitData, Grid2x2Data, BigNumData, CenterData, TimelineData, CompareData, VocabData, QAData, ChecklistData, StatData } from "@/lib/templates";
-import { validateSlide } from "@/lib/validation";
+import type {
+  Slide,
+  SplitData,
+  Grid2x2Data,
+  BigNumData,
+  CenterData,
+  TimelineData,
+  CompareData,
+  VocabData,
+  QAData,
+  ChecklistData,
+  StatData,
+  CoverData,
+  AnyTemplateData,
+} from "@/lib/templates";
+import { getSlideData } from "@/lib/i18n";
+import { validateSlideData } from "@/lib/validation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageUploadField } from "@/components/ImageUploadField";
+import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle } from "lucide-react";
 
 interface Props { slide: Slide }
 
 export function SlideEditorForm({ slide }: Props) {
   const update = useCarousel((s) => s.updateSlide);
-  const set = (data: Slide["data"]) => update(slide.id, data);
-  const errors = useMemo(() => validateSlide(slide).errors, [slide]);
-  const errFor = (field: string) => errors.find((e) => e.field === field)?.message;
-  const containerRef = useRef<HTMLDivElement>(null);
+  const activeLang = useCarousel((s) => s.activeLang);
+  const setActiveLang = useCarousel((s) => s.setActiveLang);
+  const languages = useCarousel((s) => s.brand.languages);
+  const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
 
-  // Listen for focus-field events dispatched by ExportButton
+  const data = useMemo(
+    () => getSlideData(slide, activeLang, defaultLang),
+    [slide, activeLang, defaultLang],
+  );
+
+  // Debounced update — local draft commits 400ms after last keystroke
+  const [draft, setDraft] = useState<AnyTemplateData>(data);
+  const draftRef = useRef(draft);
+  const skipNextSync = useRef(false);
+
+  useEffect(() => {
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    setDraft(data);
+    draftRef.current = data;
+  }, [data]);
+
+  const set = (next: AnyTemplateData) => {
+    setDraft(next);
+    draftRef.current = next;
+  };
+
+  // Commit draft on debounce
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (draftRef.current !== data) {
+        skipNextSync.current = true;
+        update(slide.id, draftRef.current);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [draft, data, slide.id, update]);
+
+  // Commit immediately on slide change / unmount
+  useEffect(() => {
+    return () => {
+      if (draftRef.current !== data) {
+        update(slide.id, draftRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slide.id]);
+
+  const errors = useMemo(
+    () => validateSlideData(slide.template, draft).errors,
+    [slide.template, draft],
+  );
+  const errFor = (field: string) => errors.find((e) => e.field === field)?.message;
+
+  const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<{ slideId: string; field: string }>).detail;
       if (!detail || detail.slideId !== slide.id) return;
-      // Wait for tab switch + render
       const tryFocus = (attempt = 0) => {
         const root = containerRef.current;
         if (!root) {
@@ -52,18 +120,35 @@ export function SlideEditorForm({ slide }: Props) {
 
   let body: React.ReactNode = null;
   switch (slide.template) {
-    case "split":     body = <SplitEditor d={slide.data as SplitData} set={set} errFor={errFor} />; break;
-    case "grid2x2":   body = <GridEditor d={slide.data as Grid2x2Data} set={set} errFor={errFor} />; break;
-    case "bignum":    body = <BigNumEditor d={slide.data as BigNumData} set={set} errFor={errFor} />; break;
-    case "center":    body = <CenterEditor d={slide.data as CenterData} set={set} errFor={errFor} />; break;
-    case "timeline":  body = <TimelineEditor d={slide.data as TimelineData} set={set} errFor={errFor} />; break;
-    case "compare":   body = <CompareEditor d={slide.data as CompareData} set={set} errFor={errFor} />; break;
-    case "vocab":     body = <VocabEditor d={slide.data as VocabData} set={set} errFor={errFor} />; break;
-    case "qa":        body = <QAEditor d={slide.data as QAData} set={set} errFor={errFor} />; break;
-    case "checklist": body = <ChecklistEditor d={slide.data as ChecklistData} set={set} errFor={errFor} />; break;
-    case "stat":      body = <StatEditor d={slide.data as StatData} set={set} errFor={errFor} />; break;
+    case "split":     body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} />; break;
+    case "grid2x2":   body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} />; break;
+    case "bignum":    body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} />; break;
+    case "center":    body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} />; break;
+    case "timeline":  body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} />; break;
+    case "compare":   body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} />; break;
+    case "vocab":     body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} />; break;
+    case "qa":        body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} />; break;
+    case "checklist": body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} />; break;
+    case "stat":      body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} />; break;
+    case "cover":     body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} />; break;
   }
-  return <div ref={containerRef}>{body}</div>;
+
+  return (
+    <div ref={containerRef} className="space-y-4">
+      {languages.length > 1 && (
+        <Tabs value={activeLang} onValueChange={setActiveLang}>
+          <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${languages.length}, 1fr)`, display: "grid" }}>
+            {languages.map((l) => (
+              <TabsTrigger key={l} value={l}>
+                {langLabel(l)}{l === defaultLang && " ★"}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      )}
+      {body}
+    </div>
+  );
 }
 
 type ErrFor = (field: string) => string | undefined;
@@ -95,6 +180,7 @@ function SplitEditor({ d, set, errFor }: { d: SplitData; set: (d: SplitData) => 
     <div className="space-y-4">
       <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <ImageUploadField label="Immagine (opzionale)" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Se presente, sostituisce paragrafi/lista a destra." />
       <ArrayField
         label="Paragrafi"
         items={d.paragraphs ?? []}
@@ -164,6 +250,7 @@ function CenterEditor({ d, set, errFor }: { d: CenterData; set: (d: CenterData) 
       <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
       <Field label="Frase principale" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={3} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
       <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
+      <ImageUploadField label="Immagine di sfondo (opzionale)" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Renderizzata sfocata sotto il testo." />
     </div>
   );
 }
@@ -296,6 +383,18 @@ function StatEditor({ d, set, errFor }: { d: StatData; set: (d: StatData) => voi
       </div>
       <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
       <Field label="Nota / fonte"><Input value={d.note ?? ""} onChange={(e) => set({ ...d, note: e.target.value })} /></Field>
+    </div>
+  );
+}
+
+/* ---------------- Cover ---------------- */
+function CoverEditor({ d, set, errFor }: { d: CoverData; set: (d: CoverData) => void; errFor: ErrFor }) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow"><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Sottotitolo"><Textarea rows={2} value={d.sub ?? ""} onChange={(e) => set({ ...d, sub: e.target.value })} /></Field>
+      <ImageUploadField label="Immagine fullscreen" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} />
     </div>
   );
 }

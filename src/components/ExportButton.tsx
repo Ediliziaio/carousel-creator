@@ -6,6 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -18,10 +23,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Image as ImageIcon, Package, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Image as ImageIcon, Package, Loader2, AlertTriangle, Languages } from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { validateAllSlides, type SlideValidationResult } from "@/lib/validation";
 import { downloadSinglePng, downloadZipFromNodes } from "@/lib/export";
+import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 interface Props {
@@ -32,7 +38,7 @@ interface Props {
   onError: (message: string) => void;
 }
 
-type Mode = "single" | "zip";
+type Mode = { kind: "single" | "zip"; lang: string };
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "carosello";
@@ -41,6 +47,9 @@ function slugify(s: string) {
 export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitle, onError }: Props) {
   const slides = useCarousel((s) => s.slides);
   const setActive = useCarousel((s) => s.setActive);
+  const setActiveLang = useCarousel((s) => s.setActiveLang);
+  const languages = useCarousel((s) => s.brand.languages);
+  const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
 
   const [exporting, setExporting] = useState<null | Mode>(null);
   const [pendingMode, setPendingMode] = useState<Mode | null>(null);
@@ -49,21 +58,26 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
 
   const runExport = async (mode: Mode) => {
     setExporting(mode);
+    // Switch to that lang first so the live nodes render correctly
+    setActiveLang(mode.lang);
+    // Allow render
+    await new Promise((r) => setTimeout(r, 60));
     try {
       let method;
-      if (mode === "single") {
+      const langSuffix = languages.length > 1 ? `-${mode.lang}` : "";
+      if (mode.kind === "single") {
         if (!activeSlideId) return;
         const node = exportRefs.current.get(activeSlideId);
         if (!node) throw new Error("Slide attiva non trovata nel DOM di export.");
         const num = (activeIndex + 1).toString().padStart(2, "0");
-        method = await downloadSinglePng(node, `${slugify(brandTitle)}-slide-${num}.png`);
+        method = await downloadSinglePng(node, `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`);
         toast.success("PNG esportata");
       } else {
         const nodes = slides
           .map((s) => exportRefs.current.get(s.id))
           .filter((n): n is HTMLDivElement => !!n);
         if (nodes.length === 0) throw new Error("Nessuna slide pronta per l'export.");
-        method = await downloadZipFromNodes(nodes, slugify(brandTitle));
+        method = await downloadZipFromNodes(nodes, `${slugify(brandTitle)}${langSuffix}`);
         toast.success(`${nodes.length} PNG esportate in ZIP`);
       }
       if (method === "new-tab") {
@@ -78,15 +92,15 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
     }
   };
 
-  const handleClick = (mode: Mode) => {
-    const issues = validateAllSlides(slides);
+  const handleClick = (kind: "single" | "zip", lang: string) => {
+    const issues = validateAllSlides(slides, lang, defaultLang);
     if (issues.length > 0) {
       setValidationIssues(issues);
-      setPendingMode(mode);
+      setPendingMode({ kind, lang });
       setForceExport(false);
       return;
     }
-    void runExport(mode);
+    void runExport({ kind, lang });
   };
 
   const closeDialog = () => {
@@ -101,11 +115,10 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
       closeDialog();
       void runExport(mode);
     } else {
-      // jump to first invalid slide and focus first missing field
       const first = validationIssues[0];
       if (first) {
+        if (pendingMode) setActiveLang(pendingMode.lang);
         setActive(first.slideId);
-        // dispatch focus event after slide becomes active + tab switches
         setTimeout(() => {
           window.dispatchEvent(
             new CustomEvent("slide:focus-field", {
@@ -120,6 +133,7 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
 
   const dialogOpen = pendingMode !== null && validationIssues.length > 0;
   const isBusy = exporting !== null;
+  const multilang = languages.length > 1;
 
   return (
     <>
@@ -131,33 +145,65 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
             ) : (
               <Download className="mr-1 h-4 w-4" />
             )}
-            {exporting === "single" ? "Export PNG..." : exporting === "zip" ? "Export ZIP..." : "Export"}
+            {isBusy ? "Export..." : "Export"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuItem
-            disabled={!activeSlideId}
-            onClick={() => handleClick("single")}
-          >
-            <ImageIcon className="mr-2 h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="font-medium">PNG — slide corrente</span>
-              <span className="text-xs text-muted-foreground">
-                {activeSlideId ? `Slide ${(activeIndex + 1).toString().padStart(2, "0")}` : "Nessuna slide attiva"}
-              </span>
-            </div>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            disabled={slides.length === 0}
-            onClick={() => handleClick("zip")}
-          >
-            <Package className="mr-2 h-4 w-4" />
-            <div className="flex flex-col">
-              <span className="font-medium">ZIP — tutte le slide</span>
-              <span className="text-xs text-muted-foreground">{slides.length} slide</span>
-            </div>
-          </DropdownMenuItem>
+          {!multilang ? (
+            <>
+              <DropdownMenuItem disabled={!activeSlideId} onClick={() => handleClick("single", defaultLang)}>
+                <ImageIcon className="mr-2 h-4 w-4" />
+                <div className="flex flex-col">
+                  <span className="font-medium">PNG — slide corrente</span>
+                  <span className="text-xs text-muted-foreground">
+                    {activeSlideId ? `Slide ${(activeIndex + 1).toString().padStart(2, "0")}` : "Nessuna slide attiva"}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={slides.length === 0} onClick={() => handleClick("zip", defaultLang)}>
+                <Package className="mr-2 h-4 w-4" />
+                <div className="flex flex-col">
+                  <span className="font-medium">ZIP — tutte le slide</span>
+                  <span className="text-xs text-muted-foreground">{slides.length} slide</span>
+                </div>
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuLabel className="flex items-center gap-1 text-xs">
+                <Languages className="h-3 w-3" /> Scegli lingua
+              </DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <ImageIcon className="mr-2 h-4 w-4" /> PNG — slide corrente
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {languages.map((l) => (
+                      <DropdownMenuItem key={l} onClick={() => handleClick("single", l)} disabled={!activeSlideId}>
+                        {langLabel(l)}{l === defaultLang && " ★"}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Package className="mr-2 h-4 w-4" /> ZIP — tutte le slide
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {languages.map((l) => (
+                      <DropdownMenuItem key={l} onClick={() => handleClick("zip", l)} disabled={slides.length === 0}>
+                        {langLabel(l)}{l === defaultLang && " ★"}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -166,7 +212,7 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Campi obbligatori mancanti
+              Campi obbligatori mancanti{pendingMode && multilang ? ` — ${langLabel(pendingMode.lang)}` : ""}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {validationIssues.reduce((sum, i) => sum + i.errors.length, 0)} campi da completare
