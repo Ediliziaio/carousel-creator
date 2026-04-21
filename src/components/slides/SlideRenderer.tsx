@@ -26,6 +26,14 @@ import {
   type QuoteBigData,
   type RoadmapData,
   type CtaData,
+  type HookData,
+  type ProblemSolutionData,
+  type MistakesData,
+  type FrameworkData,
+  type SocialProofData,
+  type OfferData,
+  type ObjectionData,
+  type TipPackData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -154,6 +162,14 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "quoteBig":    return <QuoteBig slide={slide} d={data as QuoteBigData} />;
     case "roadmap":     return <Roadmap slide={slide} d={data as RoadmapData} />;
     case "cta":         return <Cta slide={slide} d={data as CtaData} />;
+    case "hook":        return <Hook slide={slide} d={data as HookData} />;
+    case "problemSolution": return <ProblemSolution slide={slide} d={data as ProblemSolutionData} />;
+    case "mistakes":    return <Mistakes slide={slide} d={data as MistakesData} />;
+    case "framework":   return <Framework slide={slide} d={data as FrameworkData} />;
+    case "socialProof": return <SocialProof slide={slide} d={data as SocialProofData} />;
+    case "offer":       return <Offer slide={slide} d={data as OfferData} />;
+    case "objection":   return <Objection slide={slide} d={data as ObjectionData} />;
+    case "tipPack":     return <TipPack slide={slide} d={data as TipPackData} />;
   }
 }
 
