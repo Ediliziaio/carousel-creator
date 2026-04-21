@@ -13,6 +13,7 @@ import {
   type ZipEntry,
 } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
+import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import {
   DndContext,
   closestCenter,
