@@ -99,11 +99,14 @@ export function SlideEditorForm({ slide }: Props) {
     setActiveLangRaw(code);
   };
 
-  const errors = useMemo(
+  const allIssues = useMemo(
     () => validateSlideData(slide.template, draft).errors,
     [slide.template, draft],
   );
-  const errFor = (field: string) => errors.find((e) => e.field === field)?.message;
+  const errFor = (field: string) =>
+    allIssues.find((e) => e.field === field && (e.severity ?? "error") === "error")?.message;
+  const warnFor = (field: string) =>
+    allIssues.find((e) => e.field === field && e.severity === "warning")?.message;
 
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -139,26 +142,27 @@ export function SlideEditorForm({ slide }: Props) {
   const overrides = slide.textOverrides;
   const styleProps = { slideId: slide.id, overrides };
 
+  const editorProps = { errFor, warnFor, ...styleProps };
   let body: React.ReactNode = null;
   switch (slide.template) {
-    case "split":       body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} {...styleProps} />; break;
-    case "grid2x2":     body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} {...styleProps} />; break;
-    case "bignum":      body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} {...styleProps} />; break;
-    case "center":      body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} {...styleProps} />; break;
-    case "timeline":    body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} {...styleProps} />; break;
-    case "compare":     body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} {...styleProps} />; break;
-    case "vocab":       body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} {...styleProps} />; break;
-    case "qa":          body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} {...styleProps} />; break;
-    case "checklist":   body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} {...styleProps} />; break;
-    case "stat":        body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} {...styleProps} />; break;
-    case "cover":       body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} {...styleProps} />; break;
-    case "gallery":     body = <GalleryEditor d={draft as GalleryData} set={set as (d: GalleryData) => void} errFor={errFor} {...styleProps} />; break;
-    case "imageQuote":  body = <ImageQuoteEditor d={draft as ImageQuoteData} set={set as (d: ImageQuoteData) => void} errFor={errFor} {...styleProps} />; break;
-    case "chartBar":    body = <ChartBarEditor d={draft as ChartBarData} set={set as (d: ChartBarData) => void} errFor={errFor} {...styleProps} />; break;
-    case "chartDonut":  body = <ChartDonutEditor d={draft as ChartDonutData} set={set as (d: ChartDonutData) => void} errFor={errFor} {...styleProps} />; break;
-    case "chartLine":   body = <ChartLineEditor d={draft as ChartLineData} set={set as (d: ChartLineData) => void} errFor={errFor} {...styleProps} />; break;
-    case "feature":     body = <FeatureEditor d={draft as FeatureData} set={set as (d: FeatureData) => void} errFor={errFor} {...styleProps} />; break;
-    case "testimonial": body = <TestimonialEditor d={draft as TestimonialData} set={set as (d: TestimonialData) => void} errFor={errFor} {...styleProps} />; break;
+    case "split":       body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} {...editorProps} />; break;
+    case "grid2x2":     body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} {...editorProps} />; break;
+    case "bignum":      body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} {...editorProps} />; break;
+    case "center":      body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} {...editorProps} />; break;
+    case "timeline":    body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} {...editorProps} />; break;
+    case "compare":     body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} {...editorProps} />; break;
+    case "vocab":       body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} {...editorProps} />; break;
+    case "qa":          body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} {...editorProps} />; break;
+    case "checklist":   body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} {...editorProps} />; break;
+    case "stat":        body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} {...editorProps} />; break;
+    case "cover":       body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} {...editorProps} />; break;
+    case "gallery":     body = <GalleryEditor d={draft as GalleryData} set={set as (d: GalleryData) => void} {...editorProps} />; break;
+    case "imageQuote":  body = <ImageQuoteEditor d={draft as ImageQuoteData} set={set as (d: ImageQuoteData) => void} {...editorProps} />; break;
+    case "chartBar":    body = <ChartBarEditor d={draft as ChartBarData} set={set as (d: ChartBarData) => void} {...editorProps} />; break;
+    case "chartDonut":  body = <ChartDonutEditor d={draft as ChartDonutData} set={set as (d: ChartDonutData) => void} {...editorProps} />; break;
+    case "chartLine":   body = <ChartLineEditor d={draft as ChartLineData} set={set as (d: ChartLineData) => void} {...editorProps} />; break;
+    case "feature":     body = <FeatureEditor d={draft as FeatureData} set={set as (d: FeatureData) => void} {...editorProps} />; break;
+    case "testimonial": body = <TestimonialEditor d={draft as TestimonialData} set={set as (d: TestimonialData) => void} {...editorProps} />; break;
   }
 
   return (
@@ -180,12 +184,15 @@ export function SlideEditorForm({ slide }: Props) {
 }
 
 type ErrFor = (field: string) => string | undefined;
+type WarnFor = (field: string) => string | undefined;
 type StyleProps = { slideId: string; overrides?: Record<string, import("@/lib/templates").TextStyle> };
+type EditorProps<T> = { d: T; set: (d: T) => void; errFor: ErrFor; warnFor: WarnFor } & StyleProps;
 
-function Field({ label, hint, error, slideId, fieldPath, overrides, children }: {
+function Field({ label, hint, error, warning, slideId, fieldPath, overrides, children }: {
   label: string;
   hint?: string;
   error?: string;
+  warning?: string;
   slideId?: string;
   fieldPath?: string;
   overrides?: Record<string, import("@/lib/templates").TextStyle>;
@@ -209,8 +216,27 @@ function Field({ label, hint, error, slideId, fieldPath, overrides, children }: 
           <AlertCircle className="h-3 w-3" /> {error}
         </p>
       )}
-      {hint && !error && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+      {!error && warning && (
+        <p className="flex items-center gap-1 text-[11px] text-sky-500">
+          <Info className="h-3 w-3" /> {warning}
+        </p>
+      )}
+      {hint && !error && !warning && <p className="text-[11px] text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+function ItemCounter({ current, min, max, unit = "elementi" }: { current: number; min: number; max: number; unit?: string }) {
+  const inRange = current >= min && current <= max;
+  const tone = inRange
+    ? "text-emerald-500"
+    : current < min
+      ? "text-amber-500"
+      : "text-destructive";
+  return (
+    <span className={`text-[10px] font-medium ${tone}`}>
+      {current}/{max} {unit} {current < min && `(min ${min})`}
+    </span>
   );
 }
 
