@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid } from "lucide-react";
+import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy } from "lucide-react";
 import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -42,6 +42,7 @@ function Index() {
   const future = useCarousel((s) => s.future);
   const activeLang = useCarousel((s) => s.activeLang);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
+  const duplicateSlide = useCarousel((s) => s.duplicateSlide);
 
   const activeIndex = useMemo(() => slides.findIndex((s) => s.id === activeId), [slides, activeId]);
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
@@ -168,6 +169,15 @@ function Index() {
           </Button>
           <Button variant="outline" size="sm" onClick={onExportJson}>
             <FileJson className="mr-1 h-4 w-4" /> Export JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => activeSlide && duplicateSlide(activeSlide.id)}
+            disabled={!activeSlide}
+            title="Duplica slide attiva"
+          >
+            <Copy className="mr-1 h-4 w-4" /> Duplica
           </Button>
           <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} disabled={!activeSlide}>
             <Eye className="mr-1 h-4 w-4" /> Anteprima
