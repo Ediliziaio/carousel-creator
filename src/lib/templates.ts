@@ -12,7 +12,14 @@ export type TemplateId =
   | "qa"
   | "checklist"
   | "stat"
-  | "cover";
+  | "cover"
+  | "gallery"
+  | "imageQuote"
+  | "chartBar"
+  | "chartDonut"
+  | "chartLine"
+  | "feature"
+  | "testimonial";
 
 export interface SplitData {
   eyebrow: string;
@@ -82,6 +89,49 @@ export interface CoverData {
   sub?: string;
   imageUrl?: string;
 }
+export interface GalleryData {
+  eyebrow: string;
+  title: string;
+  images: { url?: string; caption?: string }[];
+}
+export interface ImageQuoteData {
+  imageUrl?: string;
+  quote: string;
+  author: string;
+  role?: string;
+}
+export interface ChartBarData {
+  eyebrow: string;
+  title: string;
+  unit?: string;
+  items: { label: string; value: number; color?: string }[];
+}
+export interface ChartDonutData {
+  eyebrow: string;
+  title: string;
+  centerLabel?: string;
+  segments: { label: string; value: number; color?: string }[];
+}
+export interface ChartLineData {
+  eyebrow: string;
+  title: string;
+  xLabels: string[];
+  values: number[];
+  unit?: string;
+}
+export interface FeatureData {
+  eyebrow: string;
+  title: string;
+  imageUrl?: string;
+  bullets: { marker: string; title: string; text?: string }[];
+}
+export interface TestimonialData {
+  avatarUrl?: string;
+  quote: string;
+  author: string;
+  role?: string;
+  rating?: number;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -94,7 +144,14 @@ export type AnyTemplateData =
   | QAData
   | ChecklistData
   | StatData
-  | CoverData;
+  | CoverData
+  | GalleryData
+  | ImageQuoteData
+  | ChartBarData
+  | ChartDonutData
+  | ChartLineData
+  | FeatureData
+  | TestimonialData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -266,11 +323,20 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   checklist: { label: "Checklist", desc: "Caselle da spuntare" },
   stat: { label: "Dato singolo", desc: "Numero enorme + descrizione" },
   cover: { label: "Cover immagine", desc: "Immagine fullscreen + titolo" },
+  gallery: { label: "Galleria 3 foto", desc: "Titolo + 3 immagini con didascalia" },
+  imageQuote: { label: "Foto + citazione", desc: "Foto fullscreen + quote sovrimpressa" },
+  chartBar: { label: "Grafico a barre", desc: "Confronto valori in barre orizzontali" },
+  chartDonut: { label: "Grafico a torta", desc: "Donut chart con legenda" },
+  chartLine: { label: "Grafico a linee", desc: "Trend / andamento nel tempo" },
+  feature: { label: "Feature spotlight", desc: "Immagine grande + 3 bullet" },
+  testimonial: { label: "Testimonianza", desc: "Avatar + quote + autore" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
   "split", "grid2x2", "bignum", "center", "timeline",
   "compare", "vocab", "qa", "checklist", "stat", "cover",
+  "gallery", "imageQuote", "chartBar", "chartDonut", "chartLine",
+  "feature", "testimonial",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -378,6 +444,74 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         sub: "Sottotitolo opzionale.",
         imageUrl: undefined,
       } as CoverData;
+    case "gallery":
+      return {
+        eyebrow: "Galleria",
+        title: "Tre momenti che raccontano il progetto.",
+        images: [
+          { url: undefined, caption: "Didascalia foto 1" },
+          { url: undefined, caption: "Didascalia foto 2" },
+          { url: undefined, caption: "Didascalia foto 3" },
+        ],
+      } as GalleryData;
+    case "imageQuote":
+      return {
+        imageUrl: undefined,
+        quote: "Il design non è solo come appare. È come funziona.",
+        author: "Steve Jobs",
+        role: "Apple",
+      } as ImageQuoteData;
+    case "chartBar":
+      return {
+        eyebrow: "Dati",
+        title: "Crescita per canale.",
+        unit: "%",
+        items: [
+          { label: "Instagram", value: 78 },
+          { label: "TikTok", value: 64 },
+          { label: "LinkedIn", value: 42 },
+          { label: "YouTube", value: 28 },
+        ],
+      } as ChartBarData;
+    case "chartDonut":
+      return {
+        eyebrow: "Distribuzione",
+        title: "Da dove arriva il traffico.",
+        centerLabel: "100%",
+        segments: [
+          { label: "Organico", value: 45 },
+          { label: "Social", value: 30 },
+          { label: "Email", value: 15 },
+          { label: "Paid", value: 10 },
+        ],
+      } as ChartDonutData;
+    case "chartLine":
+      return {
+        eyebrow: "Trend 2025",
+        title: "Engagement mensile.",
+        xLabels: ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu"],
+        values: [12, 19, 17, 28, 34, 41],
+        unit: "k",
+      } as ChartLineData;
+    case "feature":
+      return {
+        eyebrow: "Funzionalità",
+        title: "Tre motivi per provarlo.",
+        imageUrl: undefined,
+        bullets: [
+          { marker: "01", title: "Veloce", text: "Risultati in pochi secondi." },
+          { marker: "02", title: "Affidabile", text: "Output stabili e replicabili." },
+          { marker: "03", title: "Scalabile", text: "Da 1 a 1000 casi senza sforzo." },
+        ],
+      } as FeatureData;
+    case "testimonial":
+      return {
+        avatarUrl: undefined,
+        quote: "Ha cambiato il modo in cui lavoriamo. Non torneremmo mai indietro.",
+        author: "Marta Rossi",
+        role: "CEO @ Acme",
+        rating: 5,
+      } as TestimonialData;
   }
 }
 
@@ -478,6 +612,59 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
         { path: "sub", label: "Sottotitolo" },
+      ];
+    case "gallery": {
+      const d = data as GalleryData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.images?.forEach((_, i) => out.push({ path: `images.${i}.caption`, label: `Didascalia ${i + 1}` }));
+      return out;
+    }
+    case "imageQuote":
+      return [
+        { path: "quote", label: "Citazione" },
+        { path: "author", label: "Autore" },
+        { path: "role", label: "Ruolo" },
+      ];
+    case "chartBar": {
+      const d = data as ChartBarData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.items?.forEach((_, i) => out.push({ path: `items.${i}.label`, label: `Voce ${i + 1}` }));
+      return out;
+    }
+    case "chartDonut": {
+      const d = data as ChartDonutData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.segments?.forEach((_, i) => out.push({ path: `segments.${i}.label`, label: `Segmento ${i + 1}` }));
+      return out;
+    }
+    case "chartLine":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+    case "feature": {
+      const d = data as FeatureData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.bullets?.forEach((_, i) => out.push({ path: `bullets.${i}.title`, label: `Bullet ${i + 1}` }));
+      return out;
+    }
+    case "testimonial":
+      return [
+        { path: "quote", label: "Citazione" },
+        { path: "author", label: "Autore" },
+        { path: "role", label: "Ruolo" },
       ];
   }
 }
