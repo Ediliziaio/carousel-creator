@@ -18,8 +18,10 @@
   --w-h: 800;
   --w-b: 400;
 
-  width: 1080px;
-  height: 1350px;
+  --slide-w: 1080px;
+  --slide-h: 1350px;
+  width: var(--slide-w);
+  height: var(--slide-h);
   position: relative;
   background: var(--bg);
   overflow: hidden;
@@ -32,14 +34,34 @@
 }
 .slide-frame * { box-sizing: border-box; }
 .slide-frame .slide-inner {
-  width: 800px; height: 1000px;
-  padding: 44px 56px;
+  width: 100%; height: 100%;
+  padding: 60px 76px;
   display: flex; flex-direction: column;
-  transform: scale(1.35);
-  transform-origin: top left;
   position: relative;
   z-index: 2;
 }
+
+/* Format-specific layout overrides */
+.slide-frame.fmt-square .slide-inner { padding: 56px 64px; }
+.slide-frame.fmt-story .slide-inner { padding: 80px 64px; }
+.slide-frame.fmt-landscape .slide-inner { padding: 56px 88px; }
+
+/* Story (9:16) — verticalize 2-col layouts */
+.fmt-story.tpl-split .body { grid-template-columns: 1fr !important; }
+.fmt-story.tpl-split .col-right { border-left: none; padding-left: 0; padding-top: 24px; border-top: 1px solid var(--rule); }
+.fmt-story.tpl-grid2x2 .grid-2x2 { grid-template-columns: 1fr !important; grid-template-rows: repeat(4, 1fr) !important; }
+.fmt-story.tpl-bignum .body { grid-template-columns: 1fr !important; }
+.fmt-story.tpl-compare .compare { grid-template-columns: 1fr !important; }
+.fmt-story.tpl-qa .q-block,
+.fmt-story.tpl-qa .a-block { grid-template-columns: 44px 1fr; }
+
+/* Landscape (16:9) — keep two cols, tighten vertical spacing */
+.fmt-landscape.tpl-split .body { grid-template-columns: 38% 62%; }
+.fmt-landscape.tpl-bignum .big-num { font-size: 240px; }
+.fmt-landscape.tpl-stat .stat { font-size: 200px; }
+
+/* Square (1:1) — slightly compact */
+.fmt-square.tpl-grid2x2 .grid-cell { padding: 18px 20px; }
 
 .slide-frame h1, .slide-frame h2, .slide-frame h3 {
   font-family: var(--font-heading);
