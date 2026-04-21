@@ -235,6 +235,7 @@ function Index() {
         <div className="ml-auto flex items-center gap-2">
           <CarouselPresetDialog />
           <QuickOfferEditor />
+          <HookOfferMicroEditor />
           <ContentImportDialog />
           <Button
             variant="ghost"
@@ -306,6 +307,9 @@ function Index() {
                 : "Strict export disattivato: l'esportazione resta possibile."}
             </div>
           </div>
+          <Button variant="default" size="sm" className="h-7 shrink-0" onClick={startGuide}>
+            Correggi campi mancanti
+          </Button>
           <Button variant="outline" size="sm" className="h-7 shrink-0" onClick={goToFirstError}>
             Vai al primo errore
           </Button>
