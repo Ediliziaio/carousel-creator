@@ -43,7 +43,8 @@ function HL({ text }: { text: string }) {
 
 function buildClassName(slide: Slide, brand: BrandSettings): string {
   const fx = brand.effects;
-  const parts = ["slide-frame", `tpl-${slide.template}`];
+  const fmt = slide.format ?? "portrait";
+  const parts = ["slide-frame", `tpl-${slide.template}`, `fmt-${fmt}`];
   if (fx.bgPattern && fx.bgPattern !== "none") {
     const bgKey = fx.bgPattern === "gradient-mesh" ? "mesh" : fx.bgPattern;
     parts.push(`fx-pattern-${bgKey}`);
