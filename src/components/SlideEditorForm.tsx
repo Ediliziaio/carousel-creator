@@ -27,6 +27,14 @@ import type {
   RoadmapData,
   RoadmapStatus,
   CtaData,
+  HookData,
+  ProblemSolutionData,
+  MistakesData,
+  FrameworkData,
+  SocialProofData,
+  OfferData,
+  ObjectionData,
+  TipPackData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -177,6 +185,14 @@ export function SlideEditorForm({ slide }: Props) {
     case "quoteBig":    body = <QuoteBigEditor d={draft as QuoteBigData} set={set as (d: QuoteBigData) => void} {...editorProps} />; break;
     case "roadmap":     body = <RoadmapEditor d={draft as RoadmapData} set={set as (d: RoadmapData) => void} {...editorProps} />; break;
     case "cta":         body = <CtaEditor d={draft as CtaData} set={set as (d: CtaData) => void} {...editorProps} />; break;
+    case "hook":        body = <HookEditor d={draft as HookData} set={set as (d: HookData) => void} {...editorProps} />; break;
+    case "problemSolution": body = <ProblemSolutionEditor d={draft as ProblemSolutionData} set={set as (d: ProblemSolutionData) => void} {...editorProps} />; break;
+    case "mistakes":    body = <MistakesEditor d={draft as MistakesData} set={set as (d: MistakesData) => void} {...editorProps} />; break;
+    case "framework":   body = <FrameworkEditor d={draft as FrameworkData} set={set as (d: FrameworkData) => void} {...editorProps} />; break;
+    case "socialProof": body = <SocialProofEditor d={draft as SocialProofData} set={set as (d: SocialProofData) => void} {...editorProps} />; break;
+    case "offer":       body = <OfferEditor d={draft as OfferData} set={set as (d: OfferData) => void} {...editorProps} />; break;
+    case "objection":   body = <ObjectionEditor d={draft as ObjectionData} set={set as (d: ObjectionData) => void} {...editorProps} />; break;
+    case "tipPack":     body = <TipPackEditor d={draft as TipPackData} set={set as (d: TipPackData) => void} {...editorProps} />; break;
   }
 
   return (
