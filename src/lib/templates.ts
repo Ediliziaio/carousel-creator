@@ -355,8 +355,8 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
   }
 }
 
-export function makeDefaultSlide(template: TemplateId): Slide {
-  return { id: crypto.randomUUID(), template, data: makeDefaultData(template) };
+export function makeDefaultSlide(template: TemplateId, format: SlideFormat = "portrait"): Slide {
+  return { id: crypto.randomUUID(), template, format, data: makeDefaultData(template) };
 }
 
 // Render title with {hl}...{/hl} as accent-colored highlights
