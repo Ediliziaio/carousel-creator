@@ -1,167 +1,181 @@
 
 
-# 5 funzionalità: preset carosello completo, editor offerta, brand auto-style, import JSON, validazione bloccante
+# Wiring UI: validazione bloccante, header tools, marketing styles
 
-## 1. Preset carosello completo "Sales Funnel" (8-10 slide pre-fatte)
+## 1. Header con i 4 nuovi tool (`src/routes/index.tsx`)
 
-Aggiungo un sistema di **carousel preset**: assemblaggi pronti di slide multi-template che si inseriscono in 1 click con contenuti realistici da modificare.
+Aggiungo nella header, prima di `BrandSettings`, 4 controlli:
 
-### Nuovo file `src/lib/carouselPresets.ts`
-- Tipo `CarouselPreset { id, name, description, icon, slides: { template, format, data }[] }`
-- Esporto `BUILT_IN_CAROUSEL_PRESETS`:
-  - **"Sales Funnel completo"** (10 slide): `hook` → `problemSolution` → `mistakes` → `framework` → `socialProof` → `objection` → `offer` → `cta`
-  - **"Educational pack"** (8 slide): `cover` → `hook` → `tipPack` → `process` → `myth` → `framework` → `quoteBig` → `cta`
-  - **"Lancio prodotto"** (9 slide): `hook` → `center` → `feature` → `socialProof` → `prosCons` → `offer` → `objection` → `cta`
-  - **"Case study"** (8 slide): `cover` → `problemSolution` → `process` → `roadmap` → `socialProof` → `quoteBig` → `cta`
-- Ogni preset usa `makeDefaultData()` come base con override mirati (hook diversi per ogni preset, copy coerente con il funnel)
+- **`<CarouselPresetDialog />`** — pulsante outline `Sparkles` "Caroselli pronti"
+- **`<QuickOfferEditor />`** — pulsante outline `Zap` "Offerta rapida" (auto-disabled internamente se mancano slide `offer`/`cta`)
+- **`<ContentImportDialog />`** — pulsante outline `FileInput` "Importa contenuti"
+- **Toggle validazione overlay** — `Button variant="ghost" size="icon"` con `ShieldCheck`/`ShieldOff`, legge/scrive `validationOverlay` dallo store; tooltip "Mostra/Nascondi indicatori validazione"
 
-### Modifiche `src/lib/store.ts`
-- Aggiungo azione `loadCarouselPreset(presetId: string)`: sostituisce `slides` con quelle del preset, mantiene `brand` corrente, applica auto-styling brand (vedi #3)
-- Aggiungo azione `appendCarouselPreset(presetId: string)`: aggiunge le slide del preset alla fine
+Uso `useMemo(() => validateAllSlides(slides, activeLang, brand.defaultLanguage), [slides, activeLang, brand.defaultLanguage])` per avere le issues globali una sola volta.
 
-### Nuovo componente `src/components/CarouselPresetDialog.tsx`
-- Dialog accessibile da nuovo pulsante "Caroselli pronti" nell'header (icona `Sparkles`)
-- Grid di card preset con anteprima icone delle slide incluse, nome, descrizione, conteggio slide
-- 2 azioni per preset: "Sostituisci tutto" (warning se ci sono slide non vuote) o "Aggiungi alla fine"
+Sopra il main canvas (sotto l'export error banner), aggiungo un **banner rosso bloccante** quando `strictExport && validationIssues.length > 0`:
+- Testo: "X slide hanno campi obbligatori mancanti — Export disabilitato"
+- Link "Vai al primo errore" → `setActive(firstIssue.slideId)` + `dispatchEvent("slide:focus-field", { slideId, field: firstIssue.firstField })`
+- Componente inline (non nuovo file) con stesso stile di `ExportErrorBanner` ma colore destructive
+- Quando `strictExport=false`, banner solo informativo (giallo) senza messaggio "disabilitato"
 
-## 2. Editor rapido CTA / Prezzo / Urgenza (1 schermata, propagazione automatica)
+## 2. Overlay validazione in preview (`src/components/slides/SlideRenderer.tsx`)
 
-### Nuovo componente `src/components/QuickOfferEditor.tsx`
-- Pulsante in header (icona `Zap` + "Offerta rapida"), abilitato solo se esiste almeno una slide `offer` o `cta`
-- Sheet (laterale) con 4 campi compatti:
-  - **CTA** (testo): propagato a `cta.buttonLabel` + `offer.ctaLabel`
-  - **Prezzo nuovo** + **Prezzo barrato**: propagati a tutti gli `offer.priceNew` / `priceOld`
-  - **Currency**: propagato a `offer.currency`
-  - **Urgenza**: propagato a `offer.urgency` + `offer.badge` (badge derivato da urgency se vuoto)
-- Sezione "Anteprima impatto": lista delle slide che verranno modificate (es. "Slide 7 · Offerta", "Slide 9 · CTA")
-- Toggle per ogni campo: "Sovrascrivi anche se già personalizzato" (default OFF — modifica solo i valori a default)
-- Pulsante "Applica a tutte" → singola azione store
+Nuovo prop opzionale `showValidation?: boolean` (default `false`).
 
-### Modifiche `src/lib/store.ts`
-- Nuova azione `propagateOfferFields(patch: { ctaLabel?; priceNew?; priceOld?; currency?; urgency?; badge? }, opts: { overwriteCustom: boolean })`
-- Itera tutte le slide `offer`/`cta`, applica i campi rispettando `overwriteCustom` (confronta con i default per decidere "personalizzato")
-- Singola entry undo
-
-## 3. Pannello brand auto-style per nuovi template
-
-### Modifiche `src/lib/templates.ts`
-- Estendo `BrandEffects` con 3 nuove proprietà opzionali:
-  - `marketingBadgeStyle?: "filled" | "outline" | "neon"` (default `"filled"`) — usato dai badge `offer`, `socialProof`
-  - `marketingGradientIntensity?: "none" | "subtle" | "bold"` (default `"subtle"`) — controlla i gradient nei nuovi template (`hook`, `cta`, `offer`)
-  - `marketingIconSet?: "emoji" | "geometric" | "minimal"` (default `"emoji"`) — sostituisce ❌/✓/⚠ con set coerenti
-- Tutti i nuovi template leggono questi valori in `SlideRenderer` via CSS custom props (`--mkt-badge-style`, `--mkt-gradient`, `--mkt-icon`)
-
-### Modifiche `src/components/slides/SlideRenderer.tsx`
-- In `wrapStyle()` calcolo i CSS vars da `brand.effects.marketing*` e li passo al wrapper della slide
-- I componenti `Hook`, `Offer`, `Cta`, `SocialProof`, `Mistakes`, `ProsCons`, `Myth`, `TipPack` leggono questi vars per badge, gradient, iconografia
-
-### Modifiche `src/components/slides/slide-styles.css`
-- Aggiungo varianti `.mkt-badge--filled/outline/neon`, `.mkt-grad--subtle/bold`, `.mkt-ico--emoji/geometric/minimal`
-- Le icone "geometric" usano simboli unicode neutri (●○▲▼); "minimal" usa solo punti e linee
-
-### Modifiche `src/components/BrandSettingsDialog.tsx`
-- Nel tab "Effetti" aggiungo sezione "Stile marketing" con 3 select per i nuovi campi
-- Pulsante "Auto-tune dai colori brand": setta automaticamente `marketingGradientIntensity` (bold se accent saturo, subtle altrimenti) e `marketingBadgeStyle` (neon se `accentGlow=true`, filled altrimenti)
-
-### Modifiche `src/lib/store.ts`
-- `mergeBrand` mantiene compatibilità: i valori di default popolano automaticamente brand persistiti
-
-## 4. Import JSON di contenuti per template
-
-### Nuovo file `src/lib/contentImport.ts`
-- Funzione `parseContentBundle(json: unknown): { items: { template: TemplateId, data: AnyTemplateData }[], errors: string[] }`
-- Formato accettato (documentato in dialog):
-  ```json
-  [
-    { "template": "hook", "data": { "hook": "...", "subhook": "..." } },
-    { "template": "offer", "data": { "productName": "...", "priceNew": "..." } }
-  ]
+Quando `true`:
+- Calcolo `validateSlide(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage)` dentro il renderer
+- Se ci sono errori (severity `error`), aggiungo un overlay assoluto in alto a destra dentro `<div className="slide-frame">`:
   ```
-- Validazione schema per template: ogni `data` viene mergiata con `makeDefaultData(template)` per riempire i campi mancanti
-- Zero crash su campi sconosciuti (li ignora con warning)
+  <button className="validation-badge" onClick={...}>
+    {errors.length} {errors.length === 1 ? "campo mancante" : "campi mancanti"}
+  </button>
+  ```
+- Click → `dispatchEvent("slide:focus-field", { slideId: slide.id, field: errors[0].field })` + `useCarousel.setState({ activeId: slide.id })` (via prop callback opzionale, no — uso direttamente lo store con import dinamico per evitare ciclo: in realtà semplifico facendo dispatch dell'evento e lasciando che il form lo gestisca; per `setActive` uso `window.dispatchEvent("slide:focus-field")` che già porta il tab al form)
+- Tooltip native con elenco errori
 
-### Nuovo componente `src/components/ContentImportDialog.tsx`
-- Pulsante in header "Importa contenuti" (icona `FileInput`)
-- Dialog con 3 modalità:
-  1. **Upload file `.json`**: drag & drop o file picker
-  2. **Incolla JSON**: textarea con esempi cliccabili pre-fatti (Sales, Educational, Lancio)
-  3. **CSV semplice** (bonus): formato `template,field,value` riga per riga → trasformato a JSON internamente
-- Anteprima parsing: lista delle slide che verranno create con badge "OK" / "warning" per ognuna
-- 2 azioni: "Sostituisci tutto" / "Aggiungi alla fine"
-- Toast con conteggio slide importate + eventuali warning
+In `slide-styles.css` aggiungo:
+```css
+.validation-badge {
+  position: absolute; top: 12px; right: 12px;
+  z-index: 50; padding: 6px 10px;
+  background: rgb(239 68 68 / .95); color: white;
+  border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  font-family: system-ui, sans-serif;
+}
+.validation-badge:hover { background: rgb(220 38 38); }
+```
 
-### Modifiche `src/lib/store.ts`
-- Nuova azione `importContentBundle(items: { template, data }[], mode: "replace" | "append")`
-- Genera `Slide[]` con id nuovi, format `portrait` di default
+Passo `showValidation={validationOverlay}` solo allo `SlideRenderer` del **main canvas** (NON ai nodi nascosti di export, NON alla mini-preview della sidebar).
 
-## 5. Validazione bloccante in preview con indicatori per campo
+## 3. Marketing styles → CSS vars (`src/components/slides/SlideRenderer.tsx`)
 
-### Modifiche `src/components/slides/SlideRenderer.tsx`
-- Nuovo prop opzionale `showValidation?: boolean` (default false)
-- Quando true, dopo il render del corpo aggiungo un overlay assoluto:
-  - Per ogni `errors` di `validateSlideData`, sovrappongo un badge rosso piccolo in basso a destra della slide con conteggio errori (es. "3 campi mancanti")
-  - Click sul badge dispatcha `slide:focus-field` sul primo errore
-- Ogni `Field` taggato con attributo `data-field-path={path}` per puntamento futuro
+In `styleVars` aggiungo:
+```typescript
+["--mkt-badge" as string]: brand.effects.marketingBadgeStyle ?? "filled",
+["--mkt-grad" as string]: brand.effects.marketingGradientIntensity ?? "subtle",
+["--mkt-ico" as string]: brand.effects.marketingIconSet ?? "emoji",
+```
 
-### Modifiche `src/routes/index.tsx`
-- Aggiungo toggle `[validationOverlay, setValidationOverlay] = useState(true)` in header (icona `ShieldCheck`)
-- Passo `showValidation={validationOverlay}` allo `SlideRenderer` del main canvas (NON ai nodi nascosti di export)
-- Banner persistente in cima al main canvas se `validateAllSlides(slides).length > 0`: "X slide hanno campi obbligatori mancanti — Export disabilitato" + link "Vai al primo errore"
+In `buildClassName` aggiungo:
+```typescript
+parts.push(`mkt-badge-${fx.marketingBadgeStyle ?? "filled"}`);
+parts.push(`mkt-grad-${fx.marketingGradientIntensity ?? "subtle"}`);
+parts.push(`mkt-ico-${fx.marketingIconSet ?? "emoji"}`);
+```
 
-### Modifiche `src/components/ExportButton.tsx`
-- Aggiungo stato `strictMode: boolean` (persisted in store, default `true`)
-- Quando `strictMode=true`:
-  - Pulsante Export disabled se `validateAllSlides().length > 0`, tooltip "Completa i campi obbligatori per esportare"
-  - Rimuovo opzione "Esporta comunque" dal dialog di validazione (sostituita da "Vai al primo campo")
-- Quando `strictMode=false` (impostazione avanzata in BrandSettings → tab "Avanzate"):
-  - Comportamento attuale (override possibile)
-- Default per nuovi utenti: strict ON
+In `slide-styles.css` aggiungo regole:
+- `.mkt-badge-filled .tpl-offer .badge` (default attuale)
+- `.mkt-badge-outline .tpl-offer .badge { background: transparent; border: 2px solid var(--cyan); color: var(--cyan); }`
+- `.mkt-badge-neon .tpl-offer .badge { box-shadow: 0 0 20px var(--cyan); ... }`
+- `.mkt-grad-none .tpl-hook, .mkt-grad-none .tpl-cta { background: var(--bg) !important; }`
+- `.mkt-grad-bold .tpl-hook { background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-2) 100%); }`
+- `.mkt-ico-geometric .tpl-mistakes .ico::before { content: "▲"; }`, `.mkt-ico-minimal { content: "—"; }`
 
-### Modifiche `src/components/SlidesSidebar.tsx`
-- Già mostra `invalid` come badge — aggiungo conteggio: "3" anziché solo punto rosso, hover mostra elenco errori
+Le regole sono permissive: i template marketing che non hanno ancora `.badge`/`.ico` semplicemente ignorano le classi senza rompersi.
 
-### Modifiche `src/lib/store.ts`
-- Persisto `strictExport: boolean` nel partialize (default true)
+## 4. BrandSettings: sezione "Stile marketing" + tab "Avanzate" (`src/components/BrandSettingsDialog.tsx`)
+
+### Tab "Effetti" — nuova `Section` "Stile marketing"
+Sotto la section "Titoli & decori", aggiungo:
+```tsx
+<Section title="Stile marketing">
+  <SelectRow label="Badge marketing" value={b.effects.marketingBadgeStyle ?? "filled"} 
+    options={[{value:"filled",label:"Pieno"},{value:"outline",label:"Contorno"},{value:"neon",label:"Neon"}]}
+    onChange={(v) => setEffect("marketingBadgeStyle", v as MarketingBadgeStyle)} />
+  <SelectRow label="Intensità gradiente" value={b.effects.marketingGradientIntensity ?? "subtle"} ... />
+  <SelectRow label="Set icone" value={b.effects.marketingIconSet ?? "emoji"} ... />
+  <Button variant="outline" size="sm" onClick={onAutoTune}>
+    <Wand2 className="mr-1 h-3 w-3" /> Auto-tune dai colori brand
+  </Button>
+</Section>
+```
+
+`onAutoTune()`: imposta `marketingGradientIntensity = b.effects.accentGlow ? "bold" : "subtle"` e `marketingBadgeStyle = b.effects.accentGlow ? "neon" : "filled"`, mostra toast.
+
+### Nuovo tab "Avanzate"
+Estendo `TabsList` da 6 a 7 colonne, aggiungo `<TabsTrigger value="advanced">Avanzate</TabsTrigger>`.
+
+```tsx
+<TabsContent value="advanced" className="m-0 space-y-4">
+  <ToggleRow label="Strict export" 
+    desc="Blocca l'esportazione PNG/ZIP finché tutte le slide hanno i campi obbligatori compilati." 
+    checked={strictExport} onChange={setStrictExport} />
+  <ToggleRow label="Mostra indicatori validazione in preview"
+    desc="Sovrappone un badge rosso sulle slide con errori."
+    checked={validationOverlay} onChange={setValidationOverlay} />
+</TabsContent>
+```
+
+Letto/scritto direttamente da store, non passa da `brandDraft` (sono settings UI, non brand).
+
+## 5. ExportButton bloccante (`src/components/ExportButton.tsx`)
+
+- Leggo `strictExport = useCarousel((s) => s.strictExport)`
+- Calcolo `hasErrors = useMemo(() => validateAllSlides(slides, defaultLang, defaultLang).length > 0, [slides, defaultLang])`
+- Pulsante trigger: `disabled={isBusy || slides.length === 0 || (strictExport && hasErrors)}`
+- Aggiungo `title` dinamico: `strictExport && hasErrors ? "Completa i campi obbligatori per esportare" : ...`
+- Nel dialog di validazione, quando `strictExport=true`:
+  - Nascondo la checkbox "Esporta comunque"
+  - Pulsante azione mostra solo "Vai al primo campo da completare"
+  - `setForceExport(false)` forzato
+
+Mantengo la logica attuale (`forceExport`) per `strictExport=false`.
+
+## 6. Sidebar: conteggio errori per slide (`src/components/SlidesSidebar.tsx`)
+
+Modifico `SlideRow`:
+- Calcolo `validation = validateSlide(sl, lang, defLang)` (già fa `validateSlide` per `invalid`, sostituisco per riusare i conteggi)
+- `errorCount = validation.errors.filter(e => (e.severity ?? "error") === "error").length`
+- Sostituisco il puntino con un mini-badge rosso quando `errorCount > 0`:
+  ```tsx
+  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground" 
+        title={validation.errors.map(e => e.message).join("\n")}>
+    {errorCount}
+  </span>
+  ```
+
+In `SlidesSidebar` (top, sopra la lista), aggiungo banner condizionale visibile solo se `strictExport && totalIssues > 0`:
+```tsx
+{strictExport && totalIssues > 0 && (
+  <button onClick={goToFirstError} 
+    className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive hover:bg-destructive/20">
+    {totalIssues} slide con errori — vai al primo
+  </button>
+)}
+```
+
+`goToFirstError` → `setActive(firstIssue.slideId)` + dispatch `slide:focus-field`.
 
 ## File toccati
 
-**Nuovi:**
-- `src/lib/carouselPresets.ts`
-- `src/lib/contentImport.ts`
-- `src/components/CarouselPresetDialog.tsx`
-- `src/components/QuickOfferEditor.tsx`
-- `src/components/ContentImportDialog.tsx`
-
 **Modificati:**
-- `src/lib/store.ts` — `loadCarouselPreset`, `appendCarouselPreset`, `propagateOfferFields`, `importContentBundle`, `strictExport` persisted, `mergeBrand` con marketing fields
-- `src/lib/templates.ts` — `BrandEffects` esteso (`marketingBadgeStyle`, `marketingGradientIntensity`, `marketingIconSet`), `DEFAULT_EFFECTS` aggiornato
-- `src/components/slides/SlideRenderer.tsx` — CSS vars `--mkt-*`, prop `showValidation` con overlay, `data-field-path` sui campi
-- `src/components/slides/slide-styles.css` — varianti `.mkt-badge-*`, `.mkt-grad-*`, `.mkt-ico-*`, stile overlay validazione
-- `src/components/BrandSettingsDialog.tsx` — sezione "Stile marketing" + toggle "Strict export" in nuovo tab "Avanzate" + pulsante "Auto-tune"
-- `src/components/ExportButton.tsx` — strict mode che disabilita il pulsante
-- `src/components/SlidesSidebar.tsx` — conteggio errori sul badge invalid
-- `src/routes/index.tsx` — pulsanti header (Caroselli pronti, Offerta rapida, Importa contenuti, toggle Validazione), banner di blocco export
+- `src/routes/index.tsx` — header con 4 nuovi controlli, banner blocco export, calcolo `validationIssues`
+- `src/components/slides/SlideRenderer.tsx` — prop `showValidation`, overlay badge, CSS vars `--mkt-*`, classi `mkt-*`
+- `src/components/slides/slide-styles.css` — `.validation-badge`, `.mkt-badge-*`, `.mkt-grad-*`, `.mkt-ico-*`
+- `src/components/BrandSettingsDialog.tsx` — Section "Stile marketing" + tab "Avanzate"
+- `src/components/ExportButton.tsx` — `strictExport` blocca pulsante, dialog adattato
+- `src/components/SlidesSidebar.tsx` — conteggio errori + banner "vai al primo errore"
 
 **Non toccati:**
-- `src/lib/validation.ts` — già completo, riusato così com'è
-- `src/lib/export.ts` — agnostico
-- `src/components/SlideEditorForm.tsx` — già mostra errori inline
+- `src/lib/store.ts` — già pronto (`strictExport`, `validationOverlay`, `setStrictExport`, `setValidationOverlay`)
+- `src/lib/templates.ts` — `BrandEffects` già esteso
+- `src/lib/validation.ts` — già completo
+- `src/components/SlideEditorForm.tsx` — `data-field` già presente sui campi
 
-## Come si integra il flusso utente
+## Comportamento finale
 
-1. Utente apre app vuota → click "Caroselli pronti" → sceglie "Sales Funnel" → 10 slide pronte con contenuti default
-2. Click "Offerta rapida" → in 30 secondi imposta CTA, prezzo, urgenza una volta sola → propagati a tutte le slide
-3. BrandSettings → "Auto-tune" → colori, badge, gradient, icone si allineano al brand
-4. Per refresh contenuti: "Importa contenuti" → incolla JSON → tutto sostituito
-5. Banner rosso in alto se mancano campi → Export bloccato finché tutto OK → indicatore visivo per slide
+1. Header: 4 nuovi pulsanti tutti funzionanti, toggle scudo per overlay
+2. Preview: badge rosso "3 campi mancanti" su slide invalide → click porta al campo
+3. Sidebar: ogni slide mostra numero errori + banner riassuntivo cliccabile in cima
+4. Export: pulsante grigio quando ci sono errori in strict mode, tooltip esplicativo
+5. BrandSettings → Effetti → "Stile marketing" + Auto-tune; tab Avanzate per strict/overlay
 
 ## Fuori scope
 
-- Preset carousel **personalizzati salvati dall'utente** (solo built-in in questa iterazione)
-- **Editor visuale** del JSON (l'utente edita testo o file)
-- **AI generation** dei contenuti dei preset (solo template fissi)
-- **Sync cross-device** dei carousel preset
-- **Diff visivo** prima/dopo applicazione "Offerta rapida"
-- **Export bloccato per warning** (solo errori bloccano; warning restano informativi)
-- **Override per-slide** del marketing style (vale a livello brand)
+- Animazione del badge di validazione
+- Focus visivo del singolo campo invalido nel renderer (esiste già a livello di form)
+- Persistenza per-slide del toggle overlay
+- Esportazione di un report di validazione
 
