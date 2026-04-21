@@ -32,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { TextStylePopover } from "@/components/TextStylePopover";
+import { FontSizeSlider } from "@/components/FontSizeSlider";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle, Info } from "lucide-react";
 import { LIMITS } from "@/lib/validation";
@@ -200,12 +201,15 @@ function Field({ label, hint, error, warning, slideId, fieldPath, overrides, chi
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
           {label}{error && " *"}
         </Label>
         {slideId && fieldPath && (
-          <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+          <div className="flex items-center gap-1">
+            <FontSizeSlider slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+            <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+          </div>
         )}
       </div>
       <div className={error ? "[&_input]:border-destructive [&_textarea]:border-destructive [&_input]:focus-visible:ring-destructive [&_textarea]:focus-visible:ring-destructive" : ""}>
@@ -258,7 +262,10 @@ function SplitEditor({ d, set, errFor, slideId, overrides }: EditorProps<SplitDa
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+              </div>
             </div>
             <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />
           </div>
@@ -273,7 +280,10 @@ function SplitEditor({ d, set, errFor, slideId, overrides }: EditorProps<SplitDa
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`list.${i}.text`} value={overrides?.[`list.${i}.text`]} />
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`list.${i}.text`} value={overrides?.[`list.${i}.text`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`list.${i}.text`} value={overrides?.[`list.${i}.text`]} />
+              </div>
             </div>
             <div className="grid grid-cols-[80px_1fr] gap-2">
               <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
@@ -300,8 +310,10 @@ function GridEditor({ d, set, errFor, slideId, overrides }: EditorProps<Grid2x2D
           <div key={i} className={`space-y-2 rounded-md border p-3 ${cellErr ? "border-destructive" : "border-border"}`}>
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Cella {i + 1}</span>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`cells.${i}.title`} value={overrides?.[`cells.${i}.title`]} />
                 <TextStylePopover slideId={slideId} fieldPath={`cells.${i}.title`} value={overrides?.[`cells.${i}.title`]} />
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`cells.${i}.text`} value={overrides?.[`cells.${i}.text`]} />
                 <TextStylePopover slideId={slideId} fieldPath={`cells.${i}.text`} value={overrides?.[`cells.${i}.text`]} />
               </div>
             </div>
@@ -332,7 +344,10 @@ function BigNumEditor({ d, set, errFor, slideId, overrides }: EditorProps<BigNum
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">#{i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`paragraphs.${i}`} value={overrides?.[`paragraphs.${i}`]} />
+              </div>
             </div>
             <Textarea rows={2} value={v} onChange={(e) => on(e.target.value)} />
           </div>
@@ -368,7 +383,10 @@ function TimelineEditor({ d, set, errFor, slideId, overrides }: EditorProps<Time
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Step {i + 1}</Label>
-                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                </div>
               </div>
               <Input value={v.when} onChange={(e) => on({ ...v, when: e.target.value })} placeholder="GIORNO 01" />
               <Input data-field={`items.${i}.title`} value={v.title} className={itemTitleErr ? "border-destructive" : ""} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo step *" />
@@ -395,7 +413,10 @@ function CompareEditor({ d, set, errFor, slideId, overrides }: EditorProps<Compa
           <div key={side} className={`space-y-2 rounded-md border p-3 ${titleErr || itemsErr ? "border-destructive" : "border-border"}`}>
             <div className="flex items-center justify-between">
               <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{side === "before" ? "Prima" : "Dopo (in evidenza)"}</div>
-              <TextStylePopover slideId={slideId} fieldPath={`${side}.title`} value={overrides?.[`${side}.title`]} />
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`${side}.title`} value={overrides?.[`${side}.title`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`${side}.title`} value={overrides?.[`${side}.title`]} />
+              </div>
             </div>
             <Input value={d[side].tag} onChange={(e) => set({ ...d, [side]: { ...d[side], tag: e.target.value } })} placeholder="TAG" />
             <Input data-field={`${side}.title`} value={d[side].title} className={titleErr ? "border-destructive" : ""} onChange={(e) => set({ ...d, [side]: { ...d[side], title: e.target.value } })} placeholder="Titolo colonna *" />
@@ -446,7 +467,10 @@ function QAEditor({ d, set, errFor, slideId, overrides }: EditorProps<QAData>) {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Paragrafo {i + 1}</Label>
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`answer.${i}`} value={overrides?.[`answer.${i}`]} />
                 <TextStylePopover slideId={slideId} fieldPath={`answer.${i}`} value={overrides?.[`answer.${i}`]} />
+              </div>
               </div>
               <Textarea data-field={`answer.${i}`} rows={2} value={v} className={pErr ? "border-destructive" : ""} onChange={(e) => on(e.target.value)} />
             </div>
@@ -475,7 +499,10 @@ function ChecklistEditor({ d, set, errFor, slideId, overrides }: EditorProps<Che
                   <Switch checked={v.done} onCheckedChange={(c) => on({ ...v, done: c })} />
                   <span className="text-xs text-muted-foreground">Fatto</span>
                 </div>
-                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`items.${i}.title`} value={overrides?.[`items.${i}.title`]} />
+                </div>
               </div>
               <Input data-field={`items.${i}.title`} value={v.title} className={itemTitleErr ? "border-destructive" : ""} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Voce *" />
               <Input value={v.note ?? ""} onChange={(e) => on({ ...v, note: e.target.value })} placeholder="Nota (opzionale)" />
@@ -574,7 +601,10 @@ function GalleryEditor({ d, set, errFor, slideId, overrides }: EditorProps<Galle
           <div className="space-y-2 rounded-md border border-border p-2">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Foto {i + 1}</Label>
-              <TextStylePopover slideId={slideId} fieldPath={`images.${i}.caption`} value={overrides?.[`images.${i}.caption`]} />
+              <div className="flex items-center gap-1">
+                <FontSizeSlider compact slideId={slideId!} fieldPath={`images.${i}.caption`} value={overrides?.[`images.${i}.caption`]} />
+                <TextStylePopover slideId={slideId} fieldPath={`images.${i}.caption`} value={overrides?.[`images.${i}.caption`]} />
+              </div>
             </div>
             <ImageUploadField label="" value={v.url} onChange={(url) => on({ ...v, url })} />
             <Input value={v.caption ?? ""} onChange={(e) => on({ ...v, caption: e.target.value })} placeholder="Didascalia (opzionale)" maxLength={LIMITS.captionMax} />
@@ -629,7 +659,10 @@ function ChartBarEditor({ d, set, errFor, slideId, overrides }: EditorProps<Char
             <div className="space-y-2 rounded-md border border-border p-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Voce {i + 1}</Label>
-                <TextStylePopover slideId={slideId} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
+                </div>
               </div>
               <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
                 <Input className={`col-span-2 sm:col-span-1 ${labelErr ? "border-destructive" : ""}`} value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
@@ -671,7 +704,10 @@ function ChartDonutEditor({ d, set, errFor, slideId, overrides }: EditorProps<Ch
             <div className="space-y-2 rounded-md border border-border p-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Segmento {i + 1}</Label>
-                <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
+                </div>
               </div>
               <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
                 <Input className={`col-span-2 sm:col-span-1 ${labelErr ? "border-destructive" : ""}`} value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
@@ -750,7 +786,10 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: EditorProps<Featu
             <div className="space-y-2 rounded-md border border-border p-2">
               <div className="flex items-center justify-between">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bullet {i + 1}</Label>
-                <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
+                </div>
               </div>
               <div className="grid grid-cols-[60px_1fr] gap-2 sm:grid-cols-[80px_1fr]">
                 <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
