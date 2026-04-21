@@ -1,181 +1,113 @@
 
 
-# Wiring UI: validazione bloccante, header tools, marketing styles
+# 3 nuove utility: guida correzione errori, micro-editor Hook→Offer, preset Offerta rapida
 
-## 1. Header con i 4 nuovi tool (`src/routes/index.tsx`)
+## 1. "Correggi campi mancanti" — flusso guidato campo per campo
 
-Aggiungo nella header, prima di `BrandSettings`, 4 controlli:
+Sostituisco il singolo link "Vai al primo errore" con un flusso guidato che porta l'utente attraverso TUTTI i campi mancanti, uno alla volta, senza dover cercare.
 
-- **`<CarouselPresetDialog />`** — pulsante outline `Sparkles` "Caroselli pronti"
-- **`<QuickOfferEditor />`** — pulsante outline `Zap` "Offerta rapida" (auto-disabled internamente se mancano slide `offer`/`cta`)
-- **`<ContentImportDialog />`** — pulsante outline `FileInput` "Importa contenuti"
-- **Toggle validazione overlay** — `Button variant="ghost" size="icon"` con `ShieldCheck`/`ShieldOff`, legge/scrive `validationOverlay` dallo store; tooltip "Mostra/Nascondi indicatori validazione"
+### Nuovo componente `src/components/FixIssuesGuide.tsx`
+- Toolbar floating in basso al centro del main canvas, visibile solo quando `guideOpen=true`
+- Layout compatto: `[← Prec] Errore 3 di 12 · Slide 5 · Titolo mancante [Salta] [Succ →] [×]`
+- Passa al campo successivo automaticamente quando l'errore corrente sparisce (l'utente compila → la lista issues si ricomputa → avanza al prossimo)
+- Su click "Succ" o auto-advance: setActive(slideId) + dispatch `slide:focus-field`
+- Su "×": chiude la guida (setGuideOpen(false))
 
-Uso `useMemo(() => validateAllSlides(slides, activeLang, brand.defaultLanguage), [slides, activeLang, brand.defaultLanguage])` per avere le issues globali una sola volta.
+### Modifiche `src/routes/index.tsx`
+- Aggiungo state locale `[guideOpen, setGuideOpen] = useState(false)` e `[guideIndex, setGuideIndex] = useState(0)`
+- Sostituisco "Vai al primo errore" con due pulsanti nel banner:
+  - "Correggi campi mancanti" → `setGuideOpen(true); setGuideIndex(0); jumpToIssue(0)`
+  - "Vai al primo errore" rimane come scorciatoia (no guida)
+- Computo lista flat di tutti gli errori: `flatIssues = validationIssues.flatMap(v => v.errors.map(e => ({ slideId: v.slideId, slideIndex: v.slideIndex, templateLabel: v.templateLabel, ...e })))`
+- `jumpToIssue(i)` clamp a `[0, flatIssues.length-1]`, setActive + focus-field
+- useEffect che, quando `guideOpen` e `flatIssues.length > 0`, mantiene `guideIndex` valido (clamp + se l'errore corrente è risolto → avanza)
+- Render `<FixIssuesGuide />` quando `guideOpen && flatIssues.length > 0`; auto-chiude quando `flatIssues.length === 0` con toast "Tutti i campi sono completi ✔"
 
-Sopra il main canvas (sotto l'export error banner), aggiungo un **banner rosso bloccante** quando `strictExport && validationIssues.length > 0`:
-- Testo: "X slide hanno campi obbligatori mancanti — Export disabilitato"
-- Link "Vai al primo errore" → `setActive(firstIssue.slideId)` + `dispatchEvent("slide:focus-field", { slideId, field: firstIssue.firstField })`
-- Componente inline (non nuovo file) con stesso stile di `ExportErrorBanner` ma colore destructive
-- Quando `strictExport=false`, banner solo informativo (giallo) senza messaggio "disabilitato"
+### Comportamento utente
+1. Vedo banner "12 slide hanno campi obbligatori mancanti"
+2. Clicco "Correggi campi mancanti" → vado alla slide 1, primo errore, form già focalizzato sul campo
+3. Compilo → la guida avanza automaticamente al prossimo errore
+4. Posso navigare manualmente con Prec/Succ o saltare con "Salta"
+5. Quando finisco tutto: toast di conferma + guida si chiude
 
-## 2. Overlay validazione in preview (`src/components/slides/SlideRenderer.tsx`)
+## 2. Micro-editor "Hook → Offer" — bulk edit di slide marketing
 
-Nuovo prop opzionale `showValidation?: boolean` (default `false`).
+Editor compatto che permette di modificare in 1 schermata i testi dei template marketing (`hook`, `offer`, `cta`) con selezione per-slide di quali aggiornare.
 
-Quando `true`:
-- Calcolo `validateSlide(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage)` dentro il renderer
-- Se ci sono errori (severity `error`), aggiungo un overlay assoluto in alto a destra dentro `<div className="slide-frame">`:
-  ```
-  <button className="validation-badge" onClick={...}>
-    {errors.length} {errors.length === 1 ? "campo mancante" : "campi mancanti"}
-  </button>
-  ```
-- Click → `dispatchEvent("slide:focus-field", { slideId: slide.id, field: errors[0].field })` + `useCarousel.setState({ activeId: slide.id })` (via prop callback opzionale, no — uso direttamente lo store con import dinamico per evitare ciclo: in realtà semplifico facendo dispatch dell'evento e lasciando che il form lo gestisca; per `setActive` uso `window.dispatchEvent("slide:focus-field")` che già porta il tab al form)
-- Tooltip native con elenco errori
+### Nuovo componente `src/components/HookOfferMicroEditor.tsx`
+- Pulsante header outline `Wand2` "Hook → Offer", abilitato se almeno 1 slide tra `hook|offer|cta` esiste
+- Sheet laterale (riuso pattern di `QuickOfferEditor`) con tre sezioni a tab:
+  - **Hook**: lista delle slide `hook` con checkbox + 2 input compatti per slide (`hook`, `subhook`)
+  - **Offer**: lista delle slide `offer` con checkbox + 4 input (`productName`, `priceNew`, `priceOld`, `urgency`)
+  - **CTA**: lista delle slide `cta` con checkbox + 1 input (`buttonLabel`) + 1 (`headline`)
+- In testa a ogni tab: campo "Applica a tutte le selezionate" che propaga il valore alle slide ticchettate (es. stesso `hook` su 3 slide selezionate)
+- Pulsante "Salva modifiche" → singola entry undo
 
-In `slide-styles.css` aggiungo:
-```css
-.validation-badge {
-  position: absolute; top: 12px; right: 12px;
-  z-index: 50; padding: 6px 10px;
-  background: rgb(239 68 68 / .95); color: white;
-  border-radius: 6px; font-size: 11px; font-weight: 600;
-  cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.4);
-  font-family: system-ui, sans-serif;
-}
-.validation-badge:hover { background: rgb(220 38 38); }
-```
+### Nuova azione `src/lib/store.ts`
+- `bulkUpdateMarketingSlides(updates: Array<{ slideId: string, patch: Record<string, unknown> }>)`
+- Itera, applica patch ai data del active language, una sola entry undo
 
-Passo `showValidation={validationOverlay}` solo allo `SlideRenderer` del **main canvas** (NON ai nodi nascosti di export, NON alla mini-preview della sidebar).
+### Differenza vs QuickOfferEditor
+- QuickOfferEditor: 1 valore globale → propagato a TUTTE le slide offer/cta
+- HookOfferMicroEditor: valori potenzialmente diversi per slide, selezione granulare, copre anche `hook`
 
-## 3. Marketing styles → CSS vars (`src/components/slides/SlideRenderer.tsx`)
+## 3. Preset Offerta rapida — salva/carica set di valori
 
-In `styleVars` aggiungo:
-```typescript
-["--mkt-badge" as string]: brand.effects.marketingBadgeStyle ?? "filled",
-["--mkt-grad" as string]: brand.effects.marketingGradientIntensity ?? "subtle",
-["--mkt-ico" as string]: brand.effects.marketingIconSet ?? "emoji",
-```
+Aggiungo persistenza dei valori dell'Offerta rapida come preset riutilizzabili.
 
-In `buildClassName` aggiungo:
-```typescript
-parts.push(`mkt-badge-${fx.marketingBadgeStyle ?? "filled"}`);
-parts.push(`mkt-grad-${fx.marketingGradientIntensity ?? "subtle"}`);
-parts.push(`mkt-ico-${fx.marketingIconSet ?? "emoji"}`);
-```
+### Estensione `src/lib/store.ts`
+- Nuovo tipo `OfferPreset { id: string; name: string; createdAt: number; ctaLabel?: string; priceNew?: string; priceOld?: string; currency?: string; urgency?: string; }`
+- Nuovo state: `offerPresets: OfferPreset[]` (default `[]`)
+- Azioni:
+  - `saveOfferPreset(name: string, values: Omit<OfferPreset, "id"|"name"|"createdAt">)`
+  - `deleteOfferPreset(id: string)`
+  - `renameOfferPreset(id: string, name: string)`
+- Persisto `offerPresets` nel partialize
 
-In `slide-styles.css` aggiungo regole:
-- `.mkt-badge-filled .tpl-offer .badge` (default attuale)
-- `.mkt-badge-outline .tpl-offer .badge { background: transparent; border: 2px solid var(--cyan); color: var(--cyan); }`
-- `.mkt-badge-neon .tpl-offer .badge { box-shadow: 0 0 20px var(--cyan); ... }`
-- `.mkt-grad-none .tpl-hook, .mkt-grad-none .tpl-cta { background: var(--bg) !important; }`
-- `.mkt-grad-bold .tpl-hook { background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-2) 100%); }`
-- `.mkt-ico-geometric .tpl-mistakes .ico::before { content: "▲"; }`, `.mkt-ico-minimal { content: "—"; }`
+### Modifiche `src/components/QuickOfferEditor.tsx`
+- In testa al sheet, una `Select` "Carica preset…" che popola tutti i campi quando selezionato
+- Sotto i campi, due pulsanti compatti:
+  - `Save` "Salva come preset" → apre piccolo prompt inline (Input + Conferma) con nome → chiama `saveOfferPreset`
+  - Nella select, ogni opzione ha un mini "×" per eliminare (o gestione separata in popover)
+- Toast su salvataggio: "Preset 'Lancio Black Friday' salvato"
+- Quando si carica un preset, i campi del form si riempiono ma l'utente deve ancora cliccare "Applica a tutte" (no auto-apply)
 
-Le regole sono permissive: i template marketing che non hanno ancora `.badge`/`.ico` semplicemente ignorano le classi senza rompersi.
+### Built-in suggested presets (opzionale, dichiarati nel codice)
+Aggiungo 2-3 preset built-in d'esempio (con `builtIn: true`) non eliminabili:
+- "Lancio Black Friday" — CTA "ACQUISTA ORA →", prezzo 47/97, valuta €, urgency "Solo per 48h"
+- "Early Bird" — CTA "PRENOTA POSTO →", urgency "Sconto del 50% per i primi 20"
+- "Standard" — vuoto / valori puliti
 
-## 4. BrandSettings: sezione "Stile marketing" + tab "Avanzate" (`src/components/BrandSettingsDialog.tsx`)
-
-### Tab "Effetti" — nuova `Section` "Stile marketing"
-Sotto la section "Titoli & decori", aggiungo:
-```tsx
-<Section title="Stile marketing">
-  <SelectRow label="Badge marketing" value={b.effects.marketingBadgeStyle ?? "filled"} 
-    options={[{value:"filled",label:"Pieno"},{value:"outline",label:"Contorno"},{value:"neon",label:"Neon"}]}
-    onChange={(v) => setEffect("marketingBadgeStyle", v as MarketingBadgeStyle)} />
-  <SelectRow label="Intensità gradiente" value={b.effects.marketingGradientIntensity ?? "subtle"} ... />
-  <SelectRow label="Set icone" value={b.effects.marketingIconSet ?? "emoji"} ... />
-  <Button variant="outline" size="sm" onClick={onAutoTune}>
-    <Wand2 className="mr-1 h-3 w-3" /> Auto-tune dai colori brand
-  </Button>
-</Section>
-```
-
-`onAutoTune()`: imposta `marketingGradientIntensity = b.effects.accentGlow ? "bold" : "subtle"` e `marketingBadgeStyle = b.effects.accentGlow ? "neon" : "filled"`, mostra toast.
-
-### Nuovo tab "Avanzate"
-Estendo `TabsList` da 6 a 7 colonne, aggiungo `<TabsTrigger value="advanced">Avanzate</TabsTrigger>`.
-
-```tsx
-<TabsContent value="advanced" className="m-0 space-y-4">
-  <ToggleRow label="Strict export" 
-    desc="Blocca l'esportazione PNG/ZIP finché tutte le slide hanno i campi obbligatori compilati." 
-    checked={strictExport} onChange={setStrictExport} />
-  <ToggleRow label="Mostra indicatori validazione in preview"
-    desc="Sovrappone un badge rosso sulle slide con errori."
-    checked={validationOverlay} onChange={setValidationOverlay} />
-</TabsContent>
-```
-
-Letto/scritto direttamente da store, non passa da `brandDraft` (sono settings UI, non brand).
-
-## 5. ExportButton bloccante (`src/components/ExportButton.tsx`)
-
-- Leggo `strictExport = useCarousel((s) => s.strictExport)`
-- Calcolo `hasErrors = useMemo(() => validateAllSlides(slides, defaultLang, defaultLang).length > 0, [slides, defaultLang])`
-- Pulsante trigger: `disabled={isBusy || slides.length === 0 || (strictExport && hasErrors)}`
-- Aggiungo `title` dinamico: `strictExport && hasErrors ? "Completa i campi obbligatori per esportare" : ...`
-- Nel dialog di validazione, quando `strictExport=true`:
-  - Nascondo la checkbox "Esporta comunque"
-  - Pulsante azione mostra solo "Vai al primo campo da completare"
-  - `setForceExport(false)` forzato
-
-Mantengo la logica attuale (`forceExport`) per `strictExport=false`.
-
-## 6. Sidebar: conteggio errori per slide (`src/components/SlidesSidebar.tsx`)
-
-Modifico `SlideRow`:
-- Calcolo `validation = validateSlide(sl, lang, defLang)` (già fa `validateSlide` per `invalid`, sostituisco per riusare i conteggi)
-- `errorCount = validation.errors.filter(e => (e.severity ?? "error") === "error").length`
-- Sostituisco il puntino con un mini-badge rosso quando `errorCount > 0`:
-  ```tsx
-  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground" 
-        title={validation.errors.map(e => e.message).join("\n")}>
-    {errorCount}
-  </span>
-  ```
-
-In `SlidesSidebar` (top, sopra la lista), aggiungo banner condizionale visibile solo se `strictExport && totalIssues > 0`:
-```tsx
-{strictExport && totalIssues > 0 && (
-  <button onClick={goToFirstError} 
-    className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive hover:bg-destructive/20">
-    {totalIssues} slide con errori — vai al primo
-  </button>
-)}
-```
-
-`goToFirstError` → `setActive(firstIssue.slideId)` + dispatch `slide:focus-field`.
+I built-in seguono lo stesso pattern di `BUILT_IN_PRESETS` in `presets.ts`.
 
 ## File toccati
 
+**Nuovi:**
+- `src/components/FixIssuesGuide.tsx`
+- `src/components/HookOfferMicroEditor.tsx`
+- `src/lib/offerPresets.ts` — definisce `OfferPreset`, `BUILT_IN_OFFER_PRESETS`
+
 **Modificati:**
-- `src/routes/index.tsx` — header con 4 nuovi controlli, banner blocco export, calcolo `validationIssues`
-- `src/components/slides/SlideRenderer.tsx` — prop `showValidation`, overlay badge, CSS vars `--mkt-*`, classi `mkt-*`
-- `src/components/slides/slide-styles.css` — `.validation-badge`, `.mkt-badge-*`, `.mkt-grad-*`, `.mkt-ico-*`
-- `src/components/BrandSettingsDialog.tsx` — Section "Stile marketing" + tab "Avanzate"
-- `src/components/ExportButton.tsx` — `strictExport` blocca pulsante, dialog adattato
-- `src/components/SlidesSidebar.tsx` — conteggio errori + banner "vai al primo errore"
+- `src/routes/index.tsx` — banner con pulsante "Correggi campi mancanti", state della guida, render `<FixIssuesGuide />` e `<HookOfferMicroEditor />` nell'header
+- `src/lib/store.ts` — `offerPresets` + 3 azioni, `bulkUpdateMarketingSlides`, persistenza
+- `src/components/QuickOfferEditor.tsx` — selettore preset in testa, "Salva preset" inline, gestione delete
 
 **Non toccati:**
-- `src/lib/store.ts` — già pronto (`strictExport`, `validationOverlay`, `setStrictExport`, `setValidationOverlay`)
-- `src/lib/templates.ts` — `BrandEffects` già esteso
-- `src/lib/validation.ts` — già completo
-- `src/components/SlideEditorForm.tsx` — `data-field` già presente sui campi
+- `src/lib/validation.ts`
+- `src/components/SlideEditorForm.tsx` — riusa il listener `slide:focus-field` esistente
+- `src/components/slides/SlideRenderer.tsx`
 
-## Comportamento finale
+## Esperienza utente integrata
 
-1. Header: 4 nuovi pulsanti tutti funzionanti, toggle scudo per overlay
-2. Preview: badge rosso "3 campi mancanti" su slide invalide → click porta al campo
-3. Sidebar: ogni slide mostra numero errori + banner riassuntivo cliccabile in cima
-4. Export: pulsante grigio quando ci sono errori in strict mode, tooltip esplicativo
-5. BrandSettings → Effetti → "Stile marketing" + Auto-tune; tab Avanzate per strict/overlay
+- **Errore di validazione**: banner → "Correggi campi mancanti" → tour guidato campo per campo, auto-advance
+- **Bulk editing testi marketing**: pulsante "Hook → Offer" → modifico hook + offer + cta selettivamente in 1 schermata
+- **Riutilizzo offerte**: salvo "Black Friday" una volta, lo richiamo al prossimo lancio in 2 click
 
 ## Fuori scope
 
-- Animazione del badge di validazione
-- Focus visivo del singolo campo invalido nel renderer (esiste già a livello di form)
-- Persistenza per-slide del toggle overlay
-- Esportazione di un report di validazione
+- **Bulk editing per altri template** (myth, framework, ecc.) — solo hook/offer/cta in questa iterazione
+- **Editor inline visivo** della guida correzione (l'utente compila nella sidebar form esistente)
+- **Esportazione/importazione preset offerta** (solo persistenza locale)
+- **Animazioni di transizione** tra step della guida
+- **Tracking analytics** delle conversioni dei preset
 
