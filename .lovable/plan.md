@@ -1,100 +1,121 @@
 
 
-# Fix errori + Multi-formato slide stile Canva
+# Personalizzazione testo per-campo + Duplica + Combo preset + DnD nel picker
 
-## 1. Fix hydration mismatch DndContext (errore console al boot)
+## 1. Personalizzazione testo per-singolo-campo (stile Canva)
 
-**Causa:** `SlidesSidebar` usa `@dnd-kit` con auto-generated `aria-describedby` ID che differisce tra SSR e client (`DndDescribedBy-4` vs `-0`). Soluzione standard: rendere il DnD solo lato client.
+Estensione del modello `Slide` con un campo opzionale `textOverrides`:
 
-**Fix:** in `SlidesSidebar.tsx` aggiungo `useEffect` con flag `mounted` — finché non montato, renderizzo la lista delle slide **senza** `DndContext`/`SortableContext` (solo i bottoni statici). Dopo il mount, attivo il drag-and-drop. Stesso pattern per `ExportBatchPreviewDialog` (anche lì c'è DnD).
-
-Risultato: nessuna divergenza SSR↔client, nessun warning di idratazione.
-
-## 2. Fix "Error in route match" all'avvio
-
-**Causa probabile:** `useCarousel` viene letto durante SSR ma lo store ha `skipHydration: true`. Su SSR i selettori restituiscono lo stato di default, sul client dopo `rehydrate()` cambiano → mismatch su titolo carosello, lingue, ecc.
-
-**Fix:** in `routes/index.tsx` aggiungo lo stesso pattern `mounted` per il `<header>` e per il blocco di `SlideRenderer` nascosto usato per export — uso dei valori `DEFAULT_BRAND` durante SSR e passo a quelli dello store solo dopo mount. In alternativa più semplice: imposto `ssr: false` sulla route `/` via `createFileRoute("/")({ ssr: false, ... })` — TanStack Start supporta esplicitamente questo flag per route che dipendono da stato browser-only (localStorage). Scelgo questa via, più pulita e meno invasiva.
-
-## 3. Formato slide stile Canva (Portrait / Square / Stories / Custom)
-
-Nuovo concetto: ogni slide ha un **formato** indipendente.
-
-**Estensione modello dati** (`src/lib/templates.ts`):
 ```ts
-export type SlideFormat = "portrait" | "square" | "story" | "landscape";
-export const FORMAT_DIMENSIONS: Record<SlideFormat, { w: number; h: number; label: string; ratio: string }> = {
-  portrait:  { w: 1080, h: 1350, label: "Post verticale",  ratio: "4:5"  },
-  square:    { w: 1080, h: 1080, label: "Post quadrato",    ratio: "1:1"  },
-  story:     { w: 1080, h: 1920, label: "Storia / Reel",    ratio: "9:16" },
-  landscape: { w: 1920, h: 1080, label: "Landscape / X",    ratio: "16:9" },
-};
-export interface Slide { id: string; template: TemplateId; format: SlideFormat; data: SlideDataField; }
+// templates.ts
+export interface TextStyle {
+  fontFamily?: FontChoice;
+  fontSize?: number;        // px @ 1080px width (es. 64, 80, 120)
+  fontWeight?: Weight;
+  letterSpacing?: number;   // em (-0.05 → 0.2)
+  textAlign?: "left" | "center" | "right";
+  italic?: boolean;
+  uppercase?: boolean;
+  underline?: boolean;
+  color?: string;           // hex; default = brand.textColor o accent
+}
+
+export interface Slide {
+  id: string;
+  template: TemplateId;
+  format: SlideFormat;
+  data: SlideDataField;
+  textOverrides?: Record<string, TextStyle>; // chiave = field path es. "title", "eyebrow", "cells.0.title"
+}
 ```
 
-`makeDefaultSlide(template, format = "portrait")` accetta il formato. Migrazione: slide esistenti senza `format` → trattate come `"portrait"` di default (in `mergeBrand` / `loadJSON` faccio fill-in).
+**UI — popover "Aa" inline accanto a ogni campo testuale del form** (`SlideEditorForm.tsx`):
+- Nuovo componente `<TextStyleButton fieldPath="title" />` reso accanto alla `<Label>` di ogni `Field`
+- Click → popover compatto con: select font (riusa `FONT_OPTIONS`), slider `fontSize` (24-200px), select `fontWeight` (400-900), slider `letterSpacing`, toggle italic/uppercase/underline, 3 bottoni align L/C/R, color picker con preset (textColor, accent, accentSecondary, white, black)
+- Bottone "Reset" per cancellare l'override (torna ai default brand)
+- Indicatore visivo: il bottone "Aa" diventa pieno/colorato quando un override è attivo per quel campo
+- Tutti i cambi passano per il debounce esistente (`set()` → 400ms → store)
 
-**Rendering dinamico** (`src/components/slides/SlideRenderer.tsx` + `slide-styles.css`):
-- `.slide-frame` non hardcoda più `width: 1080px; height: 1350px` — diventa variabile via `--slide-w`, `--slide-h` iniettate inline dal renderer in base al formato della slide
-- `.slide-inner` si adatta proporzionalmente: padding/scale calcolati come funzione del formato (story ha più altezza → contenuto stretchato verticalmente; landscape → due colonne più larghe)
-- Per i template che hanno layout fissi grid (es. `tpl-grid2x2`), aggiungo varianti `.fmt-story .tpl-grid2x2` con grid 1×4 verticale invece di 2×2 — più sensato in 9:16
+**Applicazione visiva** — `SlideRenderer.tsx`:
+- Helper `getFieldStyle(fieldPath: string): React.CSSProperties` che legge `slide.textOverrides?.[fieldPath]` e lo trasforma in stile inline
+- Iniettato sui DOM nodes principali di ogni template: `.title`, `.eyebrow`, `.sub`, e per cells/items con path indicizzato (`cells.0.title`, `items.1.text`)
+- Le dimensioni `px` scalano automaticamente perché tutto il `slide-frame` viene scalato in preview/export — i px restano relativi al canvas 1080×W
 
-**Picker nuova slide stile Canva** (`SlidesSidebar.tsx`):
-- Sostituisco l'attuale `DropdownMenu` con un **`Dialog`** "Nuova slide" più ricco
-- Layout 2 colonne:
-  - **Sinistra**: scelta del formato (4 card con anteprima proporzionale: Portrait 4:5, Square 1:1, Story 9:16, Landscape 16:9) — selezionabili
-  - **Destra**: griglia 2×col di template (i 12 esistenti) con mini-thumbnail visiva, label e descrizione
-- Footer: bottone "Crea slide" che chiama `addSlide(template, format)`
-- Default sensato: il formato selezionato persiste nella sessione (state locale del componente, non nello store) così se l'utente ne crea 5 di seguito non deve ri-cliccare
+**Field path registry** in `templates.ts`: helper `getStylableFields(template: TemplateId): { path: string; label: string }[]` che ritorna i campi stilizzabili per ogni template (es. split → title, eyebrow, paragraphs[*], list[*].text). Usato dal form per sapere dove mostrare "Aa".
 
-**Sidebar miniature responsive al formato:**
-- `MiniPreview` calcola `scale` in base al formato (story → height 280, square → 200×200, ecc.) mantenendo larghezza max 200px
-- Badge del formato (es. "9:16") accanto al numero della slide
+## 2. Bottone "Duplica slide" prominente
 
-**Anteprima principale:**
-- `ScaledPreview` in `routes/index.tsx` riceve dimensioni `w/h` invece di hardcoded 1080/1350 — già usa `getBoundingClientRect`, basta parametrizzare i divisori
+Già esistente nella sidebar (icona piccola). Aggiungo un bottone **principale "Duplica"** nella toolbar dell'editor centrale (`routes/index.tsx`), accanto ad Anteprima/Anteprima ZIP, con icona `Copy` e label visibile. Comportamento: chiama `duplicateSlide(activeId)` → la copia mantiene template, formato, dati, **e gli `textOverrides`** (già coperto da `structuredClone` esistente nello store).
 
-**Export/PNG:**
-- `src/lib/export.ts` cattura il nodo già con dimensioni reali → funziona automaticamente. I file mantengono nome + dimensione corretta del formato.
-- Nel filename includo il formato: `slide-01-1080x1350.png` per chiarezza
+## 3. Preset "combo template + formato" salvabili dal NewSlideDialog
 
-**Validazione (`src/lib/validation.ts`):** invariata, controlla solo i contenuti.
+**Nuovo concetto `SlideCombo`** in `templates.ts`:
+```ts
+export interface SlideCombo {
+  id: string;
+  name: string;
+  template: TemplateId;
+  format: SlideFormat;
+  createdAt: number;
+}
+```
 
-**Default iniziale:** le 2 slide di partenza restano `portrait` per coerenza.
+**Nuovo store slice** in `lib/store.ts`:
+```ts
+slideCombos: SlideCombo[]
+saveSlideCombo(name, template, format): void
+deleteSlideCombo(id): void
+```
+Persistito via `persist` middleware (insieme a `brand` e `brandPresets`, con migration safety).
 
-## 4. UX picker nuove slide — categorizzazione
+**UI in `NewSlideDialog.tsx`** (sidebar a 3 sezioni invece di 2):
+- Sopra "Formato": nuova sezione **"I miei combo"**
+  - Lista compatta di combo card (nome + mini badge `Split · 4:5`)
+  - Click su una card → applica template + formato in un colpo (popola gli stati `template` e `format` del dialog)
+  - Bottone X piccolo per eliminare
+- Sotto la lista combo: pulsante **"💾 Salva combo corrente"** → mini input inline per nome → `saveSlideCombo(name, template, format)`
+- Se non ci sono combo salvati: testo placeholder "Salva le tue combinazioni preferite per riusarle"
 
-Raggruppo i 12 template in 3 categorie nel picker (tab interne):
-- **Testo & Titolo**: cover, center, split, bignum
-- **Liste & Dati**: grid2x2, timeline, checklist, stat, compare
-- **Riferimento**: vocab, qa
+## 4. Drag-and-drop nelle categorie e nei template del picker
 
-Ogni card template mostra una **mini-anteprima generata** (riusando `SlideRenderer` con dati di default a `scale 0.15`) — esattamente quello che vede l'utente cliccando, no icone generiche. Costo: 12 mini-render una volta sola al mount del dialog.
+Persisto un nuovo slice nello store:
+```ts
+templateCategoryOrder: string[]            // default: ["text","data","ref"]
+templatesPerCategory: Record<string, TemplateId[]>  // default: come oggi in CATEGORIES
+```
+Persistiti anche loro (migration: se mancanti → fallback ai default in `NewSlideDialog`).
+
+**UI in `NewSlideDialog.tsx`**:
+- **Tabs delle categorie**: wrappo `<TabsList>` in un `DndContext` orizzontale (riuso `@dnd-kit`). Ogni `TabsTrigger` è un `useSortable` con drag handle implicito (l'intero trigger è draggable con `activationConstraint: distance 8` per non confliggere col click di selezione tab). Il drop riordina `templateCategoryOrder` nello store.
+- **Grid dei template dentro la tab attiva**: `DndContext` verticale sulla griglia, ogni `TemplateThumb` è un `useSortable`. Drop riordina `templatesPerCategory[currentCategory]`. Mantengo l'`activationConstraint distance 8` per non rompere il click "seleziona template".
+- Indicatore visuale leggero (cursor grab, leggera ombra durante il drag).
+- Mantengo il pattern `mounted` flag per evitare hydration mismatch (anche se la route è già `ssr: false`, è gratis come safety).
+
+**Reset opzionale**: piccolo link "Ripristina ordine default" in fondo al dialog per ri-applicare l'ordine standard.
 
 ## File toccati
 
 **Nuovi:**
-- `src/components/NewSlideDialog.tsx` — modal "Nuova slide" con format-picker + template-picker visivo
+- `src/components/TextStylePopover.tsx` — popover stile testo per-campo (font/size/weight/spacing/align/italic/uppercase/underline/color/reset)
 
 **Modificati:**
-- `src/lib/templates.ts` — aggiunta `SlideFormat`, `FORMAT_DIMENSIONS`, campo `format` su `Slide`, `makeDefaultSlide(template, format)`
-- `src/lib/store.ts` — `addSlide(template, format)`, migrazione slide legacy in `loadJSON` e in `merge` del persist (fill `format = "portrait"`)
-- `src/components/slides/SlideRenderer.tsx` — passa `--slide-w`/`--slide-h` come CSS vars + classe `fmt-{format}`
-- `src/components/slides/slide-styles.css` — `.slide-frame` usa `width: var(--slide-w)`/`height: var(--slide-h)`; varianti `.fmt-square`, `.fmt-story`, `.fmt-landscape` per template che cambiano layout (grid2x2, split, compare)
-- `src/components/SlidesSidebar.tsx` — sostituisce dropdown con `NewSlideDialog`, fix hydration con `mounted` flag, mini-preview adattiva al formato, badge formato
-- `src/components/ExportBatchPreviewDialog.tsx` — fix hydration con `mounted` flag, thumbnail adattive al formato
-- `src/routes/index.tsx` — `ssr: false` sulla route, `ScaledPreview` parametrizzato w/h, hidden export refs usano dimensioni dal formato
-- `src/lib/export.ts` — filename con dimensioni reali del formato della slide
-- `src/lib/validation.ts` — nessuna modifica strutturale
+- `src/lib/templates.ts` — `TextStyle`, `Slide.textOverrides`, helper `getStylableFields(template)` per registry dei field path
+- `src/lib/store.ts` — slice `slideCombos`, `templateCategoryOrder`, `templatesPerCategory` con relative azioni; persist + migration; `duplicateSlide` già OK (clone profondo gestisce `textOverrides`)
+- `src/components/SlideEditorForm.tsx` — `<TextStyleButton>` accanto a ogni `<Field>` stilizzabile, gestione override via `set()` per passare nel debounce esistente
+- `src/components/slides/SlideRenderer.tsx` — applica `getFieldStyle(path)` come `style` inline ai nodi `.title`, `.eyebrow`, `.sub`, e a item indicizzati di cells/items/paragraphs
+- `src/components/NewSlideDialog.tsx` — sezione "I miei combo" in sidebar con save/apply/delete; DnD orizzontale su tab categorie; DnD verticale sui template della categoria attiva; reset ordine default
+- `src/routes/index.tsx` — bottone "Duplica" prominente nella toolbar centrale (icona `Copy` + label, accanto ad Anteprima/Anteprima ZIP)
 
 **Non toccati:**
-- `src/components/SlideEditorForm.tsx` — il form edita i dati, agnostico al formato
-- `src/lib/i18n.ts`, `src/lib/history.ts`, `src/lib/presets.ts` — invariati
-- `src/components/BrandSettingsDialog.tsx` — il brand è globale, non per-formato
+- `src/lib/export.ts` — gli `textOverrides` sono CSS inline → l'export PNG li cattura automaticamente, nessuna modifica
+- `src/lib/i18n.ts` — gli override sono per-slide (non per-lingua), invariato
+- `src/lib/history.ts` — invariato (le modifiche di override usano `set()` debounced come tutto il resto)
+- `src/components/SlidesSidebar.tsx` — mantiene il bottone Duplica esistente come scorciatoia per le slide non attive
 
 ## Fuori scope
-- **Resize/conversione automatica** di una slide da un formato all'altro mantenendo il layout perfetto (i template si adattano via CSS, no algoritmo di reflow del contenuto)
-- **Posizionamento libero degli elementi** stile Canva (l'editor resta template-driven, non free-form canvas)
-- **Anteprima animata multi-formato** (resta export PNG statico)
-- **Formati custom arbitrari** (i 4 preset coprono i casi reali: post, square, story, landscape — aggiungere "custom WxH" introduce edge case CSS molto pesanti)
+- **Override per-lingua** (lo stile testo è uniforme tra le lingue di una stessa slide; se serve uno stile diverso, l'utente duplica la slide)
+- **Stili "globali" per template** (l'override è per-slide, non per "tutte le slide split")
+- **Animazioni / motion design** sul testo (resta export PNG statico)
+- **Custom fonts oltre la lista FONT_OPTIONS** (resta solo Google Fonts whitelist esistente)
+- **Riordino libero dei campi** dentro un template (i template hanno layout fisso, il DnD è solo sui template/categorie nel picker)
 
