@@ -1,78 +1,87 @@
 
 
-# Tastiera per FontSizeSlider + reset robusto + sync su cambio campo
+# Input numerico, tooltip live, memoria per tipo, click-reset sul default
 
-## 1. Navigazione da tastiera con frecce
+## 1. Input numerico accanto allo slider
 
-Il componente shadcn `Slider` (Radix UI) supporta nativamente le frecce, ma con `step={2}` (oggi) ogni freccia incrementa solo di 2px — utile per drag fine ma lento da tastiera.
+In `src/components/FontSizeSlider.tsx`, sostituisco lo `<span>` che oggi mostra `64*` con un `<input type="number">` molto compatto (~44px), gestito controlled:
 
-**Modifiche a `src/components/FontSizeSlider.tsx`:**
-- Mantengo `step={2}` per il drag del mouse (granularità fine)
-- Espongo il salto da tastiera tramite la prop nativa `onKeyDown` sul thumb del Radix Slider, gestita a livello di wrapper:
-  - `ArrowUp` / `ArrowRight`: +2px (default Radix, OK)
-  - `ArrowDown` / `ArrowLeft`: -2px (default)
-  - `Shift + Arrow`: ±10px (salto rapido)
-  - `PageUp` / `PageDown`: ±20px
-  - `Home`: 16px (min), `End`: 240px (max)
-- Aggiungo attributi accessibilità: `aria-label="Dimensione font in pixel"`, `aria-valuetext="${current}px"` sul thumb
-- Aggiungo `tabIndex={0}` esplicito (Radix lo fa già, ma lo confermiamo per sicurezza)
-- Focus ring visibile: aggiungo classe `focus-visible:ring-2 focus-visible:ring-ring` al thumb di `src/components/ui/slider.tsx` (è già presente ma con `ring-1` — passo a `ring-2` per migliore visibilità da tastiera, modifica minima e generalizzata)
+- Range: `min=16 max=240 step=2`
+- Mostra il valore corrente (override o default)
+- `onChange`: aggiorna il valore con clamp [16, 240], salva l'override via `setTextOverride`
+- `onBlur`: se il campo è vuoto o NaN, ripristina al valore corrente senza salvare nulla
+- Stile: `h-6 w-12 text-[10px] tabular-nums px-1` — coerente con la densità attuale del form
+- In `compact={true}` (usato dentro `ArrayField`), l'input rimane nascosto come oggi (si edita solo via slider/tastiera/popover) per non rompere righe strette
+- Asterisco `*` per i default: appare solo come suffisso testuale nel `title` tooltip dell'input quando non c'è override (no più `<span>` separato)
 
-**Sincronizzazione con popover:** già garantita — entrambi leggono/scrivono lo stesso `overrides[fieldPath].fontSize` via `setTextOverride`. Ogni keystroke triggera lo stesso flusso del drag, quindi il popover (se aperto) mostra il valore aggiornato in tempo reale.
+## 2. Tooltip live sul thumb dello slider
 
-## 2. Reset robusto della sola chiave `fontSize`
+Modifico `src/components/ui/slider.tsx` per supportare un tooltip che segue il thumb durante drag/keyboard:
 
-L'attuale `onReset` in `FontSizeSlider.tsx` (righe 75-79) fa già la cosa giusta:
+- Aggiungo prop opzionale `showTooltip?: boolean` e `formatTooltip?: (value: number) => string` al `Slider`
+- Quando `showTooltip` è true, wrappo `SliderPrimitive.Thumb` con un `<TooltipProvider><Tooltip><TooltipTrigger asChild>...</TooltipTrigger><TooltipContent>{formatTooltip(value)}</TooltipContent></Tooltip></TooltipProvider>`
+- Il tooltip resta aperto durante drag tramite stato locale `[isDragging, setIsDragging]` derivato da eventi `onPointerDown`/`onPointerUp` sul Root, e durante focus tramite `:focus-within` (Radix gestisce focus state nativamente)
+- Posizione: `side="top"`, `sideOffset={8}`
+
+In `FontSizeSlider.tsx`: passo `showTooltip` e `formatTooltip={(v) => `${v}px`}`. Mantiene retrocompatibilità — gli altri usi del `Slider` nel progetto non sono toccati.
+
+## 3. Memoria dell'ultimo fontSize per tipo di campo
+
+Aggiungo al store `src/lib/store.ts` una nuova mappa persistita:
+
 ```ts
-const { fontSize: _omit, ...rest } = value;
-setTextOverride(slideId, fieldPath, rest);
+lastFontSizeByFieldType: Record<string, number>; // es. { title: 100, paragraphs: 36, eyebrow: 26 }
+setLastFontSizeForField: (fieldPath: string, size: number) => void;
 ```
-Ma c'è un edge case: se `rest` è un oggetto vuoto `{}`, lascia un override vuoto nello store invece di rimuovere completamente l'entry per il fieldPath. Questo non rompe nulla ma sporca lo stato e fa risultare `active = !!value && Object.keys(value).length > 0` falso ma con `value` ancora truthy, complicando i check downstream.
 
-**Modifica a `src/components/FontSizeSlider.tsx`:**
-- Dopo aver rimosso `fontSize`, controllo se `rest` è vuoto (`Object.keys(rest).length === 0`):
-  - Se vuoto → chiamo `clearTextOverride(slideId, fieldPath)` per rimuovere completamente l'entry
-  - Se non vuoto → chiamo `setTextOverride(slideId, fieldPath, rest)` come oggi
-- Importo `clearTextOverride` dal store accanto a `setTextOverride`
+Logica:
+- La chiave è il **tipo di campo** derivato dal fieldPath (radice prima del `.`): `title`, `paragraphs`, `eyebrow`, `list`, `quote`, `value`, ecc. Helper `fieldTypeOf(path)` in `FontSizeSlider.tsx`
+- Quando l'utente modifica un fontSize via slider/input/tastiera, `FontSizeSlider` chiama `setLastFontSizeForField(typeKey, value)` dopo `setTextOverride`
+- Nuovo helper `getDefaultForField(fieldPath, lastByType)`:
+  - Se esiste `lastByType[typeKey]` → restituisce quello
+  - Altrimenti restituisce `FIELD_DEFAULTS[typeKey]` (fallback statico attuale)
+- `FontSizeSlider` legge `lastFontSizeByFieldType` dallo store e lo usa come `baseDefault` quando non c'è override sul campo corrente
+- Persistito tramite `partialize` esistente (aggiungo `lastFontSizeByFieldType: s.lastFontSizeByFieldType`)
+- Inizializzato a `{}` nel default state e nel `merge` del persist
 
-Identico fix preventivo in `src/components/TextStylePopover.tsx` nella funzione `clear(key)` (righe 47-52) — stesso pattern, stesso problema potenziale.
+Risultato: l'utente imposta `title=100` su una slide → la prossima slide dove appare un campo `title` mostra il thumb a 100 (e l'input a 100), pur restando "non override" finché non interagisce. Per non confondere, in questo caso l'asterisco `*` resta visibile (è ancora un default, anche se "memorizzato"), ma il tooltip dell'input recita "Ultimo valore usato per questo tipo — clicca per applicare".
 
-## 3. Sync corretta su cambio template/campo
+## 4. Click sul default per applicare/resettare
 
-**Problema attuale:** quando l'utente cambia slide o template, la `value` prop del FontSizeSlider passa da `{fontSize: 80}` a `undefined` (nuovo campo senza override). Il componente è stateless e legge `current = value?.fontSize ?? baseDefault`, quindi tecnicamente già aggiorna correttamente. **Verifico** però che:
+Riformulo l'interazione sul valore default:
+- L'input numerico è **sempre cliccabile/editabile**: già risolve il caso "ripristina al default cliccando" perché basta digitare qualunque valore
+- Aggiungo un **pulsante invisibile a contorno** (varianta `ghost` size `xs`) intorno al numero quando NON c'è override:
+  - Click sul numero default → applica esplicitamente quel valore come override (`setTextOverride` con `fontSize: baseDefault`)
+  - Effetto: l'asterisco sparisce, il valore diventa "personalizzato" anche se uguale al default — utile per "agganciare" il valore prima di esportare e garantire coerenza tra slide
+- Il pulsante reset esistente (`RotateCcw`) resta com'è: rimuove la sola chiave `fontSize` dall'override (logica già implementata correttamente)
 
-- Il calcolo di `defaultFor(fieldPath)` venga ri-eseguito ad ogni render (è una funzione pura chiamata inline → OK)
-- Non ci siano `useState` interni con stato stale → confermato: il componente non ha `useState`, è puramente derivato da props + store
-- Il prop `value` viene passato correttamente da `SlideEditorForm` ad ogni cambio slide
+In `compact` mode (usato negli `ArrayField`), dove l'input è nascosto, aggiungo un mini-bottone reset cliccabile direttamente sull'asterisco dello slider tooltip — ma per semplicità mantengo solo il bottone `RotateCcw` già presente quando override attivo.
 
-**Modifica a `src/components/FontSizeSlider.tsx`:**
-- Aggiungo `key={`${slideId}:${fieldPath}`}` opzionale tramite documentazione del componente (commento JSDoc) — il consumer in `SlideEditorForm.tsx` dovrebbe già passare key corretta tramite il padre `Field`/`ArrayField`
-- **Verifica in `SlideEditorForm.tsx`:** controllo che il rendering condizionale del `FontSizeSlider` dentro `Field` e dentro gli items degli array usi `slideId` e `fieldPath` correnti (non chiusure stale). Se rilevo problemi, aggiungo `key={fieldPath}` esplicita.
-
-**Sincronizzazione visiva:** quando un override viene rimosso (reset), `value?.fontSize` diventa `undefined`, e il thumb torna automaticamente a `baseDefault` (es. 88 per `title`) perché `current = value?.fontSize ?? baseDefault`. Lo slider è "controllato" da Radix con `value={[current]}`, quindi si aggiorna nel render successivo. ✓
-
-## 4. Bonus UX: mostra "default" inline
-
-Quando lo slider mostra il valore di default (no override), il numero accanto è `baseDefault` ma in colore `text-muted-foreground`. Aggiungo un piccolo indicatore testuale: invece di `64`, mostro `64*` con un asterisco grigio chiaro per indicare "default non personalizzato". Tooltip al passaggio: "Valore default del template — clicca o trascina per personalizzare".
-
-## File toccati
+## 5. File toccati
 
 **Modificati:**
-- `src/components/FontSizeSlider.tsx` — keyboard handler custom (Shift/PageUp/Home/End), aria-label/valuetext, reset condizionale con `clearTextOverride` se rest vuoto, indicatore "*" per default
-- `src/components/TextStylePopover.tsx` — stesso pattern di reset robusto in `clear()`: se rest vuoto → `clearTextOverride`
-- `src/components/ui/slider.tsx` — focus ring da `ring-1` a `ring-2` per migliore visibilità tastiera (modifica safe, generalizzata)
-- `src/components/SlideEditorForm.tsx` — verifica/aggiunta `key={fieldPath}` su `FontSizeSlider` per garantire reset corretto al cambio campo (solo se necessario dopo verifica)
+- `src/components/FontSizeSlider.tsx` — input numerico controlled (nascosto in compact), helper `fieldTypeOf`, lettura `lastFontSizeByFieldType` dallo store, salvataggio dopo ogni cambio, click su default per fissarlo come override, integrazione `showTooltip` sullo Slider
+- `src/components/ui/slider.tsx` — supporto opzionale `showTooltip` + `formatTooltip` con tooltip Radix che segue il thumb durante drag/focus (zero impatto sugli altri usi esistenti)
+- `src/lib/store.ts` — campo `lastFontSizeByFieldType: Record<string, number>`, action `setLastFontSizeForField`, persist `partialize` + `merge`
 
 **Non toccati:**
-- `src/lib/store.ts` — `setTextOverride` e `clearTextOverride` esistono già, nessuna modifica al modello
-- `src/lib/templates.ts` — `TextStyle` già supporta `fontSize`
-- `SlideRenderer.tsx`, `slide-styles.css` — rendering invariato
+- `TextStylePopover.tsx` — continua a leggere/scrivere `fontSize` direttamente, sincronia automatica con slider/input
+- `templates.ts`, `SlideRenderer.tsx`, `slide-styles.css` — modello e rendering invariati
+- `SlideEditorForm.tsx` — usa `FontSizeSlider` per props, nessun cambio API
 
-## Fuori scope
+## 6. Dettagli UX
 
-- **Shortcut globali tastiera** (es. Cmd+↑ sul campo focused per ingrandire senza cliccare lo slider): possibile in iterazione successiva con event listener globale
-- **Animazione del thumb** sul cambio valore da tastiera (resta snap istantaneo Radix nativo)
-- **Persistenza dell'ultimo valore impostato** come default per il prossimo campo dello stesso tipo (es. "ho messo title=100, anche la prossima slide title parte da 100"): fuori scope, ogni slide è indipendente
-- **Drag verticale** (oggi è orizzontale Radix nativo)
-- **Numeric input editabile** accanto allo slider per digitare il valore esatto: il popover "T" già lo offre tramite slider largo
+- Layout riga (default mode): `[Slider 80px] [Input 44px] [Reset 20px]`
+- Layout riga (compact mode): `[Slider 60px] [Reset 20px]` (input nascosto)
+- Tooltip live: appare sopra il thumb durante hover, drag, focus tastiera; sparisce dopo 200ms da pointer-up
+- Memoria per tipo: solo per la sessione + persist localStorage (zero sync server, zero conflitti tra utenti)
+- Asterisco `*`: mostrato come suffisso nel `title` HTML dell'input (es. "32px (default del template)" o "32px (ultimo usato per title)") — non più carattere visibile sullo schermo, evita confusione
+
+## 7. Fuori scope
+
+- **Sliders verticali** o doppio thumb per range responsivi (story/landscape)
+- **Memoria condivisa tra progetti** o tra utenti (resta locale al device)
+- **Auto-apply della memoria a tutte le slide esistenti** (resta solo per i NUOVI campi rendered, non riscrive override già impostati)
+- **Numeric input nei tooltip** (l'input vive solo nel form, non nel tooltip)
+- **Animazione del tooltip** durante drag (resta snap istantaneo nativo Radix)
 
