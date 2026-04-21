@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,10 +49,54 @@ export function BrandSettingsDialog() {
   const setDefaultLanguage = useCarousel((s) => s.setDefaultLanguage);
   const [newLang, setNewLang] = useState("");
 
-  const setEffect = <K extends keyof typeof brand.effects>(k: K, v: (typeof brand.effects)[K]) =>
-    setBrand({ effects: { ...brand.effects, [k]: v } });
+  // Debounced draft for visual settings — collapses rapid changes (color picker,
+  // font select, weight changes, effect toggles) into a single undo entry.
+  const [brandDraft, setBrandDraft] = useState(brand);
+  const draftRef = useRef(brandDraft);
+  const skipNextSync = useRef(false);
 
-  const reset = () => setBrand({
+  useEffect(() => {
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    setBrandDraft(brand);
+    draftRef.current = brand;
+  }, [brand]);
+
+  const setDraft = (patch: Partial<typeof brand>) => {
+    const next = { ...draftRef.current, ...patch };
+    draftRef.current = next;
+    setBrandDraft(next);
+  };
+
+  // Commit draft 400ms after the last change.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (draftRef.current !== brand) {
+        skipNextSync.current = true;
+        setBrand(draftRef.current);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [brandDraft, brand, setBrand]);
+
+  // Flush pending draft when the dialog closes.
+  useEffect(() => {
+    if (open) return;
+    if (draftRef.current !== brand) {
+      skipNextSync.current = true;
+      setBrand(draftRef.current);
+    }
+  }, [open, brand, setBrand]);
+
+  // Use draft as the source of truth for inputs so changes feel instant.
+  const b = brandDraft;
+
+  const setEffect = <K extends keyof typeof b.effects>(k: K, v: (typeof b.effects)[K]) =>
+    setDraft({ effects: { ...b.effects, [k]: v } });
+
+  const reset = () => setDraft({
     accent: DEFAULT_BRAND.accent,
     accentSecondary: DEFAULT_BRAND.accentSecondary,
     textColor: DEFAULT_BRAND.textColor,
