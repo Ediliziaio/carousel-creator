@@ -1,87 +1,113 @@
 
 
-# Input numerico, tooltip live, memoria per tipo, click-reset sul default
+# Nuovi template "killer" per il carosello
 
-## 1. Input numerico accanto allo slider
+Aggiungo 6 nuovi template scelti per coprire casi d'uso ad alto engagement (educational, growth, storytelling) che oggi mancano. Ogni template è studiato per i 4 formati esistenti (portrait/square/story/landscape) con stile coerente al sistema attuale.
 
-In `src/components/FontSizeSlider.tsx`, sostituisco lo `<span>` che oggi mostra `64*` con un `<input type="number">` molto compatto (~44px), gestito controlled:
+## I 6 nuovi template
 
-- Range: `min=16 max=240 step=2`
-- Mostra il valore corrente (override o default)
-- `onChange`: aggiorna il valore con clamp [16, 240], salva l'override via `setTextOverride`
-- `onBlur`: se il campo è vuoto o NaN, ripristina al valore corrente senza salvare nulla
-- Stile: `h-6 w-12 text-[10px] tabular-nums px-1` — coerente con la densità attuale del form
-- In `compact={true}` (usato dentro `ArrayField`), l'input rimane nascosto come oggi (si edita solo via slider/tastiera/popover) per non rompere righe strette
-- Asterisco `*` per i default: appare solo come suffisso testuale nel `title` tooltip dell'input quando non c'è override (no più `<span>` separato)
+### 1. `myth` — Mito vs Realtà (categoria `text`)
+Due card affiancate (verticalmente in story, orizzontalmente altrove): "MITO" con icona ❌ + claim falso barrato, "REALTÀ" con icona ✅ + claim vero in evidenza. Perfetto per debunking e contenuti educativi.
+- Campi: `eyebrow`, `title`, `myth: { label, text }`, `reality: { label, text }`, opzionale `source`
 
-## 2. Tooltip live sul thumb dello slider
+### 2. `process` — Processo numerato a step (categoria `data`)
+Lista verticale di 3-6 step con numero grande circolare a sinistra, titolo + descrizione breve a destra, linea verticale di connessione tra step. Ideale per how-to e tutorial sintetici.
+- Campi: `eyebrow`, `title`, `steps: [{ number?, title, desc }]` (numerazione automatica se omessa)
+- Limiti validation: min 3, max 6 step
 
-Modifico `src/components/ui/slider.tsx` per supportare un tooltip che segue il thumb durante drag/keyboard:
+### 3. `prosCons` — Pro & Contro (categoria `data`)
+Due colonne ben distinte: "PRO" (verde, ✓) e "CONTRO" (rosso, ✗), ognuna con 2-5 bullet point. Decisioni, recensioni, comparazioni rapide.
+- Campi: `eyebrow`, `title`, `pros: string[]`, `cons: string[]`
+- Limiti: 2-5 per colonna
 
-- Aggiungo prop opzionale `showTooltip?: boolean` e `formatTooltip?: (value: number) => string` al `Slider`
-- Quando `showTooltip` è true, wrappo `SliderPrimitive.Thumb` con un `<TooltipProvider><Tooltip><TooltipTrigger asChild>...</TooltipTrigger><TooltipContent>{formatTooltip(value)}</TooltipContent></Tooltip></TooltipProvider>`
-- Il tooltip resta aperto durante drag tramite stato locale `[isDragging, setIsDragging]` derivato da eventi `onPointerDown`/`onPointerUp` sul Root, e durante focus tramite `:focus-within` (Radix gestisce focus state nativamente)
-- Posizione: `side="top"`, `sideOffset={8}`
+### 4. `quoteBig` — Citazione gigante full-bleed (categoria `text`)
+Citazione tipografica enorme (200px+ in portrait), virgolette decorative giganti come elemento di sfondo, autore + ruolo + foto opzionale piccola in basso. Stile editoriale "rivista".
+- Campi: `quote`, `author`, `role?`, `avatar?`
+- Diverso da `imageQuote` (che ha immagine sinistra/destra) e da `testimonial` (più strutturato): qui il quote È il protagonista assoluto
 
-In `FontSizeSlider.tsx`: passo `showTooltip` e `formatTooltip={(v) => `${v}px`}`. Mantiene retrocompatibilità — gli altri usi del `Slider` nel progetto non sono toccati.
+### 5. `roadmap` — Roadmap con stati (categoria `data`)
+Timeline orizzontale (verticale in story) con 3-5 milestone, ognuno con stato visivo (✓ done / ⏳ in progress / ○ planned), titolo, periodo (es. "Q1 2026"), descrizione breve. Ideale per product updates e annunci.
+- Campi: `eyebrow`, `title`, `milestones: [{ status: "done"|"progress"|"planned", period, title, desc }]`
+- Limiti: 3-5 milestone
 
-## 3. Memoria dell'ultimo fontSize per tipo di campo
+### 6. `cta` — Call To Action finale (categoria `ref`)
+Slide di chiusura ad alto impatto: titolo grande con verbo all'imperativo, sottotitolo, "bottone" prominente con label CTA (es. "Salva questo post"), opzionale handle social/URL piccolo in basso. Da usare come ultima slide del carosello.
+- Campi: `headline`, `subtitle?`, `buttonLabel`, `handle?`
 
-Aggiungo al store `src/lib/store.ts` una nuova mappa persistita:
+## Modifiche tecniche
 
-```ts
-lastFontSizeByFieldType: Record<string, number>; // es. { title: 100, paragraphs: 36, eyebrow: 26 }
-setLastFontSizeForField: (fieldPath: string, size: number) => void;
-```
+### `src/lib/templates.ts`
+- Estendo `TemplateId` con: `"myth" | "process" | "prosCons" | "quoteBig" | "roadmap" | "cta"`
+- Aggiungo le 6 interfacce data corrispondenti (`MythData`, `ProcessData`, `ProsConsData`, `QuoteBigData`, `RoadmapData`, `CtaData`) all'union `AnyTemplateData`
+- Estendo `TEMPLATE_META` con label/desc/category per ognuno
+- Estendo `makeDefaultData()` con contenuti default realistici (italiani, allineati al tono attuale)
+- Aggiorno `getStylableFields()` per esporre i campi testuali stilizzabili di ogni nuovo template
 
-Logica:
-- La chiave è il **tipo di campo** derivato dal fieldPath (radice prima del `.`): `title`, `paragraphs`, `eyebrow`, `list`, `quote`, `value`, ecc. Helper `fieldTypeOf(path)` in `FontSizeSlider.tsx`
-- Quando l'utente modifica un fontSize via slider/input/tastiera, `FontSizeSlider` chiama `setLastFontSizeForField(typeKey, value)` dopo `setTextOverride`
-- Nuovo helper `getDefaultForField(fieldPath, lastByType)`:
-  - Se esiste `lastByType[typeKey]` → restituisce quello
-  - Altrimenti restituisce `FIELD_DEFAULTS[typeKey]` (fallback statico attuale)
-- `FontSizeSlider` legge `lastFontSizeByFieldType` dallo store e lo usa come `baseDefault` quando non c'è override sul campo corrente
-- Persistito tramite `partialize` esistente (aggiungo `lastFontSizeByFieldType: s.lastFontSizeByFieldType`)
-- Inizializzato a `{}` nel default state e nel `merge` del persist
+### `src/lib/store.ts`
+- Aggiorno `DEFAULT_TEMPLATES_PER_CATEGORY` per includere i nuovi ID nelle categorie corrispondenti:
+  - `text`: aggiunge `myth`, `quoteBig`
+  - `data`: aggiunge `process`, `prosCons`, `roadmap`
+  - `ref`: aggiunge `cta`
+- `mergePickerState` già gestisce l'append automatico per utenti con stato persistito → zero-migration
 
-Risultato: l'utente imposta `title=100` su una slide → la prossima slide dove appare un campo `title` mostra il thumb a 100 (e l'input a 100), pur restando "non override" finché non interagisce. Per non confondere, in questo caso l'asterisco `*` resta visibile (è ancora un default, anche se "memorizzato"), ma il tooltip dell'input recita "Ultimo valore usato per questo tipo — clicca per applicare".
+### `src/components/slides/SlideRenderer.tsx`
+- Aggiungo 6 case nel `switch(slide.template)` di `renderBody()`
+- Ognuno usa `fieldStyle()` per gli override e `renderHighlighted()` per i marker `==testo==`
+- Layout responsive ai 4 formati via classi `tpl-*` + `fmt-*`
 
-## 4. Click sul default per applicare/resettare
+### `src/components/slides/slide-styles.css`
+- Nuove classi `.tpl-myth`, `.tpl-process`, `.tpl-prosCons`, `.tpl-quoteBig`, `.tpl-roadmap`, `.tpl-cta` con:
+  - Layout flex/grid base
+  - Override `.fmt-story` (stack verticale stretto)
+  - Override `.fmt-landscape` (più orizzontale, font ridotto)
+  - Override `.fmt-square` (bilanciato)
+  - Tipografia coerente con i template esistenti (eyebrow uppercase, title bold, body regular)
 
-Riformulo l'interazione sul valore default:
-- L'input numerico è **sempre cliccabile/editabile**: già risolve il caso "ripristina al default cliccando" perché basta digitare qualunque valore
-- Aggiungo un **pulsante invisibile a contorno** (varianta `ghost` size `xs`) intorno al numero quando NON c'è override:
-  - Click sul numero default → applica esplicitamente quel valore come override (`setTextOverride` con `fontSize: baseDefault`)
-  - Effetto: l'asterisco sparisce, il valore diventa "personalizzato" anche se uguale al default — utile per "agganciare" il valore prima di esportare e garantire coerenza tra slide
-- Il pulsante reset esistente (`RotateCcw`) resta com'è: rimuove la sola chiave `fontSize` dall'override (logica già implementata correttamente)
+### `src/components/SlideEditorForm.tsx`
+- 6 nuovi editor: `MythEditor`, `ProcessEditor`, `ProsConsEditor`, `QuoteBigEditor`, `RoadmapEditor`, `CtaEditor`
+- Ognuno usa i pattern esistenti: `Field` per scalari, `ArrayField` per liste (steps, pros, cons, milestones), `ItemCounter` per limiti
+- Per `roadmap.status` uso un `<select>` (done/progress/planned) con label localizzate
+- `FontSizeSlider` integrato sui campi testuali principali
 
-In `compact` mode (usato negli `ArrayField`), dove l'input è nascosto, aggiungo un mini-bottone reset cliccabile direttamente sull'asterisco dello slider tooltip — ma per semplicità mantengo solo il bottone `RotateCcw` già presente quando override attivo.
+### `src/lib/validation.ts`
+- Aggiungo case nel `validateSlideData()` per ogni nuovo template:
+  - `myth`: required `title`, `myth.text`, `reality.text`
+  - `process`: required `title`, `steps` min 3 max 6, ogni step richiede `title`
+  - `prosCons`: required `title`, `pros` 2-5, `cons` 2-5
+  - `quoteBig`: required `quote` (10-280 char), `author` (max 60)
+  - `roadmap`: required `title`, `milestones` 3-5, ogni milestone richiede `title` e `period`
+  - `cta`: required `headline`, `buttonLabel`
+- Aggiorno `LIMITS` con le nuove soglie
 
-## 5. File toccati
+## Coerenza visiva
+
+Tutti i nuovi template:
+- Riusano le CSS variables esistenti (`--slide-bg`, `--slide-fg`, `--slide-accent`, ecc.)
+- Rispettano gli effetti brand attuali (gradient, shadow, border, corner, divider)
+- Supportano gli highlight `==testo==` nei campi testuali principali
+- Funzionano con i 4 formati (portrait, square, story, landscape)
+- Si integrano nel `NewSlideDialog` senza modifiche al picker (popolato automaticamente via `templatesPerCategory`)
+
+## File toccati
 
 **Modificati:**
-- `src/components/FontSizeSlider.tsx` — input numerico controlled (nascosto in compact), helper `fieldTypeOf`, lettura `lastFontSizeByFieldType` dallo store, salvataggio dopo ogni cambio, click su default per fissarlo come override, integrazione `showTooltip` sullo Slider
-- `src/components/ui/slider.tsx` — supporto opzionale `showTooltip` + `formatTooltip` con tooltip Radix che segue il thumb durante drag/focus (zero impatto sugli altri usi esistenti)
-- `src/lib/store.ts` — campo `lastFontSizeByFieldType: Record<string, number>`, action `setLastFontSizeForField`, persist `partialize` + `merge`
+- `src/lib/templates.ts` — types, meta, default data, stylable fields
+- `src/lib/store.ts` — `DEFAULT_TEMPLATES_PER_CATEGORY` con i nuovi ID
+- `src/lib/validation.ts` — regole per i 6 nuovi template
+- `src/components/slides/SlideRenderer.tsx` — 6 nuovi case di rendering
+- `src/components/slides/slide-styles.css` — classi `.tpl-*` per i 6 nuovi template + override per formato
+- `src/components/SlideEditorForm.tsx` — 6 nuovi editor
 
 **Non toccati:**
-- `TextStylePopover.tsx` — continua a leggere/scrivere `fontSize` direttamente, sincronia automatica con slider/input
-- `templates.ts`, `SlideRenderer.tsx`, `slide-styles.css` — modello e rendering invariati
-- `SlideEditorForm.tsx` — usa `FontSizeSlider` per props, nessun cambio API
+- `NewSlideDialog.tsx`, `SlidesSidebar.tsx` — il picker legge dinamicamente da store, zero modifiche
+- `FontSizeSlider.tsx`, `TextStylePopover.tsx` — riutilizzati su qualsiasi fieldPath
+- `ExportButton.tsx`, `lib/export.ts` — export agnostico al template
 
-## 6. Dettagli UX
+## Fuori scope
 
-- Layout riga (default mode): `[Slider 80px] [Input 44px] [Reset 20px]`
-- Layout riga (compact mode): `[Slider 60px] [Reset 20px]` (input nascosto)
-- Tooltip live: appare sopra il thumb durante hover, drag, focus tastiera; sparisce dopo 200ms da pointer-up
-- Memoria per tipo: solo per la sessione + persist localStorage (zero sync server, zero conflitti tra utenti)
-- Asterisco `*`: mostrato come suffisso nel `title` HTML dell'input (es. "32px (default del template)" o "32px (ultimo usato per title)") — non più carattere visibile sullo schermo, evita confusione
-
-## 7. Fuori scope
-
-- **Sliders verticali** o doppio thumb per range responsivi (story/landscape)
-- **Memoria condivisa tra progetti** o tra utenti (resta locale al device)
-- **Auto-apply della memoria a tutte le slide esistenti** (resta solo per i NUOVI campi rendered, non riscrive override già impostati)
-- **Numeric input nei tooltip** (l'input vive solo nel form, non nel tooltip)
-- **Animazione del tooltip** durante drag (resta snap istantaneo nativo Radix)
+- **Animazioni di transizione** tra slide (resta statico come oggi)
+- **Template con video** o componenti interattivi (carousel statico per export PNG/JPG)
+- **AI-generated content** dentro i nuovi template (l'utente compila a mano)
+- **Migrazione di slide esistenti** verso i nuovi template (utente sceglie manualmente in "Nuova slide")
+- **Combinazioni preset salvate** automaticamente per i nuovi template (utente li salva manualmente come "combo" se vuole)
 
