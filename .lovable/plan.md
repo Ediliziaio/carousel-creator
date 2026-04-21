@@ -1,97 +1,81 @@
 
 
-# Nuovi preset di carosello + nuove tipologie di slide marketing-driven
+# Nuovi template "wow": media accattivanti + grafici evoluti
 
-## A. 6 nuovi preset di carosello (esperto sales/marketing)
+Aggiungo **8 nuovi template** (4 media + 4 grafici/data viz) progettati per essere visivamente forti, scroll-stopping e immediatamente utili in caroselli social/sales.
 
-Ogni preset è uno **script completo di vendita o engagement** scelto su meccanismi psicologici provati: scarcity, autorità, storytelling, lead generation, contrasto, retention.
+## A. 4 nuovi template MEDIA (categoria `media`)
 
-### 1. `webinar-funnel` — "Webinar / Lead magnet" (9 slide) 🎁
-Funnel per lead magnet gratuito (ebook, webinar, freebie):
-`hook` (curiosity gap) → `bignum` (statistica shock) → `problemSolution` → `tipPack` (3 quick wins teaser) → `socialProof` → `framework` (sneak peek metodo) → `objection` ("è davvero gratis?") → `offer` (lead magnet, prezzo €0) → `cta` ("Scarica ora")
+### 1. `mediaHero` — Hero immagine fullbleed con titolo overlay
+Foto a tutto schermo con gradient overlay (dark→trasparente) e titolo XXL in basso + eyebrow + CTA mini. Stile "rivista".
+- Campi: `imageUrl`, `eyebrow`, `title`, `subtitle?`, `ctaLabel?`, `overlayIntensity?` ("soft" | "strong")
 
-### 2. `before-after-story` — "Trasformazione cliente" (8 slide) ✨
-Storytelling classico "from-to" con cliente reale:
-`cover` ("La storia di Mario") → `hook` (situazione iniziale) → `compare` (prima/dopo) → `process` (cosa abbiamo fatto) → `chartLine` (crescita risultati) → `testimonial` → `socialProof` (metriche) → `cta` ("Vuoi essere il prossimo?")
+### 2. `polaroidStack` — Stack di 3 polaroid ruotate
+3 immagini in cornice bianca con leggera rotazione (-6°, +2°, +5°) e caption sotto ciascuna. Effetto "moodboard creativa".
+- Campi: `eyebrow`, `title`, `polaroids[]` (`url`, `caption`, `date?`) (max 3)
 
-### 3. `myth-busting` — "Sfata 5 miti" (10 slide) 🧨
-Format virale alta-saving rate:
-`hook` ("5 bugie che ti hanno detto su X") → `myth` × 5 (uno per ogni mito) → `framework` (la verità in 1 acronimo) → `quoteBig` (frase memorabile) → `cta` (newsletter / link bio)
+### 3. `splitDuo` — Split immagine + immagine con label centrale
+Due immagini affiancate 50/50 con label diagonale al centro ("VS", "→", "PRIMA / DOPO"). Versione visual del `compare`.
+- Campi: `eyebrow`, `leftImage` (`url`, `label`), `rightImage` (`url`, `label`), `centerBadge` ("VS"), `caption?`
 
-### 4. `flash-sale` — "Flash sale 24h" (7 slide) 🔥
-Urgenza massima, decisione rapida:
-`hook` ("URGENTE: 24h") → `bignum` (sconto %) → `feature` (cosa includi) → `prosCons` (con/senza prodotto) → `socialProof` (chi l'ha già preso) → `offer` (urgency forte) → `cta` ("Compra entro mezzanotte")
+### 4. `magazineCover` — Copertina magazine editoriale
+Layout tipo Vogue/Wired: foto centrale grande, masthead in alto (brand name XXL), 3-4 "cover lines" come strilli laterali, numero/data in basso.
+- Campi: `masthead`, `issueLabel` ("N° 12 · Nov 2024"), `imageUrl`, `mainHeadline`, `coverLines[]` (max 4, ciascuno `text` + `pageRef?`)
 
-### 5. `authority-builder` — "Pillar di autorità" (8 slide) 👑
-Costruzione di autorità senza vendere:
-`cover` (titolo da expert) → `bignum` (anni esperienza / clienti) → `framework` (il tuo metodo proprietario) → `process` → `mistakes` (errori da evitare) → `quoteBig` (frase d'autore) → `tipPack` (3 takeaway) → `cta` (segui per altro)
+## B. 4 nuovi template GRAFICI/DATA VIZ (categoria `data`)
 
-### 6. `objection-crusher` — "Smonta le obiezioni" (9 slide) 🛡️
-Per audience tiepida che non converte:
-`hook` ("Perché non hai ancora comprato?") → `objection` × 5 (le 5 obiezioni più comuni) → `socialProof` → `offer` → `cta` ("Ora non hai più scuse")
+### 1. `chartArea` — Grafico ad area gradient
+Curva area con gradient verticale, gridlines sottili, valore picco evidenziato con tooltip ancorato. Più "morbido" del `chartLine`.
+- Campi: `eyebrow`, `title`, `xLabels[]`, `values[]`, `unit?`, `peakLabel?`, `trend?` ("up" | "down")
 
-## B. 5 nuove tipologie di slide marketing
+### 2. `chartCompareBar` — Barre raggruppate "noi vs loro"
+Barre orizzontali raggruppate a 2 serie (es. "Brand A" vs "Brand B") con etichette categoria a sinistra, valori a destra, colori contrastanti. Killer per posizionamento competitivo.
+- Campi: `eyebrow`, `title`, `seriesA` (`label`, `color?`), `seriesB` (`label`, `color?`), `rows[]` (`label`, `valueA`, `valueB`), `unit?`
 
-Aggiungo template che coprono gap importanti per chi vende sui social.
+### 3. `kpiGrid` — Dashboard 4 KPI con sparkline
+Griglia 2x2 con 4 KPI: ogni cella ha label + valore grande + delta % colorata (verde ↑ / rosso ↓) + mini-sparkline. Stile "dashboard fintech".
+- Campi: `eyebrow`, `title`, `kpis[]` (4 obbligatori) (`label`, `value`, `unit?`, `delta`, `trend` ("up"|"down"|"flat"), `spark[]` (5-7 numeri))
 
-### 1. `urgency` — Countdown / Scarcity
-Slide con countdown grande, posti rimasti, deadline. Layout: timer XL al centro + claim sopra + CTA mini in basso.
-- Campi: `headline`, `deadline` (es. "23:47:12"), `unitsLeft` (es. "Solo 7 posti"), `ctaLabel`
+### 4. `funnelChart` — Funnel di conversione a trapezi
+Trapezi decrescenti impilati verticalmente (es. Visite → Lead → Cliente) con valore + % conversione step-by-step. Perfetto per case study.
+- Campi: `eyebrow`, `title`, `stages[]` (3-5) (`label`, `value`, `conversionPercent?`), `summary?`
 
-### 2. `bonusStack` — "Cosa ricevi" con prezzo cumulativo
-Lista bonus con valore monetario per ognuno, totale enorme barrato + prezzo finale (classico tecnica VSL).
-- Campi: `eyebrow`, `title`, `bonuses[]` (`name`, `description`, `value`), `totalValue`, `yourPrice`, `ctaLabel`
+## C. Stile visivo (non un editor banale)
 
-### 3. `guarantee` — Garanzia / "Risk reversal"
-Sigillo grafico + promessa anti-rischio (rimborso, zero rischio).
-- Campi: `badge` ("100% SODDISFATTI"), `headline`, `body`, `terms` (sotto), `seal` (icona/emoji)
-
-### 4. `faq` — Domande frequenti accordion
-Lista 3-5 Q&A con stile chat / pillole. Risolve obiezioni in batch (più compatto di 5 slide `objection`).
-- Campi: `eyebrow`, `title`, `items[]` (`q`, `a`)
-
-### 5. `quickWin` — "Win in 60 secondi"
-Slide-azione tipo "Fai questo ORA": istruzione singola con timer mini + screenshot/before-after.
-- Campi: `eyebrow` ("PROVA SUBITO"), `instruction` (titolo grande), `steps[]` (3 step max), `expectedResult`, `timeBadge` (es. "60 sec")
+I nuovi template usano **CSS dedicato** con queste tecniche:
+- Gradient overlay e mask CSS per `mediaHero` / `magazineCover`
+- `transform: rotate()` randomizzato per `polaroidStack` con shadow filtrato
+- `clip-path: polygon()` per i trapezi del `funnelChart`
+- SVG inline (no Recharts dependency) per `chartArea`, `chartCompareBar`, sparkline `kpiGrid` — evita costo runtime e mantiene crisp export PNG
+- Tutti rispettano le brand vars `--accent`, `--accent-2`, `--bg`, `--text` e le classi `mkt-grad-*`/`mkt-badge-*` esistenti
 
 ## File toccati
 
-**Nuovi:**
-- (nessuno — i nuovi template vivono in `templates.ts` e `SlideRenderer.tsx`)
-
 **Modificati:**
-- `src/lib/templates.ts` — aggiungo 5 `TemplateId` (`urgency`, `bonusStack`, `guarantee`, `faq`, `quickWin`), interface dati, default in `makeDefaultData`, voci `TEMPLATE_META` + `TEMPLATE_ORDER`, voci in `getStylableFields`
-- `src/components/slides/SlideRenderer.tsx` — 5 nuovi componenti template + case nel router `renderBody`
-- `src/components/slides/slide-styles.css` — classi `.tpl-urgency`, `.tpl-bonusStack`, `.tpl-guarantee`, `.tpl-faq`, `.tpl-quickWin` (stile coerente con marketing existing: badge, gradient, neon)
-- `src/components/SlideEditorForm.tsx` — 5 nuovi editor (`UrgencyEditor`, `BonusStackEditor`, `GuaranteeEditor`, `FaqEditor`, `QuickWinEditor`) + case nel switch
-- `src/lib/validation.ts` — 5 nuovi case di validazione (campi obbligatori: `urgency.headline/deadline/ctaLabel`, `bonusStack.title/yourPrice/ctaLabel/bonuses≥1`, `guarantee.headline/body`, `faq.title/items≥2`, `quickWin.instruction/steps≥1`)
-- `src/lib/carouselPresets.ts` — aggiungo 6 preset built-in (incluso uso dei nuovi template `urgency`, `bonusStack`, `guarantee`, `faq` in alcuni)
+- `src/lib/templates.ts` — 8 nuovi `TemplateId`, 8 interface dati, default in `makeDefaultData`, voci `TEMPLATE_META`, `TEMPLATE_ORDER`, `getStylableFields`
+- `src/components/slides/SlideRenderer.tsx` — 8 nuovi componenti renderer + case nel router `renderBody`; SVG inline per i 4 chart
+- `src/components/slides/slide-styles.css` — classi `.tpl-mediaHero`, `.tpl-polaroidStack`, `.tpl-splitDuo`, `.tpl-magazineCover`, `.tpl-chartArea`, `.tpl-chartCompareBar`, `.tpl-kpiGrid`, `.tpl-funnelChart`
+- `src/components/SlideEditorForm.tsx` — 8 nuovi editor (`MediaHeroEditor`, `PolaroidStackEditor`, `SplitDuoEditor`, `MagazineCoverEditor`, `ChartAreaEditor`, `ChartCompareBarEditor`, `KpiGridEditor`, `FunnelChartEditor`) con riuso di `ImageUploadField` e `ArrayField`
+- `src/lib/validation.ts` — 8 case validazione (es. `mediaHero.imageUrl/title`, `polaroidStack.polaroids≥1`, `chartCompareBar.rows≥2`, `kpiGrid.kpis=4`, `funnelChart.stages≥2`)
+- `src/lib/store.ts` — aggiungo i nuovi id in `DEFAULT_TEMPLATES_PER_CATEGORY`:
+  - `media`: + `mediaHero`, `polaroidStack`, `splitDuo`, `magazineCover`
+  - `data`: + `chartArea`, `chartCompareBar`, `kpiGrid`, `funnelChart`
 
 **Non toccati:**
-- `src/lib/store.ts` — già pronto (loadCarouselPreset agnostico ai template)
-- `src/components/CarouselPresetDialog.tsx` — auto-mostra i nuovi preset
-- `src/components/NewSlideDialog.tsx` — auto-mostra i nuovi template (categorizzati come `text`/`media` in base alla natura — assegno `urgency`/`bonusStack`/`guarantee`/`quickWin` a categoria `text`, `faq` a categoria `data`)
+- `src/components/CarouselPresetDialog.tsx`, `src/components/NewSlideDialog.tsx` — auto-mostrano i nuovi template via store
+- `src/lib/carouselPresets.ts` — i preset esistenti continuano a funzionare; i nuovi template restano disponibili a piacere
 
-## Categorie nei picker
+## Esperienza finale
 
-Estendo `templatesPerCategory` (in `store.ts` defaults) per includere i 5 nuovi:
-- `text`: `urgency`, `bonusStack`, `guarantee`, `quickWin`
-- `data`: `faq`
-
-## Esperienza utente integrata
-
-1. Apre "Caroselli pronti" → ora 10 preset (4 esistenti + 6 nuovi) coprono ogni stadio del funnel
-2. "Nuova slide" → 37 template totali (32 + 5 nuovi marketing-killer)
-3. I nuovi preset come `flash-sale` o `webinar-funnel` usano automaticamente i nuovi template `urgency` e `bonusStack` per massima coerenza
-4. Validazione e blocco export funzionano out-of-the-box anche sui nuovi template
-5. Auto-style brand (badge filled/neon, gradient subtle/bold) si applica anche ai nuovi template marketing
+1. "Nuova slide" → categoria **Media** ora propone 8 template (4 esistenti + 4 nuovi visualmente forti)
+2. Categoria **Grafici/Dati** ora propone anche `chartArea`, `chartCompareBar`, `kpiGrid`, `funnelChart` per casi d'uso reali (trend, confronto competitivo, dashboard, conversion funnel)
+3. Tutti i nuovi template sono editabili dal form, validati, esportabili in PNG, e rispettano brand colors + marketing styles
 
 ## Fuori scope
 
-- Rendering reale del countdown live (è un testo statico, non un timer JS — l'utente lo aggiorna manualmente)
-- Animazioni speciali per `urgency` (resta statico per export PNG)
-- Localizzazione automatica del copy dei preset (default italiano, l'utente traduce)
-- Editor visuale del `bonusStack` con calcolo automatico totale (utente compila i numeri)
-- Preset salvati dall'utente (solo built-in)
-- Migrazione dei vecchi preset per usare i nuovi template
+- Animazioni di ingresso (export statico)
+- Upload multiplo drag-and-drop su `polaroidStack` (un'immagine alla volta)
+- Editor visuale chart con drag dei punti (compilazione numeri da form)
+- Migrazione automatica di `gallery`/`chartLine` esistenti verso i nuovi template
+- Preset carosello che usano i nuovi template (l'utente li compone manualmente)
 
