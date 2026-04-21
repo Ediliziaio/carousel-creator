@@ -1507,7 +1507,7 @@ function MediaHeroEditor({ d, set, errFor, slideId, overrides }: EditorProps<Med
         <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="STORY" />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <Field label="Sottotitolo (opzionale)" slideId={slideId} fieldPath="subtitle" overrides={overrides}>
         <Input value={d.subtitle ?? ""} onChange={(e) => set({ ...d, subtitle: e.target.value })} />
@@ -1530,21 +1530,22 @@ function MediaHeroEditor({ d, set, errFor, slideId, overrides }: EditorProps<Med
 
 function PolaroidStackEditor({ d, set, errFor, slideId, overrides }: EditorProps<PolaroidStackData>) {
   const pErr = errFor("polaroids");
+  const polaroids = d.polaroids ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
         <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {pErr && <p data-field="polaroids" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {pErr}</p>}
       <ArrayField
         label="Polaroid (1–3)"
-        items={d.polaroids}
+        items={polaroids}
         onChange={(arr) => set({ ...d, polaroids: arr })}
         maxItems={3}
-        counter={<ItemCounter current={d.polaroids.length} min={1} max={3} unit="polaroid" />}
+        counter={<ItemCounter current={polaroids.length} min={1} max={3} unit="polaroid" />}
         render={(v, on, i) => (
           <div className="space-y-2 rounded-md border border-border p-2">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Polaroid {i + 1}</Label>
@@ -1560,6 +1561,8 @@ function PolaroidStackEditor({ d, set, errFor, slideId, overrides }: EditorProps
 }
 
 function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<SplitDuoData>) {
+  const left = d.leftImage ?? { url: undefined, label: "" };
+  const right = d.rightImage ?? { url: undefined, label: "" };
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
@@ -1568,21 +1571,21 @@ function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<Spli
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 rounded-md border border-border p-3">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Sinistra</Label>
-          <ImageUploadField label="" value={d.leftImage.url} onChange={(url) => set({ ...d, leftImage: { ...d.leftImage, url } })} />
+          <ImageUploadField label="" value={left.url} onChange={(url) => set({ ...d, leftImage: { ...left, url } })} />
           <Field label="Etichetta" error={errFor("leftImage.label")} slideId={slideId} fieldPath="leftImage.label" overrides={overrides}>
-            <Input data-field="leftImage.label" value={d.leftImage.label} onChange={(e) => set({ ...d, leftImage: { ...d.leftImage, label: e.target.value } })} placeholder="PRIMA" />
+            <Input data-field="leftImage.label" value={left.label} onChange={(e) => set({ ...d, leftImage: { ...left, label: e.target.value } })} placeholder="PRIMA" />
           </Field>
         </div>
         <div className="space-y-2 rounded-md border border-border p-3">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Destra</Label>
-          <ImageUploadField label="" value={d.rightImage.url} onChange={(url) => set({ ...d, rightImage: { ...d.rightImage, url } })} />
+          <ImageUploadField label="" value={right.url} onChange={(url) => set({ ...d, rightImage: { ...right, url } })} />
           <Field label="Etichetta" error={errFor("rightImage.label")} slideId={slideId} fieldPath="rightImage.label" overrides={overrides}>
-            <Input data-field="rightImage.label" value={d.rightImage.label} onChange={(e) => set({ ...d, rightImage: { ...d.rightImage, label: e.target.value } })} placeholder="DOPO" />
+            <Input data-field="rightImage.label" value={right.label} onChange={(e) => set({ ...d, rightImage: { ...right, label: e.target.value } })} placeholder="DOPO" />
           </Field>
         </div>
       </div>
       <Field label="Badge centrale" error={errFor("centerBadge")} slideId={slideId} fieldPath="centerBadge" overrides={overrides}>
-        <Input data-field="centerBadge" value={d.centerBadge} onChange={(e) => set({ ...d, centerBadge: e.target.value })} placeholder="VS" />
+        <Input data-field="centerBadge" value={d.centerBadge ?? ""} onChange={(e) => set({ ...d, centerBadge: e.target.value })} placeholder="VS" />
       </Field>
       <Field label="Caption (opzionale)" slideId={slideId} fieldPath="caption" overrides={overrides}>
         <Input value={d.caption ?? ""} onChange={(e) => set({ ...d, caption: e.target.value })} />
@@ -1593,25 +1596,26 @@ function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<Spli
 
 function MagazineCoverEditor({ d, set, errFor, slideId, overrides }: EditorProps<MagazineCoverData>) {
   const cErr = errFor("coverLines");
+  const coverLines = d.coverLines ?? [];
   return (
     <div className="space-y-4">
       <Field label="Masthead" error={errFor("masthead")} slideId={slideId} fieldPath="masthead" overrides={overrides}>
-        <Input data-field="masthead" value={d.masthead} onChange={(e) => set({ ...d, masthead: e.target.value })} placeholder="VOGUE" />
+        <Input data-field="masthead" value={d.masthead ?? ""} onChange={(e) => set({ ...d, masthead: e.target.value })} placeholder="VOGUE" />
       </Field>
       <Field label="Numero / Data" slideId={slideId} fieldPath="issueLabel" overrides={overrides}>
         <Input value={d.issueLabel ?? ""} onChange={(e) => set({ ...d, issueLabel: e.target.value })} placeholder="N° 12 · Nov 2025" />
       </Field>
       <ImageUploadField label="Foto centrale" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} />
       <Field label="Headline principale" hint={HL_HINT} error={errFor("mainHeadline")} slideId={slideId} fieldPath="mainHeadline" overrides={overrides}>
-        <Textarea data-field="mainHeadline" rows={2} value={d.mainHeadline} onChange={(e) => set({ ...d, mainHeadline: e.target.value })} />
+        <Textarea data-field="mainHeadline" rows={2} value={d.mainHeadline ?? ""} onChange={(e) => set({ ...d, mainHeadline: e.target.value })} />
       </Field>
       {cErr && <p data-field="coverLines" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {cErr}</p>}
       <ArrayField
         label="Cover lines (1–4)"
-        items={d.coverLines}
+        items={coverLines}
         onChange={(arr) => set({ ...d, coverLines: arr })}
         maxItems={4}
-        counter={<ItemCounter current={d.coverLines.length} min={1} max={4} unit="strilli" />}
+        counter={<ItemCounter current={coverLines.length} min={1} max={4} unit="strilli" />}
         render={(v, on, i) => (
           <div className="grid grid-cols-[1fr_90px] gap-2">
             <Input value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder={`Strillo ${i + 1}`} />
@@ -1626,9 +1630,11 @@ function MagazineCoverEditor({ d, set, errFor, slideId, overrides }: EditorProps
 
 function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartAreaData>) {
   const vErr = errFor("values");
+  const xLabelsArr = d.xLabels ?? [];
+  const valuesArr = d.values ?? [];
   const updatePair = (i: number, lb?: string, val?: number) => {
-    const xLabels = [...d.xLabels];
-    const values = [...d.values];
+    const xLabels = [...xLabelsArr];
+    const values = [...valuesArr];
     if (lb !== undefined) xLabels[i] = lb;
     if (val !== undefined) values[i] = val;
     set({ ...d, xLabels, values });
@@ -1636,10 +1642,10 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Unità (es. k)"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
@@ -1659,10 +1665,10 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
       {vErr && <p data-field="values" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {vErr}</p>}
       <ArrayField
         label="Punti (3–24)"
-        items={d.values.map((v, i) => ({ x: d.xLabels[i] ?? "", v }))}
+        items={valuesArr.map((v, i) => ({ x: xLabelsArr[i] ?? "", v }))}
         onChange={(arr) => set({ ...d, xLabels: arr.map((p) => p.x), values: arr.map((p) => p.v) })}
         maxItems={24}
-        counter={<ItemCounter current={d.values.length} min={3} max={24} unit="punti" />}
+        counter={<ItemCounter current={valuesArr.length} min={3} max={24} unit="punti" />}
         render={(v, on, i) => (
           <div className="grid grid-cols-[1fr_100px] gap-2">
             <Input value={v.x} onChange={(e) => { on({ ...v, x: e.target.value }); updatePair(i, e.target.value); }} placeholder="Etichetta X" />
@@ -1677,36 +1683,39 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
 
 function ChartCompareBarEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartCompareBarData>) {
   const rErr = errFor("rows");
+  const seriesA = d.seriesA ?? { label: "" };
+  const seriesB = d.seriesB ?? { label: "" };
+  const rows = d.rows ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Serie A — label" error={errFor("seriesA.label")}>
-          <Input data-field="seriesA.label" value={d.seriesA.label} onChange={(e) => set({ ...d, seriesA: { ...d.seriesA, label: e.target.value } })} />
+          <Input data-field="seriesA.label" value={seriesA.label} onChange={(e) => set({ ...d, seriesA: { ...seriesA, label: e.target.value } })} />
         </Field>
         <Field label="Serie A — colore (#hex)" error={errFor("seriesA.color")}>
-          <Input value={d.seriesA.color ?? ""} onChange={(e) => set({ ...d, seriesA: { ...d.seriesA, color: e.target.value || undefined } })} placeholder="#00E5FF" />
+          <Input value={seriesA.color ?? ""} onChange={(e) => set({ ...d, seriesA: { ...seriesA, color: e.target.value || undefined } })} placeholder="#00E5FF" />
         </Field>
         <Field label="Serie B — label" error={errFor("seriesB.label")}>
-          <Input data-field="seriesB.label" value={d.seriesB.label} onChange={(e) => set({ ...d, seriesB: { ...d.seriesB, label: e.target.value } })} />
+          <Input data-field="seriesB.label" value={seriesB.label} onChange={(e) => set({ ...d, seriesB: { ...seriesB, label: e.target.value } })} />
         </Field>
         <Field label="Serie B — colore (#hex)" error={errFor("seriesB.color")}>
-          <Input value={d.seriesB.color ?? ""} onChange={(e) => set({ ...d, seriesB: { ...d.seriesB, color: e.target.value || undefined } })} placeholder="#B24BF3" />
+          <Input value={seriesB.color ?? ""} onChange={(e) => set({ ...d, seriesB: { ...seriesB, color: e.target.value || undefined } })} placeholder="#B24BF3" />
         </Field>
       </div>
       <Field label="Unità"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
       {rErr && <p data-field="rows" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {rErr}</p>}
       <ArrayField
         label="Righe (2–6)"
-        items={d.rows}
+        items={rows}
         onChange={(arr) => set({ ...d, rows: arr })}
         maxItems={6}
-        counter={<ItemCounter current={d.rows.length} min={2} max={6} unit="righe" />}
+        counter={<ItemCounter current={rows.length} min={2} max={6} unit="righe" />}
         render={(v, on, i) => {
           const lErr = errFor(`rows.${i}.label`);
           return (
@@ -1727,19 +1736,20 @@ function ChartCompareBarEditor({ d, set, errFor, slideId, overrides }: EditorPro
 
 function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGridData>) {
   const kErr = errFor("kpis");
+  const kpis = d.kpis ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {kErr && <p data-field="kpis" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {kErr}</p>}
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">4 KPI (esattamente)</Label>
-      {d.kpis.map((k, i) => {
+      {kpis.map((k, i) => {
         const update = (patch: Partial<typeof k>) => {
-          const arr = [...d.kpis];
+          const arr = [...kpis];
           arr[i] = { ...k, ...patch };
           set({ ...d, kpis: arr });
         };
@@ -1764,7 +1774,7 @@ function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGr
               </select>
             </div>
             <Input
-              value={k.spark.join(", ")}
+              value={(k.spark ?? []).join(", ")}
               onChange={(e) => update({ spark: e.target.value.split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)) })}
               placeholder="Sparkline: 12, 18, 22, 28, 34, 41"
             />
@@ -1777,21 +1787,22 @@ function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGr
 
 function FunnelChartEditor({ d, set, errFor, slideId, overrides }: EditorProps<FunnelChartData>) {
   const sErr = errFor("stages");
+  const stages = d.stages ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {sErr && <p data-field="stages" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {sErr}</p>}
       <ArrayField
         label="Stadi (2–5)"
-        items={d.stages}
+        items={stages}
         onChange={(arr) => set({ ...d, stages: arr })}
         maxItems={5}
-        counter={<ItemCounter current={d.stages.length} min={2} max={5} unit="stadi" />}
+        counter={<ItemCounter current={stages.length} min={2} max={5} unit="stadi" />}
         render={(v, on, i) => {
           const lErr = errFor(`stages.${i}.label`);
           const vErr = errFor(`stages.${i}.value`);
