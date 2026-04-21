@@ -123,6 +123,9 @@ export const useCarousel = create<CarouselState>()(
       activeId: initial1.id,
       activeLang: DEFAULT_BRAND.defaultLanguage,
       brandPresets: BUILT_IN_PRESETS,
+      slideCombos: [],
+      templateCategoryOrder: [...DEFAULT_CATEGORY_ORDER],
+      templatesPerCategory: { ...DEFAULT_TEMPLATES_PER_CATEGORY },
       past: [],
       future: [],
 
@@ -233,6 +236,59 @@ export const useCarousel = create<CarouselState>()(
           });
         }),
 
+      /* Per-field text overrides */
+      setTextOverride: (slideId, fieldPath, style) =>
+        set((s) =>
+          withHistory(s, {
+            slides: s.slides.map((sl) => {
+              if (sl.id !== slideId) return sl;
+              const next = { ...(sl.textOverrides ?? {}) };
+              if (Object.keys(style).length === 0) {
+                delete next[fieldPath];
+              } else {
+                next[fieldPath] = style;
+              }
+              return { ...sl, textOverrides: Object.keys(next).length > 0 ? next : undefined };
+            }),
+          }),
+        ),
+
+      clearTextOverride: (slideId, fieldPath) =>
+        set((s) =>
+          withHistory(s, {
+            slides: s.slides.map((sl) => {
+              if (sl.id !== slideId || !sl.textOverrides) return sl;
+              const next = { ...sl.textOverrides };
+              delete next[fieldPath];
+              return { ...sl, textOverrides: Object.keys(next).length > 0 ? next : undefined };
+            }),
+          }),
+        ),
+
+      /* Slide combos */
+      saveSlideCombo: (name, template, format) =>
+        set((s) => ({
+          slideCombos: [
+            ...s.slideCombos,
+            { id: crypto.randomUUID(), name: name.trim() || "Senza nome", template, format, createdAt: Date.now() },
+          ],
+        })),
+
+      deleteSlideCombo: (id) =>
+        set((s) => ({ slideCombos: s.slideCombos.filter((c) => c.id !== id) })),
+
+      /* Picker DnD ordering */
+      setTemplateCategoryOrder: (order) => set({ templateCategoryOrder: order }),
+      setTemplatesForCategory: (category, templates) =>
+        set((s) => ({
+          templatesPerCategory: { ...s.templatesPerCategory, [category]: templates },
+        })),
+      resetPickerOrder: () =>
+        set({
+          templateCategoryOrder: [...DEFAULT_CATEGORY_ORDER],
+          templatesPerCategory: { ...DEFAULT_TEMPLATES_PER_CATEGORY },
+        }),
+
       /* Brand presets */
       saveBrandPreset: (name) =>
         set((s) => {
@@ -304,15 +360,26 @@ export const useCarousel = create<CarouselState>()(
       partialize: (s) => ({
         brand: s.brand,
         brandPresets: s.brandPresets.filter((p) => !p.builtIn),
+        slideCombos: s.slideCombos,
+        templateCategoryOrder: s.templateCategoryOrder,
+        templatesPerCategory: s.templatesPerCategory,
       }),
       merge: (persistedState, currentState) => {
-        const ps = persistedState as Partial<{ brand: BrandSettings; brandPresets: BrandPreset[] }> | undefined;
+        const ps = persistedState as Partial<{
+          brand: BrandSettings;
+          brandPresets: BrandPreset[];
+          slideCombos: SlideCombo[];
+          templateCategoryOrder: string[];
+          templatesPerCategory: Record<string, TemplateId[]>;
+        }> | undefined;
         const customPresets = ps?.brandPresets ?? [];
         return {
           ...currentState,
           brand: mergeBrand(ps?.brand),
-          // Always include built-ins first; user presets after.
           brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => !p.builtIn)],
+          slideCombos: ps?.slideCombos ?? [],
+          templateCategoryOrder: ps?.templateCategoryOrder ?? [...DEFAULT_CATEGORY_ORDER],
+          templatesPerCategory: ps?.templatesPerCategory ?? { ...DEFAULT_TEMPLATES_PER_CATEGORY },
         };
       },
     },
