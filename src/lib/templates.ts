@@ -619,6 +619,14 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   guarantee: { label: "Garanzia / Risk reversal", desc: "Sigillo garanzia + promessa anti-rischio" },
   faq: { label: "FAQ", desc: "Domande & risposte in formato accordion" },
   quickWin: { label: "Quick win", desc: "Azione rapida da fare ora con step" },
+  mediaHero: { label: "Media hero", desc: "Foto fullbleed + titolo overlay" },
+  polaroidStack: { label: "Polaroid stack", desc: "3 polaroid ruotate stile moodboard" },
+  splitDuo: { label: "Split duo", desc: "Due immagini con badge centrale" },
+  magazineCover: { label: "Magazine cover", desc: "Copertina editoriale + cover lines" },
+  chartArea: { label: "Grafico ad area", desc: "Curva area gradient con picco" },
+  chartCompareBar: { label: "Barre confronto", desc: "Barre raggruppate noi vs loro" },
+  kpiGrid: { label: "Dashboard KPI", desc: "4 KPI con sparkline e delta" },
+  funnelChart: { label: "Funnel conversione", desc: "Trapezi a step decrescenti" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -629,6 +637,8 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
   "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
   "urgency", "bonusStack", "guarantee", "faq", "quickWin",
+  "mediaHero", "polaroidStack", "splitDuo", "magazineCover",
+  "chartArea", "chartCompareBar", "kpiGrid", "funnelChart",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
