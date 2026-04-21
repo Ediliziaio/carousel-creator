@@ -92,6 +92,10 @@ interface CarouselState {
   setTextOverride: (slideId: string, fieldPath: string, style: TextStyle) => void;
   clearTextOverride: (slideId: string, fieldPath: string) => void;
 
+  /** Memory of last fontSize used per field type (e.g. {title: 100, paragraphs: 36}). */
+  lastFontSizeByFieldType: Record<string, number>;
+  setLastFontSizeForFieldType: (typeKey: string, size: number) => void;
+
   /** Slide combos */
   saveSlideCombo: (name: string, template: TemplateId, format: SlideFormat) => void;
   deleteSlideCombo: (id: string) => void;
