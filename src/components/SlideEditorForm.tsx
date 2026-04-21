@@ -665,7 +665,7 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData;
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bullet {i + 1}</Label>
               <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
             </div>
-            <div className="grid grid-cols-[80px_1fr] gap-2">
+            <div className="grid grid-cols-[60px_1fr] gap-2 sm:grid-cols-[80px_1fr]">
               <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
               <Input value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo" />
             </div>
