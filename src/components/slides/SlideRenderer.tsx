@@ -578,3 +578,130 @@ function Testimonial({ slide, d }: { slide: Slide; d: TestimonialData }) {
     </>
   );
 }
+
+/* ===================== NEW TEMPLATES ===================== */
+
+function Myth({ slide, d }: { slide: Slide; d: MythData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="myth-grid">
+        <div className="myth-card myth-false">
+          <div className="myth-icon">✕</div>
+          <div className="myth-label">{d.myth.label}</div>
+          <p className="myth-text" style={fieldStyle(slide, "myth.text")}>{d.myth.text}</p>
+        </div>
+        <div className="myth-card myth-true">
+          <div className="myth-icon">✓</div>
+          <div className="myth-label">{d.reality.label}</div>
+          <p className="myth-text" style={fieldStyle(slide, "reality.text")}>{d.reality.text}</p>
+        </div>
+      </div>
+      {d.source && <div className="myth-source">{d.source}</div>}
+    </>
+  );
+}
+
+function Process({ slide, d }: { slide: Slide; d: ProcessData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <ol className="process-list">
+        {d.steps.map((s, i) => (
+          <li key={i} className="process-step">
+            <div className="process-num">{s.number ?? pad2(i + 1)}</div>
+            <div className="process-body">
+              <h3 style={fieldStyle(slide, `steps.${i}.title`)}>{s.title}</h3>
+              <p>{s.desc}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
+function ProsCons({ slide, d }: { slide: Slide; d: ProsConsData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="proscons-grid">
+        <div className="proscons-col proscons-pros">
+          <div className="proscons-head">{d.prosLabel ?? "PRO"}</div>
+          <ul>
+            {d.pros.map((p, i) => (
+              <li key={i}>
+                <span className="proscons-mark">✓</span>
+                <span style={fieldStyle(slide, `pros.${i}`)}>{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="proscons-col proscons-cons">
+          <div className="proscons-head">{d.consLabel ?? "CONTRO"}</div>
+          <ul>
+            {d.cons.map((c, i) => (
+              <li key={i}>
+                <span className="proscons-mark">✕</span>
+                <span style={fieldStyle(slide, `cons.${i}`)}>{c}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function QuoteBig({ slide, d }: { slide: Slide; d: QuoteBigData }) {
+  return (
+    <>
+      <div className="qb-mark" aria-hidden>"</div>
+      <blockquote className="qb-quote" style={fieldStyle(slide, "quote")}>{d.quote}</blockquote>
+      <div className="qb-foot">
+        {d.avatarUrl && (
+          <div className="qb-avatar"><img src={d.avatarUrl} alt={d.author} /></div>
+        )}
+        <div className="qb-meta">
+          <div className="qb-author" style={fieldStyle(slide, "author")}>— {d.author}</div>
+          {d.role && <div className="qb-role" style={fieldStyle(slide, "role")}>{d.role}</div>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Roadmap({ slide, d }: { slide: Slide; d: RoadmapData }) {
+  const symbol = (s: string) => (s === "done" ? "✓" : s === "progress" ? "●" : "○");
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="roadmap-track">
+        {d.milestones.map((m, i) => (
+          <div key={i} className={`roadmap-item rm-${m.status}`}>
+            <div className="rm-dot">{symbol(m.status)}</div>
+            <div className="rm-period">{m.period}</div>
+            <h3 style={fieldStyle(slide, `milestones.${i}.title`)}>{m.title}</h3>
+            <p>{m.desc}</p>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function Cta({ slide, d }: { slide: Slide; d: CtaData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 className="cta-headline" style={fieldStyle(slide, "headline")}><HL text={d.headline} /></h1>
+      {d.subtitle && <p className="cta-sub" style={fieldStyle(slide, "subtitle")}>{d.subtitle}</p>}
+      <div className="cta-button" style={fieldStyle(slide, "buttonLabel")}>{d.buttonLabel}</div>
+      {d.handle && <div className="cta-handle">{d.handle}</div>}
+    </>
+  );
+}
