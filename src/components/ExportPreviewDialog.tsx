@@ -6,7 +6,7 @@ import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { validateSlide } from "@/lib/validation";
 import { downloadSinglePng, ensureFontsFor, fontsReadyFor } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
-import { TEMPLATE_META } from "@/lib/templates";
+import { TEMPLATE_META, FORMAT_DIMENSIONS } from "@/lib/templates";
 import { Download, AlertCircle, X, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,21 +36,24 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
   const [busy, setBusy] = useState(false);
   const [assetsReady, setAssetsReady] = useState(false);
 
+  const fmt = slide?.format ?? "portrait";
+  const dim = FORMAT_DIMENSIONS[fmt];
+
   useEffect(() => {
     if (!open) return;
     const el = containerRef.current;
     if (!el) return;
     const compute = () => {
       const rect = el.getBoundingClientRect();
-      const sx = (rect.width - 16) / 1080;
-      const sy = (rect.height - 16) / 1350;
-      setScale(Math.max(0.1, Math.min(sx, sy)));
+      const sx = (rect.width - 16) / dim.w;
+      const sy = (rect.height - 16) / dim.h;
+      setScale(Math.max(0.05, Math.min(sx, sy)));
     };
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [open]);
+  }, [open, dim.w, dim.h]);
 
   // Preload fonts + check images for the dialog so preview matches export.
   useEffect(() => {
@@ -91,7 +94,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
   const validation = validateSlide(slide, lang, brand.defaultLanguage);
   const num = (slideIndex + 1).toString().padStart(2, "0");
   const langSuffix = brand.languages.length > 1 ? `-${lang}` : "";
-  const filename = `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`;
+  const filename = `${slugify(brandTitle)}-slide-${num}-${dim.w}x${dim.h}${langSuffix}.png`;
 
   const onDownload = async () => {
     if (!captureRef.current) return;
@@ -131,11 +134,11 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
         </DialogHeader>
         <div className="grid max-h-[70vh] grid-cols-[1fr_280px]">
           <div ref={containerRef} className="relative flex items-center justify-center overflow-hidden bg-[#1a1a1a] p-4">
-            <div style={{ width: 1080 * scale, height: 1350 * scale, position: "relative" }}>
+            <div style={{ width: dim.w * scale, height: dim.h * scale, position: "relative" }}>
               <div
                 style={{
-                  width: 1080,
-                  height: 1350,
+                  width: dim.w,
+                  height: dim.h,
                   transform: `scale(${scale})`,
                   transformOrigin: "top left",
                   position: "absolute",
@@ -150,7 +153,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           </div>
           <div className="space-y-3 overflow-auto border-l border-border bg-card p-4 text-sm">
             <Info label="Template" value={TEMPLATE_META[slide.template].label} />
-            <Info label="Risoluzione" value="1080 × 1350 px" />
+            <Info label="Risoluzione" value={`${dim.w} × ${dim.h} px (${dim.ratio})`} />
             <Info label="Lingua" value={langLabel(lang)} />
             <Info label="File" value={filename} mono />
             <Info label="Brand" value={brand.brand} />
@@ -199,8 +202,8 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           </Button>
         </DialogFooter>
         {/* Hidden full-size capture node — what actually gets exported */}
-        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}>
-          <div ref={captureRef} style={{ width: 1080, height: 1350 }}>
+        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
+          <div ref={captureRef} style={{ width: dim.w, height: dim.h }}>
             <SlideRenderer slide={slide} brand={brand} index={slideIndex} total={slides.length} lang={lang} />
           </div>
         </div>

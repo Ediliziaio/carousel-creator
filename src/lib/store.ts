@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import {
   type Slide,
   type TemplateId,
+  type SlideFormat,
   type BrandSettings,
   type AnyTemplateData,
   type SlideDataField,
@@ -39,7 +40,7 @@ interface CarouselState {
   setActiveLang: (code: string) => void;
   setDefaultLanguage: (code: string) => void;
 
-  addSlide: (template: TemplateId) => void;
+  addSlide: (template: TemplateId, format?: SlideFormat) => void;
   removeSlide: (id: string) => void;
   duplicateSlide: (id: string) => void;
   updateSlide: (id: string, data: AnyTemplateData) => void;
@@ -136,9 +137,9 @@ export const useCarousel = create<CarouselState>()(
           return withHistory(s, { brand: { ...s.brand, defaultLanguage: code } });
         }),
 
-      addSlide: (template) =>
+      addSlide: (template, format = "portrait") =>
         set((s) => {
-          const slide = makeDefaultSlide(template);
+          const slide = makeDefaultSlide(template, format);
           return withHistory(s, { slides: [...s.slides, slide], activeId: slide.id });
         }),
 
@@ -189,14 +190,18 @@ export const useCarousel = create<CarouselState>()(
       setActive: (id) => set({ activeId: id }),
 
       loadJSON: (json) =>
-        set((s) =>
-          withHistory(s, {
+        set((s) => {
+          const migrated = json.slides.map((sl) => ({
+            ...sl,
+            format: (sl as Partial<Slide>).format ?? ("portrait" as SlideFormat),
+          }));
+          return withHistory(s, {
             brand: mergeBrand(json.brand),
-            slides: json.slides,
-            activeId: json.slides[0]?.id ?? null,
+            slides: migrated,
+            activeId: migrated[0]?.id ?? null,
             activeLang: (json.brand?.defaultLanguage ?? "it"),
-          }),
-        ),
+          });
+        }),
 
       /* Brand presets */
       saveBrandPreset: (name) =>

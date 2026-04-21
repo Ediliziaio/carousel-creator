@@ -15,14 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid } from "lucide-react";
+import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   head: () => ({
     meta: [
-      { title: "Carousel Generator — 1080×1350 PNG" },
-      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG 1080×1350." },
+      { title: "Carousel Generator — multi-formato PNG" },
+      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG in 4 formati." },
     ],
   }),
   component: Index,
@@ -192,9 +194,14 @@ function Index() {
 
         <main className="relative flex flex-1 items-center justify-center overflow-auto bg-[#1a1a1a] p-6">
           {activeSlide ? (
-            <ScaledPreview key={activeSlide.id + activeLang}>
-              <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
-            </ScaledPreview>
+            (() => {
+              const dim = FORMAT_DIMENSIONS[activeSlide.format ?? "portrait"];
+              return (
+                <ScaledPreview key={activeSlide.id + activeLang} w={dim.w} h={dim.h}>
+                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
+                </ScaledPreview>
+              );
+            })()
           ) : (
             <div className="text-muted-foreground">Nessuna slide selezionata</div>
           )}
@@ -226,13 +233,16 @@ function Index() {
 
       <div
         aria-hidden
-        style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}
+        style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}
       >
-        {slides.map((s, i) => (
-          <div key={s.id} ref={setExportRef(s.id)} style={{ width: 1080, height: 1350 }}>
-            <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
-          </div>
-        ))}
+        {slides.map((s, i) => {
+          const dim = FORMAT_DIMENSIONS[s.format ?? "portrait"];
+          return (
+            <div key={s.id} ref={setExportRef(s.id)} style={{ width: dim.w, height: dim.h }}>
+              <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
+            </div>
+          );
+        })}
       </div>
 
       <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
@@ -241,7 +251,7 @@ function Index() {
   );
 }
 
-function ScaledPreview({ children }: { children: React.ReactNode }) {
+function ScaledPreview({ children, w = 1080, h = 1350 }: { children: React.ReactNode; w?: number; h?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
 
@@ -250,23 +260,23 @@ function ScaledPreview({ children }: { children: React.ReactNode }) {
     if (!el) return;
     const compute = () => {
       const rect = el.getBoundingClientRect();
-      const sx = (rect.width - 32) / 1080;
-      const sy = (rect.height - 32) / 1350;
-      setScale(Math.max(0.1, Math.min(sx, sy)));
+      const sx = (rect.width - 32) / w;
+      const sy = (rect.height - 32) / h;
+      setScale(Math.max(0.05, Math.min(sx, sy)));
     };
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [w, h]);
 
   return (
     <div ref={containerRef} className="flex h-full w-full items-center justify-center">
-      <div style={{ width: 1080 * scale, height: 1350 * scale, position: "relative" }}>
+      <div style={{ width: w * scale, height: h * scale, position: "relative" }}>
         <div
           style={{
-            width: 1080,
-            height: 1350,
+            width: w,
+            height: h,
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             position: "absolute",

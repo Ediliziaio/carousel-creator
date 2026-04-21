@@ -112,18 +112,20 @@ export async function waitForImages(node: HTMLElement): Promise<void> {
 export async function captureNode(node: HTMLElement, brand: BrandSettings): Promise<string> {
   await ensureFontsFor(brand);
   await waitForImages(node);
+  const w = node.offsetWidth || 1080;
+  const h = node.offsetHeight || 1350;
   // Render twice — first warms up images/fonts, second is the real one
   await toPng(node, {
-    width: 1080,
-    height: 1350,
+    width: w,
+    height: h,
     pixelRatio: 1,
     cacheBust: true,
     backgroundColor: brand.bgColor || "#0A0A0A",
   });
   await waitForImages(node);
   const dataUrl = await toPng(node, {
-    width: 1080,
-    height: 1350,
+    width: w,
+    height: h,
     pixelRatio: 1,
     cacheBust: true,
     backgroundColor: brand.bgColor || "#0A0A0A",

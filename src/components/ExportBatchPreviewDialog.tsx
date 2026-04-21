@@ -13,6 +13,7 @@ import {
   type ZipEntry,
 } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
+import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import {
   DndContext,
   closestCenter,
@@ -64,7 +65,11 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
   };
 
   if (!slide) return null;
-  const scale = 180 / 1080;
+  const fmt = slide.format ?? "portrait";
+  const dim = FORMAT_DIMENSIONS[fmt];
+  const targetW = 180;
+  const scale = targetW / dim.w;
+  const thumbH = Math.round(dim.h * scale);
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
@@ -72,9 +77,9 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
         className={`group relative overflow-hidden rounded-md border-2 transition-colors ${
           selected ? "border-primary" : "border-border opacity-60"
         } ${invalid ? "ring-2 ring-destructive" : ""}`}
-        style={{ width: 180, height: 225 }}
+        style={{ width: targetW, height: thumbH }}
       >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1350 }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: dim.w, height: dim.h }}>
           <SlideRenderer slide={slide} brand={brand} index={index} total={total} lang={lang} />
         </div>
         {!selected && (
@@ -93,7 +98,7 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
           <Checkbox checked={selected} onCheckedChange={onToggle} />
         </div>
         <div className="absolute bottom-1 left-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-mono font-bold tracking-wider shadow">
-          {(index + 1).toString().padStart(2, "0")}
+          {(index + 1).toString().padStart(2, "0")} · {dim.ratio}
         </div>
         {invalid && (
           <div className="absolute bottom-1 right-1 rounded bg-destructive p-1 text-destructive-foreground shadow" title="Errori di validazione">
@@ -111,6 +116,9 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
   const reorderSlides = useCarousel((s) => s.reorderSlides);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
   const activeLang = useCarousel((s) => s.activeLang);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLangs, setSelectedLangs] = useState<string[]>([brand.defaultLanguage]);
@@ -305,23 +313,27 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
         </div>
 
         <div className="max-h-[55vh] overflow-auto bg-[#1a1a1a] p-4">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={slides.map((s) => s.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-                {slides.map((s, i) => (
-                  <Thumbnail
-                    key={s.id}
-                    slideId={s.id}
-                    index={i}
-                    selected={selectedIds.has(s.id)}
-                    onToggle={() => toggle(s.id)}
-                    invalid={!validateSlide(s, selectedLangs[0], brand.defaultLanguage).valid}
-                    lang={selectedLangs[0] ?? brand.defaultLanguage}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          {mounted ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={slides.map((s) => s.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+                  {slides.map((s, i) => (
+                    <Thumbnail
+                      key={s.id}
+                      slideId={s.id}
+                      index={i}
+                      selected={selectedIds.has(s.id)}
+                      onToggle={() => toggle(s.id)}
+                      invalid={!validateSlide(s, selectedLangs[0], brand.defaultLanguage).valid}
+                      lang={selectedLangs[0] ?? brand.defaultLanguage}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <div className="text-sm text-muted-foreground">Caricamento...</div>
+          )}
         </div>
 
         <DialogFooter className="flex-col gap-2 border-t border-border px-6 py-3 sm:flex-row sm:items-center">
@@ -354,12 +366,13 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
         </DialogFooter>
 
         {/* Hidden capture nodes — one per (lang, slide) */}
-        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, width: 1080, height: 1350, pointerEvents: "none" }}>
+        <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
           {selectedLangs.flatMap((lng) =>
             selectedSlides.map((sl) => {
               const idx = slides.findIndex((x) => x.id === sl.id);
+              const dim = FORMAT_DIMENSIONS[sl.format ?? "portrait"];
               return (
-                <div key={`${lng}-${sl.id}`} ref={setCaptureRef(`${lng}-${sl.id}`)} style={{ width: 1080, height: 1350 }}>
+                <div key={`${lng}-${sl.id}`} ref={setCaptureRef(`${lng}-${sl.id}`)} style={{ width: dim.w, height: dim.h }}>
                   <SlideRenderer slide={sl} brand={brand} index={idx} total={slides.length} lang={lng} />
                 </div>
               );
