@@ -26,6 +26,12 @@ import { type CarouselSnapshot, pushSnapshot, snapshot } from "./history";
 import { setSlideData, getSlideData } from "./i18n";
 import { getCarouselPreset, buildPresetSlideData } from "./carouselPresets";
 import type { ImportedItem } from "./contentImport";
+import {
+  type OfferPreset,
+  type OfferPresetValues,
+  BUILT_IN_OFFER_PRESETS,
+  makeOfferPreset,
+} from "./offerPresets";
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
@@ -136,6 +142,15 @@ interface CarouselState {
   /** Strict export toggle */
   setStrictExport: (v: boolean) => void;
   setValidationOverlay: (v: boolean) => void;
+
+  /** Bulk update marketing slides (hook/offer/cta) — single undo entry */
+  bulkUpdateMarketingSlides: (updates: { slideId: string; patch: Record<string, unknown> }[]) => void;
+
+  /** Offer presets (Quick Offer reusable values) */
+  offerPresets: OfferPreset[];
+  saveOfferPreset: (name: string, values: OfferPresetValues) => void;
+  deleteOfferPreset: (id: string) => void;
+  renameOfferPreset: (id: string, name: string) => void;
 
   undo: () => void;
   redo: () => void;
