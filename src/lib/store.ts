@@ -40,6 +40,14 @@ interface CarouselState {
   /** All available brand presets (built-in + user). */
   brandPresets: BrandPreset[];
 
+  /** Saved template+format combos for quick reuse. */
+  slideCombos: SlideCombo[];
+
+  /** User-customised category order in the New Slide dialog. */
+  templateCategoryOrder: string[];
+  /** User-customised template order within each category. */
+  templatesPerCategory: Record<string, TemplateId[]>;
+
   past: CarouselSnapshot[];
   future: CarouselSnapshot[];
 
@@ -56,6 +64,19 @@ interface CarouselState {
   reorderSlides: (from: number, to: number) => void;
   setActive: (id: string) => void;
   loadJSON: (json: { brand: BrandSettings; slides: Slide[] }) => void;
+
+  /** Per-field text style overrides */
+  setTextOverride: (slideId: string, fieldPath: string, style: TextStyle) => void;
+  clearTextOverride: (slideId: string, fieldPath: string) => void;
+
+  /** Slide combos */
+  saveSlideCombo: (name: string, template: TemplateId, format: SlideFormat) => void;
+  deleteSlideCombo: (id: string) => void;
+
+  /** Picker DnD ordering */
+  setTemplateCategoryOrder: (order: string[]) => void;
+  setTemplatesForCategory: (category: string, templates: TemplateId[]) => void;
+  resetPickerOrder: () => void;
 
   /** Brand presets actions */
   saveBrandPreset: (name: string) => void;
