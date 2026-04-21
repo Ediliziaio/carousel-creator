@@ -118,6 +118,10 @@ export function BrandSettingsDialog() {
   const deleteBrandPreset = useCarousel((s) => s.deleteBrandPreset);
   const renameBrandPreset = useCarousel((s) => s.renameBrandPreset);
   const resetBrandToDefault = useCarousel((s) => s.resetBrandToDefault);
+  const strictExport = useCarousel((s) => s.strictExport);
+  const setStrictExport = useCarousel((s) => s.setStrictExport);
+  const validationOverlay = useCarousel((s) => s.validationOverlay);
+  const setValidationOverlay = useCarousel((s) => s.setValidationOverlay);
 
   const [newLang, setNewLang] = useState("");
   const [presetName, setPresetName] = useState("");
