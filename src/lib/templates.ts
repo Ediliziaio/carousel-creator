@@ -102,9 +102,23 @@ export interface I18nWrapper<T = AnyTemplateData> {
 
 export type SlideDataField<T = AnyTemplateData> = T | I18nWrapper<T>;
 
+/* ============ Slide formats (Canva-style) ============ */
+export type SlideFormat = "portrait" | "square" | "story" | "landscape";
+
+export const FORMAT_DIMENSIONS: Record<
+  SlideFormat,
+  { w: number; h: number; label: string; ratio: string; desc: string }
+> = {
+  portrait:  { w: 1080, h: 1350, label: "Post verticale", ratio: "4:5",  desc: "Instagram feed" },
+  square:    { w: 1080, h: 1080, label: "Post quadrato",  ratio: "1:1",  desc: "Feed classico" },
+  story:     { w: 1080, h: 1920, label: "Storia / Reel",  ratio: "9:16", desc: "Stories e Reels" },
+  landscape: { w: 1920, h: 1080, label: "Landscape",      ratio: "16:9", desc: "X / LinkedIn / YouTube" },
+};
+
 export interface Slide {
   id: string;
   template: TemplateId;
+  format: SlideFormat;
   data: SlideDataField;
 }
 
