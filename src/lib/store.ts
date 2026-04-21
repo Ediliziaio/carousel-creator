@@ -36,8 +36,8 @@ import {
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
   text:  ["cover", "center", "split", "bignum", "myth", "quoteBig", "hook", "objection", "urgency", "guarantee", "quickWin"],
-  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "process", "prosCons", "roadmap", "problemSolution", "mistakes", "framework", "socialProof", "tipPack", "faq"],
-  media: ["gallery", "imageQuote", "feature", "testimonial"],
+  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "chartArea", "chartCompareBar", "kpiGrid", "funnelChart", "process", "prosCons", "roadmap", "problemSolution", "mistakes", "framework", "socialProof", "tipPack", "faq"],
+  media: ["gallery", "imageQuote", "feature", "testimonial", "mediaHero", "polaroidStack", "splitDuo", "magazineCover"],
   ref:   ["vocab", "qa", "cta", "offer", "bonusStack"],
 };
 

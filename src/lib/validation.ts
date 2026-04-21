@@ -37,6 +37,14 @@ import type {
   GuaranteeData,
   FaqData,
   QuickWinData,
+  MediaHeroData,
+  PolaroidStackData,
+  SplitDuoData,
+  MagazineCoverData,
+  ChartAreaData,
+  ChartCompareBarData,
+  KpiGridData,
+  FunnelChartData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -543,6 +551,124 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
         if (d.steps.length > 5) err("steps", `Step: massimo 5 (hai ${d.steps.length})`);
         d.steps.forEach((s, i) => {
           if (empty(s)) err(`steps.${i}`, `Step ${i + 1}: ${REQUIRED}`);
+        });
+      }
+      break;
+    }
+    case "mediaHero": {
+      const d = data as MediaHeroData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      const u = checkImageUrl(d.imageUrl);
+      if (u) err("imageUrl", u);
+      else if (!d.imageUrl) warn("imageUrl", "Suggerimento: aggiungi una foto fullbleed per maggiore impatto");
+      break;
+    }
+    case "polaroidStack": {
+      const d = data as PolaroidStackData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.polaroids || d.polaroids.length < 1) {
+        err("polaroids", "Polaroid: aggiungi almeno 1 immagine");
+      } else {
+        if (d.polaroids.length > 3) err("polaroids", `Polaroid: massimo 3 (hai ${d.polaroids.length})`);
+        const filled = d.polaroids.filter((p) => p.url && p.url.trim()).length;
+        if (filled < 1) warn("polaroids", "Suggerimento: carica almeno un'immagine");
+        d.polaroids.forEach((p, i) => {
+          const u = checkImageUrl(p.url);
+          if (u) err(`polaroids.${i}.url`, `Polaroid ${i + 1}: ${u}`);
+        });
+      }
+      break;
+    }
+    case "splitDuo": {
+      const d = data as SplitDuoData;
+      if (empty(d.leftImage?.label)) err("leftImage.label", `Etichetta sinistra: ${REQUIRED}`);
+      if (empty(d.rightImage?.label)) err("rightImage.label", `Etichetta destra: ${REQUIRED}`);
+      if (empty(d.centerBadge)) err("centerBadge", `Badge centrale: ${REQUIRED}`);
+      const ul = checkImageUrl(d.leftImage?.url);
+      if (ul) err("leftImage.url", ul);
+      const ur = checkImageUrl(d.rightImage?.url);
+      if (ur) err("rightImage.url", ur);
+      break;
+    }
+    case "magazineCover": {
+      const d = data as MagazineCoverData;
+      if (empty(d.masthead)) err("masthead", `Masthead: ${REQUIRED}`);
+      if (empty(d.mainHeadline)) err("mainHeadline", `Headline: ${REQUIRED}`);
+      const u = checkImageUrl(d.imageUrl);
+      if (u) err("imageUrl", u);
+      else if (!d.imageUrl) warn("imageUrl", "Suggerimento: aggiungi una foto centrale");
+      if (!d.coverLines || d.coverLines.length < 1) {
+        err("coverLines", "Cover lines: aggiungi almeno 1 strillo");
+      } else if (d.coverLines.length > 4) {
+        err("coverLines", `Cover lines: massimo 4 (hai ${d.coverLines.length})`);
+      }
+      break;
+    }
+    case "chartArea": {
+      const d = data as ChartAreaData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.values || d.values.length < 3)
+        err("values", `Servono almeno 3 punti (hai ${d.values?.length ?? 0})`);
+      if (d.values && d.values.length > 24)
+        err("values", `Massimo 24 punti (hai ${d.values.length})`);
+      if (d.xLabels && d.values && d.xLabels.length !== d.values.length)
+        err("values", `Etichette X (${d.xLabels.length}) e valori (${d.values.length}) devono coincidere`);
+      d.values?.forEach((v, i) => {
+        if (!Number.isFinite(v)) err(`values.${i}`, `Punto ${i + 1}: valore non numerico`);
+      });
+      break;
+    }
+    case "chartCompareBar": {
+      const d = data as ChartCompareBarData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (empty(d.seriesA?.label)) err("seriesA.label", `Serie A: ${REQUIRED}`);
+      if (empty(d.seriesB?.label)) err("seriesB.label", `Serie B: ${REQUIRED}`);
+      if (!d.rows || d.rows.length < 2) {
+        err("rows", `Servono almeno 2 righe (hai ${d.rows?.length ?? 0})`);
+      } else {
+        if (d.rows.length > 6) err("rows", `Massimo 6 righe (hai ${d.rows.length})`);
+        d.rows.forEach((r, i) => {
+          if (empty(r.label)) err(`rows.${i}.label`, `Riga ${i + 1}: etichetta obbligatoria`);
+          if (!Number.isFinite(r.valueA) || r.valueA < 0)
+            err(`rows.${i}.valueA`, `Riga ${i + 1}: valore A non valido`);
+          if (!Number.isFinite(r.valueB) || r.valueB < 0)
+            err(`rows.${i}.valueB`, `Riga ${i + 1}: valore B non valido`);
+        });
+      }
+      if (d.seriesA?.color && !HEX_RE.test(d.seriesA.color))
+        err("seriesA.color", "Colore A: usa hex (#RRGGBB)");
+      if (d.seriesB?.color && !HEX_RE.test(d.seriesB.color))
+        err("seriesB.color", "Colore B: usa hex (#RRGGBB)");
+      break;
+    }
+    case "kpiGrid": {
+      const d = data as KpiGridData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.kpis || d.kpis.length !== 4) {
+        err("kpis", `KPI: devono essere esattamente 4 (hai ${d.kpis?.length ?? 0})`);
+      } else {
+        d.kpis.forEach((k, i) => {
+          if (empty(k.label)) err(`kpis.${i}.label`, `KPI ${i + 1}: etichetta obbligatoria`);
+          if (empty(k.value)) err(`kpis.${i}.value`, `KPI ${i + 1}: valore obbligatorio`);
+          if (empty(k.delta)) err(`kpis.${i}.delta`, `KPI ${i + 1}: delta obbligatorio`);
+          if (!k.spark || k.spark.length < 3)
+            err(`kpis.${i}.spark`, `KPI ${i + 1}: sparkline serve almeno 3 punti`);
+          if (k.spark && k.spark.length > 12)
+            err(`kpis.${i}.spark`, `KPI ${i + 1}: sparkline max 12 punti`);
+        });
+      }
+      break;
+    }
+    case "funnelChart": {
+      const d = data as FunnelChartData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.stages || d.stages.length < 2) {
+        err("stages", `Stadi: servono almeno 2 (hai ${d.stages?.length ?? 0})`);
+      } else {
+        if (d.stages.length > 5) err("stages", `Stadi: massimo 5 (hai ${d.stages.length})`);
+        d.stages.forEach((s, i) => {
+          if (empty(s.label)) err(`stages.${i}.label`, `Stadio ${i + 1}: etichetta obbligatoria`);
+          if (empty(s.value)) err(`stages.${i}.value`, `Stadio ${i + 1}: valore obbligatorio`);
         });
       }
       break;
