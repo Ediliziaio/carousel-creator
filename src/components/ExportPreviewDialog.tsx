@@ -134,11 +134,11 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
         </DialogHeader>
         <div className="grid max-h-[70vh] grid-cols-[1fr_280px]">
           <div ref={containerRef} className="relative flex items-center justify-center overflow-hidden bg-[#1a1a1a] p-4">
-            <div style={{ width: 1080 * scale, height: 1350 * scale, position: "relative" }}>
+            <div style={{ width: dim.w * scale, height: dim.h * scale, position: "relative" }}>
               <div
                 style={{
-                  width: 1080,
-                  height: 1350,
+                  width: dim.w,
+                  height: dim.h,
                   transform: `scale(${scale})`,
                   transformOrigin: "top left",
                   position: "absolute",
@@ -153,7 +153,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           </div>
           <div className="space-y-3 overflow-auto border-l border-border bg-card p-4 text-sm">
             <Info label="Template" value={TEMPLATE_META[slide.template].label} />
-            <Info label="Risoluzione" value="1080 × 1350 px" />
+            <Info label="Risoluzione" value={`${dim.w} × ${dim.h} px (${dim.ratio})`} />
             <Info label="Lingua" value={langLabel(lang)} />
             <Info label="File" value={filename} mono />
             <Info label="Brand" value={brand.brand} />
