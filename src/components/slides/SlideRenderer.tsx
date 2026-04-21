@@ -39,6 +39,14 @@ import {
   type GuaranteeData,
   type FaqData,
   type QuickWinData,
+  type MediaHeroData,
+  type PolaroidStackData,
+  type SplitDuoData,
+  type MagazineCoverData,
+  type ChartAreaData,
+  type ChartCompareBarData,
+  type KpiGridData,
+  type FunnelChartData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -207,6 +215,14 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "guarantee":   return <Guarantee slide={slide} d={data as GuaranteeData} />;
     case "faq":         return <Faq slide={slide} d={data as FaqData} />;
     case "quickWin":    return <QuickWin slide={slide} d={data as QuickWinData} />;
+    case "mediaHero":   return <MediaHero slide={slide} d={data as MediaHeroData} />;
+    case "polaroidStack": return <PolaroidStack slide={slide} d={data as PolaroidStackData} />;
+    case "splitDuo":    return <SplitDuo slide={slide} d={data as SplitDuoData} />;
+    case "magazineCover": return <MagazineCover slide={slide} d={data as MagazineCoverData} />;
+    case "chartArea":   return <ChartArea slide={slide} d={data as ChartAreaData} brand={brand} />;
+    case "chartCompareBar": return <ChartCompareBar slide={slide} d={data as ChartCompareBarData} brand={brand} />;
+    case "kpiGrid":     return <KpiGrid slide={slide} d={data as KpiGridData} brand={brand} />;
+    case "funnelChart": return <FunnelChart slide={slide} d={data as FunnelChartData} brand={brand} />;
   }
 }
 
