@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageUploadField } from "@/components/ImageUploadField";
+import { TextStylePopover } from "@/components/TextStylePopover";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle } from "lucide-react";
 
@@ -127,19 +128,22 @@ export function SlideEditorForm({ slide }: Props) {
     return () => window.removeEventListener("slide:focus-field", handler);
   }, [slide.id]);
 
+  const overrides = slide.textOverrides;
+  const styleProps = { slideId: slide.id, overrides };
+
   let body: React.ReactNode = null;
   switch (slide.template) {
-    case "split":     body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} />; break;
-    case "grid2x2":   body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} />; break;
-    case "bignum":    body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} />; break;
-    case "center":    body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} />; break;
-    case "timeline":  body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} />; break;
-    case "compare":   body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} />; break;
-    case "vocab":     body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} />; break;
-    case "qa":        body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} />; break;
-    case "checklist": body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} />; break;
-    case "stat":      body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} />; break;
-    case "cover":     body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} />; break;
+    case "split":     body = <SplitEditor d={draft as SplitData} set={set as (d: SplitData) => void} errFor={errFor} {...styleProps} />; break;
+    case "grid2x2":   body = <GridEditor d={draft as Grid2x2Data} set={set as (d: Grid2x2Data) => void} errFor={errFor} {...styleProps} />; break;
+    case "bignum":    body = <BigNumEditor d={draft as BigNumData} set={set as (d: BigNumData) => void} errFor={errFor} {...styleProps} />; break;
+    case "center":    body = <CenterEditor d={draft as CenterData} set={set as (d: CenterData) => void} errFor={errFor} {...styleProps} />; break;
+    case "timeline":  body = <TimelineEditor d={draft as TimelineData} set={set as (d: TimelineData) => void} errFor={errFor} {...styleProps} />; break;
+    case "compare":   body = <CompareEditor d={draft as CompareData} set={set as (d: CompareData) => void} errFor={errFor} {...styleProps} />; break;
+    case "vocab":     body = <VocabEditor d={draft as VocabData} set={set as (d: VocabData) => void} errFor={errFor} {...styleProps} />; break;
+    case "qa":        body = <QAEditor d={draft as QAData} set={set as (d: QAData) => void} errFor={errFor} {...styleProps} />; break;
+    case "checklist": body = <ChecklistEditor d={draft as ChecklistData} set={set as (d: ChecklistData) => void} errFor={errFor} {...styleProps} />; break;
+    case "stat":      body = <StatEditor d={draft as StatData} set={set as (d: StatData) => void} errFor={errFor} {...styleProps} />; break;
+    case "cover":     body = <CoverEditor d={draft as CoverData} set={set as (d: CoverData) => void} errFor={errFor} {...styleProps} />; break;
   }
 
   return (
@@ -161,13 +165,27 @@ export function SlideEditorForm({ slide }: Props) {
 }
 
 type ErrFor = (field: string) => string | undefined;
+type StyleProps = { slideId: string; overrides?: Record<string, import("@/lib/templates").TextStyle> };
 
-function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
+function Field({ label, hint, error, slideId, fieldPath, overrides, children }: {
+  label: string;
+  hint?: string;
+  error?: string;
+  slideId?: string;
+  fieldPath?: string;
+  overrides?: Record<string, import("@/lib/templates").TextStyle>;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
-      <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
-        {label}{error && " *"}
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label className={`text-xs uppercase tracking-wider ${error ? "text-destructive" : "text-muted-foreground"}`}>
+          {label}{error && " *"}
+        </Label>
+        {slideId && fieldPath && (
+          <TextStylePopover slideId={slideId} fieldPath={fieldPath} value={overrides?.[fieldPath]} />
+        )}
+      </div>
       <div className={error ? "[&_input]:border-destructive [&_textarea]:border-destructive [&_input]:focus-visible:ring-destructive [&_textarea]:focus-visible:ring-destructive" : ""}>
         {children}
       </div>
