@@ -521,6 +521,11 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   offer: { label: "Offerta / Pricing", desc: "Card prezzo con CTA grande" },
   objection: { label: "Obiezione → Risposta", desc: "Bubble chat per scogliere dubbi" },
   tipPack: { label: "Pacchetto consigli", desc: "Mini-card numerate da salvare" },
+  urgency: { label: "Urgenza / Countdown", desc: "Timer XL + scarcity per spinta finale" },
+  bonusStack: { label: "Bonus stack", desc: "Lista bonus con valore cumulativo (VSL)" },
+  guarantee: { label: "Garanzia / Risk reversal", desc: "Sigillo garanzia + promessa anti-rischio" },
+  faq: { label: "FAQ", desc: "Domande & risposte in formato accordion" },
+  quickWin: { label: "Quick win", desc: "Azione rapida da fare ora con step" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -530,6 +535,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "feature", "testimonial",
   "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
   "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
+  "urgency", "bonusStack", "guarantee", "faq", "quickWin",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
