@@ -1,139 +1,77 @@
 
 
-# Nuovi template ricchi di immagini, grafici e media
+# Anteprima immediata immagini + layout responsive editor (gallery/chart/testimonial)
 
-Aggiungo 7 nuovi template orientati a massimizzare la personalizzazione visiva (immagini grandi, grafici, gallery, citazioni, mockup).
+## 1. Anteprima immediata immagini caricate
 
-## 1. Nuovi template
+`ImageUploadField.tsx` già mostra una preview quando `value` è presente, con bottone "Rimuovi". Manca però il bottone **"Sostituisci"** esplicito (oggi per cambiare immagine bisogna prima rimuovere, poi ri-caricare).
 
-| ID | Nome | Descrizione | Categoria |
-|---|---|---|---|
-| `gallery` | Galleria 3 immagini | Titolo + 3 immagini affiancate con didascalia | Media |
-| `imageQuote` | Citazione + foto | Foto a tutta pagina + quote sovrimpressa con autore | Media |
-| `chartBar` | Grafico a barre | Titolo + grafico orizzontale con etichette + valori (max 6 voci) | Dati |
-| `chartDonut` | Grafico a torta | Titolo + donut chart con legenda colorata + percentuali | Dati |
-| `chartLine` | Trend / Line chart | Titolo + curva con punti, asse X di etichette, eyebrow di periodo | Dati |
-| `feature` | Feature spotlight | Immagine grande + titolo + 3 bullet con icona/marker | Media |
-| `testimonial` | Testimonianza | Avatar circolare + quote grande + nome/ruolo | Media |
+**Modifiche a `src/components/ImageUploadField.tsx`:**
+- Nel blocco preview (quando `value` esiste), aggiungo un secondo bottone "Sostituisci" che apre il file picker (`inputRef.current?.click()`) senza dover prima rimuovere
+- Layout footer preview: due bottoni affiancati (`Sostituisci` + `Rimuovi`), entrambi `size="sm"`, con icone (`RefreshCw` e `X`)
+- L'`<input type="file">` resta unico in fondo al componente, riusato sia per upload iniziale che per sostituzione
+- Mantengo il drag-and-drop sul box vuoto (già esistente)
 
-I grafici sono renderizzati in **SVG puro** (no librerie esterne). Colori derivati da `brand.accent`/`brand.accentSecondary` per coerenza visiva. Sono catturati nativamente da `html-to-image` nell'export PNG (già usato nel progetto), quindi nessuna modifica all'export.
+**Verifico che ImageUploadField sia usato in tutti i campi rilevanti:**
+- Gallery (`images[].url`) — controllerò in `SlideEditorForm.tsx` che ogni item della gallery usi `ImageUploadField` con preview
+- ImageQuote (`imageUrl`) — già usa `ImageUploadField`
+- Feature (`imageUrl`) — già usa `ImageUploadField`
+- Testimonial (`avatarUrl`) — già usa `ImageUploadField`, ma per l'avatar uso una **variante compatta circolare** (preview tonda invece di rettangolare)
 
-## 2. Modello dati (in `src/lib/templates.ts`)
+**Nuova prop opzionale in `ImageUploadField`:** `variant?: "default" | "avatar"`. Quando `variant="avatar"`, la preview è un cerchio 96×96 con bottoni sotto invece che a fianco.
 
-```ts
-export interface GalleryData {
-  eyebrow: string; title: string;
-  images: { url?: string; caption?: string }[]; // 3 elementi
-}
-export interface ImageQuoteData {
-  imageUrl?: string;
-  quote: string;       // testo della citazione
-  author: string;      // nome
-  role?: string;       // ruolo / contesto
-}
-export interface ChartBarData {
-  eyebrow: string; title: string;
-  unit?: string;       // es. "%", "k€"
-  items: { label: string; value: number; color?: string }[]; // 2-6 barre
-}
-export interface ChartDonutData {
-  eyebrow: string; title: string;
-  centerLabel?: string;
-  segments: { label: string; value: number; color?: string }[]; // 2-6 fette
-}
-export interface ChartLineData {
-  eyebrow: string; title: string;
-  xLabels: string[];   // es. ["Gen","Feb",...]
-  values: number[];    // stessa lunghezza di xLabels
-  unit?: string;
-}
-export interface FeatureData {
-  eyebrow: string; title: string;
-  imageUrl?: string;
-  bullets: { marker: string; title: string; text?: string }[]; // 3 elementi
-}
-export interface TestimonialData {
-  avatarUrl?: string;
-  quote: string;
-  author: string;
-  role?: string;
-  rating?: number;     // 1..5 stelline opzionali
-}
-```
+## 2. Layout responsive editor (gallery, chart, testimonial)
 
-`TemplateId` viene esteso con i 7 nuovi ID. `makeDefaultData()` riceve i case mancanti con dati italiani plausibili. `getStylableFields()` aggiunge i campi di testo per ognuno (eyebrow, title, quote, author, label di chart, ecc.). `TEMPLATE_META` aggiornato.
+Il problema attuale: i form per gallery (3 immagini affiancate), chart (label + valore + colore in riga) e testimonial (avatar + campi) sono pensati per desktop e su mobile (<640px) generano scroll orizzontale.
 
-## 3. Categorizzazione del picker
+**Modifiche a `src/components/SlideEditorForm.tsx`:**
 
-Aggiungo una **nuova categoria `media`** "Media & Grafici" e aggiorno i default:
-- `text` (Testo & Titolo): cover, center, split, bignum
-- `data` (Liste & Dati): grid2x2, timeline, checklist, stat, compare, **chartBar, chartDonut, chartLine**
-- `media` (Media & Grafici): **gallery, imageQuote, feature, testimonial**
-- `ref` (Riferimento): vocab, qa
+### Gallery editor
+- Oggi: probabilmente `grid-cols-3` per gli ImageUploadField della gallery
+- Nuovo: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3` — 1 colonna su mobile, 2 su tablet, 3 su desktop
+- Ogni cella gallery: ImageUploadField + caption input stack verticale, full-width
 
-`templateCategoryOrder` default → `["text","data","media","ref"]`. In `NewSlideDialog.tsx` aggiungo `CATEGORY_LABELS.media = "Media & Grafici"`.
+### Chart editor (chartBar / chartDonut / chartLine)
+- Oggi: probabilmente riga con label + value (+ color picker) in `flex` orizzontale
+- Nuovo per ogni item: 
+  - Mobile (`<sm`): stack verticale → label full-width, sotto riga con value + color picker affiancati
+  - Desktop (`≥sm`): riga unica `flex gap-2` con label `flex-1`, value `w-24`, color picker `w-12`
+- Pattern Tailwind: `flex flex-col sm:flex-row gap-2 sm:items-center`
+- Per `chartLine` (xLabels + values come due array paralleli): stesso pattern, mobile stack, desktop affiancati
 
-**Migrazione store** (`src/lib/store.ts`): nella `migrate` del `persist`, se `templatesPerCategory.media` non esiste → inietto i 4 template media e aggiungo i 3 chart in `data`. Versione persist bumpata.
+### Testimonial editor
+- Oggi: probabilmente avatar e campi testo affiancati
+- Nuovo: `flex flex-col sm:flex-row gap-4` — avatar sopra su mobile, a sinistra su desktop
+- Quote textarea full-width sempre
+- Nome + ruolo + rating: `grid grid-cols-1 sm:grid-cols-2 gap-3`
 
-## 4. Componenti renderer (in `src/components/slides/SlideRenderer.tsx`)
+### Feature editor
+- Stesso trattamento: immagine sopra su mobile, lista bullet sotto sempre full-width
+- Bullet items: stack verticale con marker + title + text
 
-Nuovi sub-componenti React: `Gallery`, `ImageQuote`, `ChartBar`, `ChartDonut`, `ChartLine`, `Feature`, `Testimonial`. Aggiunti al `switch (slide.template)` di `renderBody`.
+### Helper: classi consistenti
+Definisco mentalmente (no costanti esportate, le classi sono inline):
+- Stack responsive: `flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-start`
+- Grid items chart: `grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 sm:items-center`
+- Grid gallery cells: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3`
 
-**Grafici SVG (puro, no deps):**
-- `ChartBar`: barre orizzontali con larghezza proporzionale a `value/max(values)`, label a sinistra, valore a destra. Colori derivati da accent/accentSecondary alternati o `item.color` se fornito.
-- `ChartDonut`: SVG con `<circle>` + `stroke-dasharray` per ogni segmento, ruotato. Centro con `centerLabel` o totale. Legenda a destra.
-- `ChartLine`: SVG `<polyline>` + `<circle>` per i punti, asse X con etichette sotto, gradient stroke usando accent.
-
-Tutti i grafici sono responsive al canvas slide (1080×W) — usano `viewBox` SVG così scalano automaticamente con `transform: scale()` del frame.
-
-## 5. CSS template (in `src/components/slides/slide-styles.css`)
-
-Aggiungo classi per i nuovi template:
-- `.tpl-gallery` — grid 3 colonne con padding
-- `.tpl-imageQuote` — bg image full + veil + quote tipografica grande
-- `.tpl-chartBar`, `.tpl-chartDonut`, `.tpl-chartLine` — layout titolo top + chart fluido sotto
-- `.tpl-feature` — split immagine left, lista right (riusa logica `.tpl-split` con varianti)
-- `.tpl-testimonial` — center vertical, avatar + quote + author
-
-Per `fmt-story` (9:16) e `fmt-landscape` (16:9): override compatti per gallery (1 colonna in story, 4 in landscape) e chart (più alti in story).
-
-## 6. Validazione (`src/lib/validation.ts`)
-
-Aggiungo i case per i 7 template:
-- `gallery`: title required, almeno 1 immagine
-- `imageQuote`: quote + author required
-- `chartBar/Donut/Line`: title required + array non vuoto
-- `feature`: title + almeno 1 bullet
-- `testimonial`: quote + author required
-
-## 7. Editor (`src/components/SlideEditorForm.tsx`)
-
-Aggiungo un blocco di rendering form per ogni nuovo template, riutilizzando i componenti esistenti:
-- `Field` (input testo), `ArrayField` (per gallery images, chart items, bullets)
-- `ImageUploadField` per gallery items, imageQuote, feature, testimonial avatar
-- Per i chart: input numerico per `value`, color picker opzionale per `color`
-
-Tutti i campi passano per il debounce esistente (`set()` → 400ms → store) e supportano `<TextStyleButton>` dove sensato.
+### Editor container
+Aggiungo `overflow-x-hidden` sul wrapper principale del form per blindare contro eventuali leak di larghezza da componenti annidati (`ArrayField`, `Field`).
 
 ## File toccati
 
 **Modificati:**
-- `src/lib/templates.ts` — nuovi `TemplateId`, interfacce dati, `makeDefaultData`, `TEMPLATE_META`, `TEMPLATE_ORDER`, `getStylableFields`
-- `src/lib/store.ts` — migrazione `templatesPerCategory` con nuova categoria `media` + nuovi template, bump versione persist
-- `src/components/slides/SlideRenderer.tsx` — 7 nuovi sub-componenti incluso 3 chart SVG
-- `src/components/slides/slide-styles.css` — classi `.tpl-*` per i 7 nuovi template + override per `fmt-story`/`fmt-landscape`
-- `src/components/SlideEditorForm.tsx` — form blocks per i 7 nuovi template
-- `src/components/NewSlideDialog.tsx` — `CATEGORY_LABELS.media`
-- `src/lib/validation.ts` — validazione per i 7 nuovi template
+- `src/components/ImageUploadField.tsx` — bottone "Sostituisci" nel preview, prop `variant="avatar"` con preview circolare
+- `src/components/SlideEditorForm.tsx` — layout responsive (mobile-first) per gallery, chart (bar/donut/line), testimonial, feature; `overflow-x-hidden` sul wrapper
 
 **Non toccati:**
-- `src/lib/export.ts` — html-to-image cattura SVG nativamente, nessuna modifica
-- `src/lib/i18n.ts`, `src/lib/history.ts` — invariati
+- `SlideRenderer.tsx`, `slide-styles.css` — il rendering del canvas resta indipendente dall'editor
+- `templates.ts`, `store.ts` — nessuna modifica al modello dati
+- Tutti gli altri template editor (cover, split, ecc.) — già hanno layout semplici single-column
 
 ## Fuori scope
-- **Librerie chart esterne** (recharts, chart.js): SVG inline → bundle leggero, export PNG affidabile
-- **Tipi grafico avanzati** (scatter, area, radar): si possono aggiungere in iterazioni successive
-- **Layer di ritaglio/filtro immagini stile Photoshop**: l'upload mantiene l'immagine originale
-- **Mappe / icone vettoriali per feature template**: il marker resta testo (es. "01", "→")
-- **Animazioni/transizioni nei grafici**: l'export è PNG statico
+- **Crop / resize delle immagini** prima dell'upload (resta upload nativo, immagine inserita 1:1)
+- **Riordino drag-and-drop** delle immagini gallery o degli items chart (resta riordino via bottoni up/down esistenti in `ArrayField`)
+- **Lightbox / preview ingrandito** al click sull'anteprima (resta thumbnail inline)
+- **Mobile-first redesign dell'intera UI** dell'app (header, sidebar slide, ecc. fuori scope — solo i form editor delle 4 famiglie problematiche)
 
