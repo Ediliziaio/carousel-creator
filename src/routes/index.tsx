@@ -189,6 +189,18 @@ function Index() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <CarouselPresetDialog />
+          <QuickOfferEditor />
+          <ContentImportDialog />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setValidationOverlay(!validationOverlay)}
+            title={validationOverlay ? "Nascondi indicatori validazione" : "Mostra indicatori validazione"}
+          >
+            {validationOverlay ? <ShieldCheck className="h-4 w-4 text-primary" /> : <ShieldOff className="h-4 w-4" />}
+          </Button>
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
             <Upload className="mr-1 h-4 w-4" /> Import JSON
@@ -227,6 +239,33 @@ function Index() {
 
       {exportError && (
         <ExportErrorBanner message={exportError} onDismiss={() => setExportError(null)} />
+      )}
+
+      {validationIssues.length > 0 && (
+        <div
+          role="alert"
+          className={`flex items-start gap-3 border-b px-4 py-2 text-sm ${
+            strictExport
+              ? "border-destructive/30 bg-destructive/10 text-destructive"
+              : "border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+          }`}
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">
+            <div className="font-medium">
+              {validationIssues.length} {validationIssues.length === 1 ? "slide ha" : "slide hanno"} campi obbligatori mancanti
+              {strictExport && " — Export disabilitato"}
+            </div>
+            <div className="text-xs opacity-90">
+              {strictExport
+                ? "Completa i campi obbligatori per riabilitare l'esportazione."
+                : "Strict export disattivato: l'esportazione resta possibile."}
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="h-7 shrink-0" onClick={goToFirstError}>
+            Vai al primo errore
+          </Button>
+        </div>
       )}
 
       <div className="flex min-h-0 flex-1">
