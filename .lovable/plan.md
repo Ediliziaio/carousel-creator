@@ -1,121 +1,139 @@
 
 
-# Personalizzazione testo per-campo + Duplica + Combo preset + DnD nel picker
+# Nuovi template ricchi di immagini, grafici e media
 
-## 1. Personalizzazione testo per-singolo-campo (stile Canva)
+Aggiungo 7 nuovi template orientati a massimizzare la personalizzazione visiva (immagini grandi, grafici, gallery, citazioni, mockup).
 
-Estensione del modello `Slide` con un campo opzionale `textOverrides`:
+## 1. Nuovi template
+
+| ID | Nome | Descrizione | Categoria |
+|---|---|---|---|
+| `gallery` | Galleria 3 immagini | Titolo + 3 immagini affiancate con didascalia | Media |
+| `imageQuote` | Citazione + foto | Foto a tutta pagina + quote sovrimpressa con autore | Media |
+| `chartBar` | Grafico a barre | Titolo + grafico orizzontale con etichette + valori (max 6 voci) | Dati |
+| `chartDonut` | Grafico a torta | Titolo + donut chart con legenda colorata + percentuali | Dati |
+| `chartLine` | Trend / Line chart | Titolo + curva con punti, asse X di etichette, eyebrow di periodo | Dati |
+| `feature` | Feature spotlight | Immagine grande + titolo + 3 bullet con icona/marker | Media |
+| `testimonial` | Testimonianza | Avatar circolare + quote grande + nome/ruolo | Media |
+
+I grafici sono renderizzati in **SVG puro** (no librerie esterne). Colori derivati da `brand.accent`/`brand.accentSecondary` per coerenza visiva. Sono catturati nativamente da `html-to-image` nell'export PNG (già usato nel progetto), quindi nessuna modifica all'export.
+
+## 2. Modello dati (in `src/lib/templates.ts`)
 
 ```ts
-// templates.ts
-export interface TextStyle {
-  fontFamily?: FontChoice;
-  fontSize?: number;        // px @ 1080px width (es. 64, 80, 120)
-  fontWeight?: Weight;
-  letterSpacing?: number;   // em (-0.05 → 0.2)
-  textAlign?: "left" | "center" | "right";
-  italic?: boolean;
-  uppercase?: boolean;
-  underline?: boolean;
-  color?: string;           // hex; default = brand.textColor o accent
+export interface GalleryData {
+  eyebrow: string; title: string;
+  images: { url?: string; caption?: string }[]; // 3 elementi
 }
-
-export interface Slide {
-  id: string;
-  template: TemplateId;
-  format: SlideFormat;
-  data: SlideDataField;
-  textOverrides?: Record<string, TextStyle>; // chiave = field path es. "title", "eyebrow", "cells.0.title"
+export interface ImageQuoteData {
+  imageUrl?: string;
+  quote: string;       // testo della citazione
+  author: string;      // nome
+  role?: string;       // ruolo / contesto
+}
+export interface ChartBarData {
+  eyebrow: string; title: string;
+  unit?: string;       // es. "%", "k€"
+  items: { label: string; value: number; color?: string }[]; // 2-6 barre
+}
+export interface ChartDonutData {
+  eyebrow: string; title: string;
+  centerLabel?: string;
+  segments: { label: string; value: number; color?: string }[]; // 2-6 fette
+}
+export interface ChartLineData {
+  eyebrow: string; title: string;
+  xLabels: string[];   // es. ["Gen","Feb",...]
+  values: number[];    // stessa lunghezza di xLabels
+  unit?: string;
+}
+export interface FeatureData {
+  eyebrow: string; title: string;
+  imageUrl?: string;
+  bullets: { marker: string; title: string; text?: string }[]; // 3 elementi
+}
+export interface TestimonialData {
+  avatarUrl?: string;
+  quote: string;
+  author: string;
+  role?: string;
+  rating?: number;     // 1..5 stelline opzionali
 }
 ```
 
-**UI — popover "Aa" inline accanto a ogni campo testuale del form** (`SlideEditorForm.tsx`):
-- Nuovo componente `<TextStyleButton fieldPath="title" />` reso accanto alla `<Label>` di ogni `Field`
-- Click → popover compatto con: select font (riusa `FONT_OPTIONS`), slider `fontSize` (24-200px), select `fontWeight` (400-900), slider `letterSpacing`, toggle italic/uppercase/underline, 3 bottoni align L/C/R, color picker con preset (textColor, accent, accentSecondary, white, black)
-- Bottone "Reset" per cancellare l'override (torna ai default brand)
-- Indicatore visivo: il bottone "Aa" diventa pieno/colorato quando un override è attivo per quel campo
-- Tutti i cambi passano per il debounce esistente (`set()` → 400ms → store)
+`TemplateId` viene esteso con i 7 nuovi ID. `makeDefaultData()` riceve i case mancanti con dati italiani plausibili. `getStylableFields()` aggiunge i campi di testo per ognuno (eyebrow, title, quote, author, label di chart, ecc.). `TEMPLATE_META` aggiornato.
 
-**Applicazione visiva** — `SlideRenderer.tsx`:
-- Helper `getFieldStyle(fieldPath: string): React.CSSProperties` che legge `slide.textOverrides?.[fieldPath]` e lo trasforma in stile inline
-- Iniettato sui DOM nodes principali di ogni template: `.title`, `.eyebrow`, `.sub`, e per cells/items con path indicizzato (`cells.0.title`, `items.1.text`)
-- Le dimensioni `px` scalano automaticamente perché tutto il `slide-frame` viene scalato in preview/export — i px restano relativi al canvas 1080×W
+## 3. Categorizzazione del picker
 
-**Field path registry** in `templates.ts`: helper `getStylableFields(template: TemplateId): { path: string; label: string }[]` che ritorna i campi stilizzabili per ogni template (es. split → title, eyebrow, paragraphs[*], list[*].text). Usato dal form per sapere dove mostrare "Aa".
+Aggiungo una **nuova categoria `media`** "Media & Grafici" e aggiorno i default:
+- `text` (Testo & Titolo): cover, center, split, bignum
+- `data` (Liste & Dati): grid2x2, timeline, checklist, stat, compare, **chartBar, chartDonut, chartLine**
+- `media` (Media & Grafici): **gallery, imageQuote, feature, testimonial**
+- `ref` (Riferimento): vocab, qa
 
-## 2. Bottone "Duplica slide" prominente
+`templateCategoryOrder` default → `["text","data","media","ref"]`. In `NewSlideDialog.tsx` aggiungo `CATEGORY_LABELS.media = "Media & Grafici"`.
 
-Già esistente nella sidebar (icona piccola). Aggiungo un bottone **principale "Duplica"** nella toolbar dell'editor centrale (`routes/index.tsx`), accanto ad Anteprima/Anteprima ZIP, con icona `Copy` e label visibile. Comportamento: chiama `duplicateSlide(activeId)` → la copia mantiene template, formato, dati, **e gli `textOverrides`** (già coperto da `structuredClone` esistente nello store).
+**Migrazione store** (`src/lib/store.ts`): nella `migrate` del `persist`, se `templatesPerCategory.media` non esiste → inietto i 4 template media e aggiungo i 3 chart in `data`. Versione persist bumpata.
 
-## 3. Preset "combo template + formato" salvabili dal NewSlideDialog
+## 4. Componenti renderer (in `src/components/slides/SlideRenderer.tsx`)
 
-**Nuovo concetto `SlideCombo`** in `templates.ts`:
-```ts
-export interface SlideCombo {
-  id: string;
-  name: string;
-  template: TemplateId;
-  format: SlideFormat;
-  createdAt: number;
-}
-```
+Nuovi sub-componenti React: `Gallery`, `ImageQuote`, `ChartBar`, `ChartDonut`, `ChartLine`, `Feature`, `Testimonial`. Aggiunti al `switch (slide.template)` di `renderBody`.
 
-**Nuovo store slice** in `lib/store.ts`:
-```ts
-slideCombos: SlideCombo[]
-saveSlideCombo(name, template, format): void
-deleteSlideCombo(id): void
-```
-Persistito via `persist` middleware (insieme a `brand` e `brandPresets`, con migration safety).
+**Grafici SVG (puro, no deps):**
+- `ChartBar`: barre orizzontali con larghezza proporzionale a `value/max(values)`, label a sinistra, valore a destra. Colori derivati da accent/accentSecondary alternati o `item.color` se fornito.
+- `ChartDonut`: SVG con `<circle>` + `stroke-dasharray` per ogni segmento, ruotato. Centro con `centerLabel` o totale. Legenda a destra.
+- `ChartLine`: SVG `<polyline>` + `<circle>` per i punti, asse X con etichette sotto, gradient stroke usando accent.
 
-**UI in `NewSlideDialog.tsx`** (sidebar a 3 sezioni invece di 2):
-- Sopra "Formato": nuova sezione **"I miei combo"**
-  - Lista compatta di combo card (nome + mini badge `Split · 4:5`)
-  - Click su una card → applica template + formato in un colpo (popola gli stati `template` e `format` del dialog)
-  - Bottone X piccolo per eliminare
-- Sotto la lista combo: pulsante **"💾 Salva combo corrente"** → mini input inline per nome → `saveSlideCombo(name, template, format)`
-- Se non ci sono combo salvati: testo placeholder "Salva le tue combinazioni preferite per riusarle"
+Tutti i grafici sono responsive al canvas slide (1080×W) — usano `viewBox` SVG così scalano automaticamente con `transform: scale()` del frame.
 
-## 4. Drag-and-drop nelle categorie e nei template del picker
+## 5. CSS template (in `src/components/slides/slide-styles.css`)
 
-Persisto un nuovo slice nello store:
-```ts
-templateCategoryOrder: string[]            // default: ["text","data","ref"]
-templatesPerCategory: Record<string, TemplateId[]>  // default: come oggi in CATEGORIES
-```
-Persistiti anche loro (migration: se mancanti → fallback ai default in `NewSlideDialog`).
+Aggiungo classi per i nuovi template:
+- `.tpl-gallery` — grid 3 colonne con padding
+- `.tpl-imageQuote` — bg image full + veil + quote tipografica grande
+- `.tpl-chartBar`, `.tpl-chartDonut`, `.tpl-chartLine` — layout titolo top + chart fluido sotto
+- `.tpl-feature` — split immagine left, lista right (riusa logica `.tpl-split` con varianti)
+- `.tpl-testimonial` — center vertical, avatar + quote + author
 
-**UI in `NewSlideDialog.tsx`**:
-- **Tabs delle categorie**: wrappo `<TabsList>` in un `DndContext` orizzontale (riuso `@dnd-kit`). Ogni `TabsTrigger` è un `useSortable` con drag handle implicito (l'intero trigger è draggable con `activationConstraint: distance 8` per non confliggere col click di selezione tab). Il drop riordina `templateCategoryOrder` nello store.
-- **Grid dei template dentro la tab attiva**: `DndContext` verticale sulla griglia, ogni `TemplateThumb` è un `useSortable`. Drop riordina `templatesPerCategory[currentCategory]`. Mantengo l'`activationConstraint distance 8` per non rompere il click "seleziona template".
-- Indicatore visuale leggero (cursor grab, leggera ombra durante il drag).
-- Mantengo il pattern `mounted` flag per evitare hydration mismatch (anche se la route è già `ssr: false`, è gratis come safety).
+Per `fmt-story` (9:16) e `fmt-landscape` (16:9): override compatti per gallery (1 colonna in story, 4 in landscape) e chart (più alti in story).
 
-**Reset opzionale**: piccolo link "Ripristina ordine default" in fondo al dialog per ri-applicare l'ordine standard.
+## 6. Validazione (`src/lib/validation.ts`)
+
+Aggiungo i case per i 7 template:
+- `gallery`: title required, almeno 1 immagine
+- `imageQuote`: quote + author required
+- `chartBar/Donut/Line`: title required + array non vuoto
+- `feature`: title + almeno 1 bullet
+- `testimonial`: quote + author required
+
+## 7. Editor (`src/components/SlideEditorForm.tsx`)
+
+Aggiungo un blocco di rendering form per ogni nuovo template, riutilizzando i componenti esistenti:
+- `Field` (input testo), `ArrayField` (per gallery images, chart items, bullets)
+- `ImageUploadField` per gallery items, imageQuote, feature, testimonial avatar
+- Per i chart: input numerico per `value`, color picker opzionale per `color`
+
+Tutti i campi passano per il debounce esistente (`set()` → 400ms → store) e supportano `<TextStyleButton>` dove sensato.
 
 ## File toccati
 
-**Nuovi:**
-- `src/components/TextStylePopover.tsx` — popover stile testo per-campo (font/size/weight/spacing/align/italic/uppercase/underline/color/reset)
-
 **Modificati:**
-- `src/lib/templates.ts` — `TextStyle`, `Slide.textOverrides`, helper `getStylableFields(template)` per registry dei field path
-- `src/lib/store.ts` — slice `slideCombos`, `templateCategoryOrder`, `templatesPerCategory` con relative azioni; persist + migration; `duplicateSlide` già OK (clone profondo gestisce `textOverrides`)
-- `src/components/SlideEditorForm.tsx` — `<TextStyleButton>` accanto a ogni `<Field>` stilizzabile, gestione override via `set()` per passare nel debounce esistente
-- `src/components/slides/SlideRenderer.tsx` — applica `getFieldStyle(path)` come `style` inline ai nodi `.title`, `.eyebrow`, `.sub`, e a item indicizzati di cells/items/paragraphs
-- `src/components/NewSlideDialog.tsx` — sezione "I miei combo" in sidebar con save/apply/delete; DnD orizzontale su tab categorie; DnD verticale sui template della categoria attiva; reset ordine default
-- `src/routes/index.tsx` — bottone "Duplica" prominente nella toolbar centrale (icona `Copy` + label, accanto ad Anteprima/Anteprima ZIP)
+- `src/lib/templates.ts` — nuovi `TemplateId`, interfacce dati, `makeDefaultData`, `TEMPLATE_META`, `TEMPLATE_ORDER`, `getStylableFields`
+- `src/lib/store.ts` — migrazione `templatesPerCategory` con nuova categoria `media` + nuovi template, bump versione persist
+- `src/components/slides/SlideRenderer.tsx` — 7 nuovi sub-componenti incluso 3 chart SVG
+- `src/components/slides/slide-styles.css` — classi `.tpl-*` per i 7 nuovi template + override per `fmt-story`/`fmt-landscape`
+- `src/components/SlideEditorForm.tsx` — form blocks per i 7 nuovi template
+- `src/components/NewSlideDialog.tsx` — `CATEGORY_LABELS.media`
+- `src/lib/validation.ts` — validazione per i 7 nuovi template
 
 **Non toccati:**
-- `src/lib/export.ts` — gli `textOverrides` sono CSS inline → l'export PNG li cattura automaticamente, nessuna modifica
-- `src/lib/i18n.ts` — gli override sono per-slide (non per-lingua), invariato
-- `src/lib/history.ts` — invariato (le modifiche di override usano `set()` debounced come tutto il resto)
-- `src/components/SlidesSidebar.tsx` — mantiene il bottone Duplica esistente come scorciatoia per le slide non attive
+- `src/lib/export.ts` — html-to-image cattura SVG nativamente, nessuna modifica
+- `src/lib/i18n.ts`, `src/lib/history.ts` — invariati
 
 ## Fuori scope
-- **Override per-lingua** (lo stile testo è uniforme tra le lingue di una stessa slide; se serve uno stile diverso, l'utente duplica la slide)
-- **Stili "globali" per template** (l'override è per-slide, non per "tutte le slide split")
-- **Animazioni / motion design** sul testo (resta export PNG statico)
-- **Custom fonts oltre la lista FONT_OPTIONS** (resta solo Google Fonts whitelist esistente)
-- **Riordino libero dei campi** dentro un template (i template hanno layout fisso, il DnD è solo sui template/categorie nel picker)
+- **Librerie chart esterne** (recharts, chart.js): SVG inline → bundle leggero, export PNG affidabile
+- **Tipi grafico avanzati** (scatter, area, radar): si possono aggiungere in iterazioni successive
+- **Layer di ritaglio/filtro immagini stile Photoshop**: l'upload mantiene l'immagine originale
+- **Mappe / icone vettoriali per feature template**: il marker resta testo (es. "01", "→")
+- **Animazioni/transizioni nei grafici**: l'export è PNG statico
 
