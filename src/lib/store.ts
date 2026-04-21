@@ -190,14 +190,18 @@ export const useCarousel = create<CarouselState>()(
       setActive: (id) => set({ activeId: id }),
 
       loadJSON: (json) =>
-        set((s) =>
-          withHistory(s, {
+        set((s) => {
+          const migrated = json.slides.map((sl) => ({
+            ...sl,
+            format: (sl as Partial<Slide>).format ?? ("portrait" as SlideFormat),
+          }));
+          return withHistory(s, {
             brand: mergeBrand(json.brand),
-            slides: json.slides,
-            activeId: json.slides[0]?.id ?? null,
+            slides: migrated,
+            activeId: migrated[0]?.id ?? null,
             activeLang: (json.brand?.defaultLanguage ?? "it"),
-          }),
-        ),
+          });
+        }),
 
       /* Brand presets */
       saveBrandPreset: (name) =>
