@@ -38,7 +38,15 @@ export type TemplateId =
   | "bonusStack"
   | "guarantee"
   | "faq"
-  | "quickWin";
+  | "quickWin"
+  | "mediaHero"
+  | "polaroidStack"
+  | "splitDuo"
+  | "magazineCover"
+  | "chartArea"
+  | "chartCompareBar"
+  | "kpiGrid"
+  | "funnelChart";
 
 export interface SplitData {
   eyebrow: string;
@@ -277,6 +285,83 @@ export interface QuickWinData {
   expectedResult?: string;
   timeBadge?: string;
 }
+export interface MediaHeroData {
+  imageUrl?: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  overlayIntensity?: "soft" | "strong";
+}
+export interface PolaroidItem {
+  url?: string;
+  caption?: string;
+  date?: string;
+}
+export interface PolaroidStackData {
+  eyebrow?: string;
+  title: string;
+  polaroids: PolaroidItem[];
+}
+export interface SplitDuoData {
+  eyebrow?: string;
+  leftImage: { url?: string; label: string };
+  rightImage: { url?: string; label: string };
+  centerBadge: string;
+  caption?: string;
+}
+export interface CoverLine {
+  text: string;
+  pageRef?: string;
+}
+export interface MagazineCoverData {
+  masthead: string;
+  issueLabel?: string;
+  imageUrl?: string;
+  mainHeadline: string;
+  coverLines: CoverLine[];
+}
+export interface ChartAreaData {
+  eyebrow: string;
+  title: string;
+  xLabels: string[];
+  values: number[];
+  unit?: string;
+  peakLabel?: string;
+  trend?: "up" | "down";
+}
+export interface ChartCompareBarData {
+  eyebrow: string;
+  title: string;
+  seriesA: { label: string; color?: string };
+  seriesB: { label: string; color?: string };
+  rows: { label: string; valueA: number; valueB: number }[];
+  unit?: string;
+}
+export interface KpiItem {
+  label: string;
+  value: string;
+  unit?: string;
+  delta: string;
+  trend: "up" | "down" | "flat";
+  spark: number[];
+}
+export interface KpiGridData {
+  eyebrow: string;
+  title: string;
+  kpis: KpiItem[]; // exactly 4
+}
+export interface FunnelStage {
+  label: string;
+  value: string;
+  conversionPercent?: string;
+}
+export interface FunnelChartData {
+  eyebrow: string;
+  title: string;
+  stages: FunnelStage[];
+  summary?: string;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -315,7 +400,15 @@ export type AnyTemplateData =
   | BonusStackData
   | GuaranteeData
   | FaqData
-  | QuickWinData;
+  | QuickWinData
+  | MediaHeroData
+  | PolaroidStackData
+  | SplitDuoData
+  | MagazineCoverData
+  | ChartAreaData
+  | ChartCompareBarData
+  | KpiGridData
+  | FunnelChartData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
