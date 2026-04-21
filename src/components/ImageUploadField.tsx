@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 interface Props {
   label: string;
@@ -13,13 +14,24 @@ interface Props {
   maxMB?: number;
   /** "default" rectangular preview, "avatar" circular 96x96 preview. */
   variant?: "default" | "avatar";
+  /** If true (default), clicking the preview opens a fullscreen lightbox. */
+  clickToZoom?: boolean;
 }
 
 const ACCEPTED = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 
-export function ImageUploadField({ label, value, onChange, hint, maxMB = 5, variant = "default" }: Props) {
+export function ImageUploadField({
+  label,
+  value,
+  onChange,
+  hint,
+  maxMB = 5,
+  variant = "default",
+  clickToZoom = true,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const readFile = (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
@@ -47,14 +59,22 @@ export function ImageUploadField({ label, value, onChange, hint, maxMB = 5, vari
   };
 
   const openPicker = () => inputRef.current?.click();
+  const openZoom = () => {
+    if (clickToZoom && value) setLightboxOpen(true);
+  };
 
   const renderPreview = () => {
     if (variant === "avatar") {
       return (
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center">
-          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full border border-border bg-muted/30">
+          <button
+            type="button"
+            onClick={openZoom}
+            className={`h-24 w-24 shrink-0 overflow-hidden rounded-full border border-border bg-muted/30 ${clickToZoom ? "cursor-zoom-in transition-opacity hover:opacity-80" : ""}`}
+            aria-label="Apri anteprima a tutto schermo"
+          >
             <img src={value} alt={label} className="h-full w-full object-cover" />
-          </div>
+          </button>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button type="button" size="sm" variant="outline" onClick={openPicker}>
               <RefreshCw className="mr-1 h-3.5 w-3.5" /> Sostituisci
@@ -68,7 +88,14 @@ export function ImageUploadField({ label, value, onChange, hint, maxMB = 5, vari
     }
     return (
       <div className="relative overflow-hidden rounded-md border border-border bg-muted/30">
-        <img src={value} alt={label} className="block max-h-48 w-full object-contain" />
+        <button
+          type="button"
+          onClick={openZoom}
+          className={`block w-full ${clickToZoom ? "cursor-zoom-in" : "cursor-default"}`}
+          aria-label="Apri anteprima a tutto schermo"
+        >
+          <img src={value} alt={label} className="block max-h-48 w-full object-contain" />
+        </button>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border p-2">
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <ImageIcon className="h-3 w-3" /> Immagine caricata
@@ -118,6 +145,7 @@ export function ImageUploadField({ label, value, onChange, hint, maxMB = 5, vari
         }}
       />
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+      <ImageLightbox open={lightboxOpen} onOpenChange={setLightboxOpen} src={value} alt={label} />
     </div>
   );
 }
