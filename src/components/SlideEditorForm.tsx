@@ -1507,7 +1507,7 @@ function MediaHeroEditor({ d, set, errFor, slideId, overrides }: EditorProps<Med
         <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="STORY" />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <Field label="Sottotitolo (opzionale)" slideId={slideId} fieldPath="subtitle" overrides={overrides}>
         <Input value={d.subtitle ?? ""} onChange={(e) => set({ ...d, subtitle: e.target.value })} />
@@ -1561,6 +1561,8 @@ function PolaroidStackEditor({ d, set, errFor, slideId, overrides }: EditorProps
 }
 
 function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<SplitDuoData>) {
+  const left = d.leftImage ?? { url: undefined, label: "" };
+  const right = d.rightImage ?? { url: undefined, label: "" };
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
@@ -1569,21 +1571,21 @@ function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<Spli
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 rounded-md border border-border p-3">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Sinistra</Label>
-          <ImageUploadField label="" value={d.leftImage.url} onChange={(url) => set({ ...d, leftImage: { ...d.leftImage, url } })} />
+          <ImageUploadField label="" value={left.url} onChange={(url) => set({ ...d, leftImage: { ...left, url } })} />
           <Field label="Etichetta" error={errFor("leftImage.label")} slideId={slideId} fieldPath="leftImage.label" overrides={overrides}>
-            <Input data-field="leftImage.label" value={d.leftImage.label} onChange={(e) => set({ ...d, leftImage: { ...d.leftImage, label: e.target.value } })} placeholder="PRIMA" />
+            <Input data-field="leftImage.label" value={left.label} onChange={(e) => set({ ...d, leftImage: { ...left, label: e.target.value } })} placeholder="PRIMA" />
           </Field>
         </div>
         <div className="space-y-2 rounded-md border border-border p-3">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">Destra</Label>
-          <ImageUploadField label="" value={d.rightImage.url} onChange={(url) => set({ ...d, rightImage: { ...d.rightImage, url } })} />
+          <ImageUploadField label="" value={right.url} onChange={(url) => set({ ...d, rightImage: { ...right, url } })} />
           <Field label="Etichetta" error={errFor("rightImage.label")} slideId={slideId} fieldPath="rightImage.label" overrides={overrides}>
-            <Input data-field="rightImage.label" value={d.rightImage.label} onChange={(e) => set({ ...d, rightImage: { ...d.rightImage, label: e.target.value } })} placeholder="DOPO" />
+            <Input data-field="rightImage.label" value={right.label} onChange={(e) => set({ ...d, rightImage: { ...right, label: e.target.value } })} placeholder="DOPO" />
           </Field>
         </div>
       </div>
       <Field label="Badge centrale" error={errFor("centerBadge")} slideId={slideId} fieldPath="centerBadge" overrides={overrides}>
-        <Input data-field="centerBadge" value={d.centerBadge} onChange={(e) => set({ ...d, centerBadge: e.target.value })} placeholder="VS" />
+        <Input data-field="centerBadge" value={d.centerBadge ?? ""} onChange={(e) => set({ ...d, centerBadge: e.target.value })} placeholder="VS" />
       </Field>
       <Field label="Caption (opzionale)" slideId={slideId} fieldPath="caption" overrides={overrides}>
         <Input value={d.caption ?? ""} onChange={(e) => set({ ...d, caption: e.target.value })} />
@@ -1594,25 +1596,26 @@ function SplitDuoEditor({ d, set, errFor, slideId, overrides }: EditorProps<Spli
 
 function MagazineCoverEditor({ d, set, errFor, slideId, overrides }: EditorProps<MagazineCoverData>) {
   const cErr = errFor("coverLines");
+  const coverLines = d.coverLines ?? [];
   return (
     <div className="space-y-4">
       <Field label="Masthead" error={errFor("masthead")} slideId={slideId} fieldPath="masthead" overrides={overrides}>
-        <Input data-field="masthead" value={d.masthead} onChange={(e) => set({ ...d, masthead: e.target.value })} placeholder="VOGUE" />
+        <Input data-field="masthead" value={d.masthead ?? ""} onChange={(e) => set({ ...d, masthead: e.target.value })} placeholder="VOGUE" />
       </Field>
       <Field label="Numero / Data" slideId={slideId} fieldPath="issueLabel" overrides={overrides}>
         <Input value={d.issueLabel ?? ""} onChange={(e) => set({ ...d, issueLabel: e.target.value })} placeholder="N° 12 · Nov 2025" />
       </Field>
       <ImageUploadField label="Foto centrale" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} />
       <Field label="Headline principale" hint={HL_HINT} error={errFor("mainHeadline")} slideId={slideId} fieldPath="mainHeadline" overrides={overrides}>
-        <Textarea data-field="mainHeadline" rows={2} value={d.mainHeadline} onChange={(e) => set({ ...d, mainHeadline: e.target.value })} />
+        <Textarea data-field="mainHeadline" rows={2} value={d.mainHeadline ?? ""} onChange={(e) => set({ ...d, mainHeadline: e.target.value })} />
       </Field>
       {cErr && <p data-field="coverLines" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {cErr}</p>}
       <ArrayField
         label="Cover lines (1–4)"
-        items={d.coverLines}
+        items={coverLines}
         onChange={(arr) => set({ ...d, coverLines: arr })}
         maxItems={4}
-        counter={<ItemCounter current={d.coverLines.length} min={1} max={4} unit="strilli" />}
+        counter={<ItemCounter current={coverLines.length} min={1} max={4} unit="strilli" />}
         render={(v, on, i) => (
           <div className="grid grid-cols-[1fr_90px] gap-2">
             <Input value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder={`Strillo ${i + 1}`} />
