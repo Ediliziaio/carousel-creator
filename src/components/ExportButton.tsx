@@ -25,7 +25,7 @@ import { downloadSinglePng, downloadZipFromNodes } from "@/lib/export";
 import { toast } from "sonner";
 
 interface Props {
-  exportRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  exportRefs: React.RefObject<Map<string, HTMLDivElement>>;
   activeSlideId: string | null;
   activeIndex: number;
   brandTitle: string;
@@ -101,9 +101,19 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
       closeDialog();
       void runExport(mode);
     } else {
-      // jump to first invalid
+      // jump to first invalid slide and focus first missing field
       const first = validationIssues[0];
-      if (first) setActive(first.slideId);
+      if (first) {
+        setActive(first.slideId);
+        // dispatch focus event after slide becomes active + tab switches
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("slide:focus-field", {
+              detail: { slideId: first.slideId, field: first.firstField },
+            }),
+          );
+        }, 80);
+      }
       closeDialog();
     }
   };
@@ -159,8 +169,9 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
               Campi obbligatori mancanti
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {validationIssues.length} slide{validationIssues.length === 1 ? "" : ""} con campi non compilati.
-              Completa i campi prima di esportare, oppure forza l'export per generare comunque le PNG.
+              {validationIssues.reduce((sum, i) => sum + i.errors.length, 0)} campi da completare
+              {" su "}{validationIssues.length} slide. Completa i campi prima di esportare, oppure forza
+              l'export per generare comunque le PNG.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-64 space-y-2 overflow-auto rounded-md border border-border bg-muted/30 p-3 text-sm">
@@ -184,7 +195,7 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialog}>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDialog}>
-              {forceExport ? "Esporta comunque" : "Vai alla prima slide invalida"}
+              {forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
