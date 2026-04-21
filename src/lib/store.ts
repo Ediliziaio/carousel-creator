@@ -293,6 +293,11 @@ export const useCarousel = create<CarouselState>()(
           }),
         ),
 
+      setLastFontSizeForFieldType: (typeKey, size) =>
+        set((s) => ({
+          lastFontSizeByFieldType: { ...s.lastFontSizeByFieldType, [typeKey]: size },
+        })),
+
       /* Slide combos */
       saveSlideCombo: (name, template, format) =>
         set((s) => ({
