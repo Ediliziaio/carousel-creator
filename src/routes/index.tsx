@@ -106,16 +106,19 @@ function Index() {
           <Button variant="outline" size="sm" onClick={onExportJson}>
             <FileJson className="mr-1 h-4 w-4" /> Export JSON
           </Button>
-          <Button size="sm" variant="secondary" onClick={onExportSingle} disabled={!activeSlide || exporting !== null}>
-            {exporting === "single" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
-            PNG slide
-          </Button>
-          <Button size="sm" onClick={onExportZip} disabled={slides.length === 0 || exporting !== null}>
-            {exporting === "zip" ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Package className="mr-1 h-4 w-4" />}
-            ZIP ({slides.length})
-          </Button>
+          <ExportButton
+            exportRefs={exportRefs}
+            activeSlideId={activeSlide?.id ?? null}
+            activeIndex={activeIndex}
+            brandTitle={brand.carouselTitle}
+            onError={setExportError}
+          />
         </div>
       </header>
+
+      {exportError && (
+        <ExportErrorBanner message={exportError} onDismiss={() => setExportError(null)} />
+      )}
 
       {/* Main 3-col layout */}
       <div className="flex min-h-0 flex-1">
