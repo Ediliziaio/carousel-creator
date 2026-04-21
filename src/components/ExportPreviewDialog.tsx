@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useCarousel } from "@/lib/store";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { validateSlide } from "@/lib/validation";
-import { downloadSinglePng } from "@/lib/export";
+import { downloadSinglePng, ensureFontsFor, fontsReadyFor } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
 import { TEMPLATE_META } from "@/lib/templates";
-import { Download, AlertCircle, X, Loader2 } from "lucide-react";
+import { Download, AlertCircle, X, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -34,6 +34,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.4);
   const [busy, setBusy] = useState(false);
+  const [assetsReady, setAssetsReady] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -51,6 +52,40 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
     return () => ro.disconnect();
   }, [open]);
 
+  // Preload fonts + check images for the dialog so preview matches export.
+  useEffect(() => {
+    if (!open) return;
+    setAssetsReady(false);
+    let cancelled = false;
+    (async () => {
+      await ensureFontsFor(brand);
+      // Wait a tick for capture node images to mount
+      await new Promise((r) => setTimeout(r, 50));
+      const node = captureRef.current;
+      if (node) {
+        const imgs = Array.from(node.querySelectorAll("img"));
+        await Promise.all(
+          imgs.map(
+            (img) =>
+              new Promise<void>((resolve) => {
+                if (img.complete) return resolve();
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+              }),
+          ),
+        );
+      }
+      if (!cancelled && fontsReadyFor(brand)) setAssetsReady(true);
+      else if (!cancelled) {
+        // retry once more after a beat
+        setTimeout(() => !cancelled && setAssetsReady(fontsReadyFor(brand)), 300);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, brand, slide]);
+
   if (!slide) return null;
 
   const validation = validateSlide(slide, lang, brand.defaultLanguage);
@@ -62,7 +97,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
     if (!captureRef.current) return;
     setBusy(true);
     try {
-      const method = await downloadSinglePng(captureRef.current, filename);
+      const method = await downloadSinglePng(captureRef.current, filename, brand);
       toast.success("PNG esportata");
       if (method === "new-tab") {
         toast.info("Download bloccato dal browser: file aperto in una nuova tab.");
