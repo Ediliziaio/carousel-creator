@@ -161,7 +161,7 @@ export function SlideEditorForm({ slide }: Props) {
   }
 
   return (
-    <div ref={containerRef} className="space-y-4">
+    <div ref={containerRef} className="space-y-4 overflow-x-hidden">
       {languages.length > 1 && (
         <Tabs value={activeLang} onValueChange={setActiveLang}>
           <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${languages.length}, 1fr)`, display: "grid" }}>
@@ -549,7 +549,7 @@ function ImageQuoteEditor({ d, set, errFor, slideId, overrides }: { d: ImageQuot
     <div className="space-y-4">
       <ImageUploadField label="Immagine fullscreen" value={d.imageUrl} onChange={(url) => set({ ...d, imageUrl: url })} hint="Renderizzata sotto la citazione." />
       <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}><Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
         <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}><Input value={d.role ?? ""} onChange={(e) => set({ ...d, role: e.target.value })} /></Field>
       </div>
@@ -574,10 +574,10 @@ function ChartBarEditor({ d, set, errFor, slideId, overrides }: { d: ChartBarDat
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Voce {i + 1}</Label>
               <TextStylePopover slideId={slideId} fieldPath={`items.${i}.label`} value={overrides?.[`items.${i}.label`]} />
             </div>
-            <div className="grid grid-cols-[1fr_100px_50px] gap-2">
-              <Input value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
+              <Input className="col-span-2 sm:col-span-1" value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
               <Input type="number" value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" />
-              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 p-1" />
+              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
             </div>
           </div>
         )}
@@ -604,10 +604,10 @@ function ChartDonutEditor({ d, set, errFor, slideId, overrides }: { d: ChartDonu
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Segmento {i + 1}</Label>
               <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
             </div>
-            <div className="grid grid-cols-[1fr_100px_50px] gap-2">
-              <Input value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
+              <Input className="col-span-2 sm:col-span-1" value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
               <Input type="number" value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" />
-              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 p-1" />
+              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
             </div>
           </div>
         )}
@@ -634,10 +634,12 @@ function ChartLineEditor({ d, set, errFor, slideId, overrides }: { d: ChartLineD
       <div className="space-y-2">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Punti dati</Label>
         {d.xLabels.map((lb, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="flex flex-col gap-2 sm:flex-row">
             <Input className="flex-1" value={lb} onChange={(e) => updatePoint(i, e.target.value, d.values[i] ?? 0)} placeholder="Etichetta X" />
-            <Input className="w-24" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" />
-            <Button type="button" variant="ghost" size="icon" onClick={() => removePoint(i)}><Trash2 className="h-4 w-4" /></Button>
+            <div className="flex gap-2">
+              <Input className="flex-1 sm:w-24 sm:flex-none" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removePoint(i)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addPoint}><Plus className="mr-1 h-4 w-4" /> Aggiungi punto</Button>
@@ -663,7 +665,7 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData;
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Bullet {i + 1}</Label>
               <TextStylePopover slideId={slideId} fieldPath={`bullets.${i}.title`} value={overrides?.[`bullets.${i}.title`]} />
             </div>
-            <div className="grid grid-cols-[80px_1fr] gap-2">
+            <div className="grid grid-cols-[60px_1fr] gap-2 sm:grid-cols-[80px_1fr]">
               <Input value={v.marker} onChange={(e) => on({ ...v, marker: e.target.value })} placeholder="01" />
               <Input value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo" />
             </div>
@@ -680,9 +682,9 @@ function FeatureEditor({ d, set, errFor, slideId, overrides }: { d: FeatureData;
 function TestimonialEditor({ d, set, errFor, slideId, overrides }: { d: TestimonialData; set: (d: TestimonialData) => void; errFor: ErrFor } & StyleProps) {
   return (
     <div className="space-y-4">
-      <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} />
+      <ImageUploadField label="Avatar (opzionale)" value={d.avatarUrl} onChange={(url) => set({ ...d, avatarUrl: url })} variant="avatar" />
       <Field label="Citazione" error={errFor("quote")} slideId={slideId} fieldPath="quote" overrides={overrides}><Textarea data-field="quote" rows={4} value={d.quote} onChange={(e) => set({ ...d, quote: e.target.value })} /></Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Autore" error={errFor("author")} slideId={slideId} fieldPath="author" overrides={overrides}><Input data-field="author" value={d.author} onChange={(e) => set({ ...d, author: e.target.value })} /></Field>
         <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}><Input value={d.role ?? ""} onChange={(e) => set({ ...d, role: e.target.value })} /></Field>
       </div>
