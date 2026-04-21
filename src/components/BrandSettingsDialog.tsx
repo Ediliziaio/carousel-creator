@@ -132,30 +132,30 @@ export function BrandSettingsDialog() {
             <TabsContent value="basics" className="m-0 space-y-4">
               <div className="space-y-1.5">
                 <Label>Nome brand (header)</Label>
-                <Input value={brand.brand} onChange={(e) => setBrand({ brand: e.target.value })} />
+                <Input value={b.brand} onChange={(e) => setDraft({ brand: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label>Handle (footer)</Label>
-                <Input value={brand.handle} onChange={(e) => setBrand({ handle: e.target.value })} />
+                <Input value={b.handle} onChange={(e) => setDraft({ handle: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label>Footer destro (CTA)</Label>
-                <Input value={brand.footerCta} onChange={(e) => setBrand({ footerCta: e.target.value })} />
+                <Input value={b.footerCta} onChange={(e) => setDraft({ footerCta: e.target.value })} />
               </div>
               <ImageUploadField
                 label="Logo aziendale (opzionale)"
-                value={brand.logoDataUrl}
-                onChange={(url) => setBrand({ logoDataUrl: url })}
+                value={b.logoDataUrl}
+                onChange={(url) => setDraft({ logoDataUrl: url })}
                 hint="Mostrato accanto al nome brand nell'header. Sfondo trasparente consigliato."
                 maxMB={2}
               />
             </TabsContent>
 
             <TabsContent value="colors" className="m-0 space-y-4">
-              <ColorRow label="Colore accent" value={brand.accent} onChange={(v) => setBrand({ accent: v })} presets={ACCENT_PRESETS} />
-              <ColorRow label="Colore accent secondario" value={brand.accentSecondary} onChange={(v) => setBrand({ accentSecondary: v })} presets={ACCENT_PRESETS} />
-              <ColorRow label="Colore testo" value={brand.textColor} onChange={(v) => setBrand({ textColor: v })} />
-              <ColorRow label="Colore sfondo" value={brand.bgColor} onChange={(v) => setBrand({ bgColor: v })} />
+              <ColorRow label="Colore accent" value={b.accent} onChange={(v) => setDraft({ accent: v })} presets={ACCENT_PRESETS} />
+              <ColorRow label="Colore accent secondario" value={b.accentSecondary} onChange={(v) => setDraft({ accentSecondary: v })} presets={ACCENT_PRESETS} />
+              <ColorRow label="Colore testo" value={b.textColor} onChange={(v) => setDraft({ textColor: v })} />
+              <ColorRow label="Colore sfondo" value={b.bgColor} onChange={(v) => setDraft({ bgColor: v })} />
               <Button variant="outline" size="sm" onClick={reset}>
                 <RotateCcw className="mr-1 h-3 w-3" /> Reset valori grafici al default
               </Button>
@@ -165,7 +165,7 @@ export function BrandSettingsDialog() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Font titoli</Label>
-                  <Select value={brand.fontHeading} onValueChange={(v) => setBrand({ fontHeading: v as typeof brand.fontHeading })}>
+                  <Select value={b.fontHeading} onValueChange={(v) => setDraft({ fontHeading: v as typeof b.fontHeading })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {FONT_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
@@ -174,7 +174,7 @@ export function BrandSettingsDialog() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Font body</Label>
-                  <Select value={brand.fontBody} onValueChange={(v) => setBrand({ fontBody: v as typeof brand.fontBody })}>
+                  <Select value={b.fontBody} onValueChange={(v) => setDraft({ fontBody: v as typeof b.fontBody })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {FONT_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
@@ -185,7 +185,7 @@ export function BrandSettingsDialog() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Peso titoli</Label>
-                  <Select value={String(brand.headingWeight)} onValueChange={(v) => setBrand({ headingWeight: Number(v) as Weight })}>
+                  <Select value={String(b.headingWeight)} onValueChange={(v) => setDraft({ headingWeight: Number(v) as Weight })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {WEIGHTS.map((w) => <SelectItem key={w} value={String(w)}>{w}</SelectItem>)}
@@ -194,7 +194,7 @@ export function BrandSettingsDialog() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Peso body</Label>
-                  <Select value={String(brand.bodyWeight)} onValueChange={(v) => setBrand({ bodyWeight: Number(v) as Weight })}>
+                  <Select value={String(b.bodyWeight)} onValueChange={(v) => setDraft({ bodyWeight: Number(v) as Weight })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {WEIGHTS.map((w) => <SelectItem key={w} value={String(w)}>{w}</SelectItem>)}
@@ -207,7 +207,7 @@ export function BrandSettingsDialog() {
             <TabsContent value="effects" className="m-0 space-y-4">
               <div className="space-y-1.5">
                 <Label>Pattern sfondo</Label>
-                <Select value={brand.effects.bgPattern} onValueChange={(v) => setEffect("bgPattern", v as BgPattern)}>
+                <Select value={b.effects.bgPattern} onValueChange={(v) => setEffect("bgPattern", v as BgPattern)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {BG_PATTERNS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
@@ -216,16 +216,16 @@ export function BrandSettingsDialog() {
               </div>
               <div className="space-y-1.5">
                 <Label>Bordo slide</Label>
-                <Select value={brand.effects.borderStyle} onValueChange={(v) => setEffect("borderStyle", v as BorderStyle)}>
+                <Select value={b.effects.borderStyle} onValueChange={(v) => setEffect("borderStyle", v as BorderStyle)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {BORDER_STYLES.map((b) => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
+                    {BORDER_STYLES.map((bs) => <SelectItem key={bs.value} value={bs.value}>{bs.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <ToggleRow label="Glow accent" desc="Aggiunge un alone luminoso a numeri grandi e accent." checked={brand.effects.accentGlow} onChange={(v) => setEffect("accentGlow", v)} />
-              <ToggleRow label="Titoli a gradiente" desc="Riempie i titoli con accent → accent secondario." checked={brand.effects.textGradient} onChange={(v) => setEffect("textGradient", v)} />
-              <ToggleRow label="Effetto film grain" desc="Sottile rumore tipo pellicola." checked={brand.effects.grain} onChange={(v) => setEffect("grain", v)} />
+              <ToggleRow label="Glow accent" desc="Aggiunge un alone luminoso a numeri grandi e accent." checked={b.effects.accentGlow} onChange={(v) => setEffect("accentGlow", v)} />
+              <ToggleRow label="Titoli a gradiente" desc="Riempie i titoli con accent → accent secondario." checked={b.effects.textGradient} onChange={(v) => setEffect("textGradient", v)} />
+              <ToggleRow label="Effetto film grain" desc="Sottile rumore tipo pellicola." checked={b.effects.grain} onChange={(v) => setEffect("grain", v)} />
             </TabsContent>
 
             <TabsContent value="lang" className="m-0 space-y-4">
