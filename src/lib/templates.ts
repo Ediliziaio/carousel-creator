@@ -33,7 +33,12 @@ export type TemplateId =
   | "socialProof"
   | "offer"
   | "objection"
-  | "tipPack";
+  | "tipPack"
+  | "urgency"
+  | "bonusStack"
+  | "guarantee"
+  | "faq"
+  | "quickWin";
 
 export interface SplitData {
   eyebrow: string;
@@ -237,6 +242,41 @@ export interface TipPackData {
   tips: { icon?: string; title: string; text: string }[];
   saveLabel?: string;
 }
+export interface UrgencyData {
+  eyebrow?: string;
+  headline: string;
+  deadline: string;
+  unitsLeft?: string;
+  ctaLabel: string;
+}
+export interface BonusStackData {
+  eyebrow: string;
+  title: string;
+  bonuses: { name: string; description?: string; value: string }[];
+  totalValue: string;
+  yourPrice: string;
+  currency?: string;
+  ctaLabel: string;
+}
+export interface GuaranteeData {
+  badge?: string;
+  headline: string;
+  body: string;
+  terms?: string;
+  seal?: string;
+}
+export interface FaqData {
+  eyebrow: string;
+  title: string;
+  items: { q: string; a: string }[];
+}
+export interface QuickWinData {
+  eyebrow?: string;
+  instruction: string;
+  steps: string[];
+  expectedResult?: string;
+  timeBadge?: string;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -270,7 +310,12 @@ export type AnyTemplateData =
   | SocialProofData
   | OfferData
   | ObjectionData
-  | TipPackData;
+  | TipPackData
+  | UrgencyData
+  | BonusStackData
+  | GuaranteeData
+  | FaqData
+  | QuickWinData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
