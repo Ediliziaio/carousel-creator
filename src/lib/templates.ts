@@ -110,8 +110,22 @@ export interface Slide {
 
 /* ============ Brand & Effects ============ */
 
-export type BgPattern = "none" | "dots" | "grid" | "noise" | "gradient-mesh";
+export type BgPattern =
+  | "none"
+  | "dots"
+  | "grid"
+  | "noise"
+  | "gradient-mesh"
+  | "gradient-radial"
+  | "gradient-conic"
+  | "blob"
+  | "stripes"
+  | "waves";
 export type BorderStyle = "none" | "thin" | "thick" | "dashed" | "glow";
+export type ShadowStyle = "none" | "soft" | "hard" | "colored";
+export type CornerStyle = "sharp" | "rounded" | "pill";
+export type TitleEffect = "none" | "outline" | "shadow-3d" | "underline-accent" | "highlight-block";
+export type DividerStyle = "line" | "dots" | "wave" | "gradient";
 
 export interface BrandEffects {
   bgPattern: BgPattern;
@@ -119,6 +133,11 @@ export interface BrandEffects {
   textGradient: boolean;
   grain: boolean;
   borderStyle: BorderStyle;
+  shadow: ShadowStyle;
+  cornerStyle: CornerStyle;
+  titleEffect: TitleEffect;
+  dividerStyle: DividerStyle;
+  iconAccent: boolean;
 }
 
 export const DEFAULT_EFFECTS: BrandEffects = {
@@ -127,6 +146,11 @@ export const DEFAULT_EFFECTS: BrandEffects = {
   textGradient: false,
   grain: false,
   borderStyle: "none",
+  shadow: "none",
+  cornerStyle: "rounded",
+  titleEffect: "none",
+  dividerStyle: "line",
+  iconAccent: false,
 };
 
 export type FontChoice =
