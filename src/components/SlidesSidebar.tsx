@@ -1,5 +1,6 @@
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META, TEMPLATE_ORDER, type TemplateId } from "@/lib/templates";
+import { validateSlide } from "@/lib/validation";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { Button } from "@/components/ui/button";
 import { Plus, Copy, Trash2, ArrowUp, ArrowDown } from "lucide-react";
@@ -63,6 +64,7 @@ export function SlidesSidebar() {
       <div className="flex-1 space-y-3 overflow-auto p-3">
         {slides.map((sl, i) => {
           const active = sl.id === activeId;
+          const invalid = !validateSlide(sl).valid;
           return (
             <div key={sl.id} className="space-y-1">
               <button
@@ -71,8 +73,16 @@ export function SlidesSidebar() {
                 className={`block w-full rounded-md p-1 transition-colors ${active ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted"}`}
               >
                 <MiniPreview index={i} />
-                <div className="mt-1 flex items-center justify-between px-1">
-                  <span className="text-xs font-medium">{(i + 1).toString().padStart(2, "0")} · {TEMPLATE_META[sl.template].label}</span>
+                <div className="mt-1 flex items-center justify-between gap-2 px-1">
+                  <span className="flex items-center gap-1.5 text-xs font-medium">
+                    {invalid && (
+                      <span
+                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
+                        title="Campi obbligatori mancanti"
+                      />
+                    )}
+                    {(i + 1).toString().padStart(2, "0")} · {TEMPLATE_META[sl.template].label}
+                  </span>
                 </div>
               </button>
               <div className="flex justify-end gap-1">
