@@ -161,7 +161,7 @@ export function SlideEditorForm({ slide }: Props) {
   }
 
   return (
-    <div ref={containerRef} className="space-y-4">
+    <div ref={containerRef} className="space-y-4 overflow-x-hidden">
       {languages.length > 1 && (
         <Tabs value={activeLang} onValueChange={setActiveLang}>
           <TabsList className="w-full" style={{ gridTemplateColumns: `repeat(${languages.length}, 1fr)`, display: "grid" }}>
