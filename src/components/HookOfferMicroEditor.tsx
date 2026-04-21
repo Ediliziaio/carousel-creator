@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Wand2 } from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { getSlideData } from "@/lib/i18n";
-import type { Slide, HookData, OfferData, CtaData } from "@/lib/templates";
+import type { Slide } from "@/lib/templates";
 import { toast } from "sonner";
 
 type MarketingTpl = "hook" | "offer" | "cta";
@@ -249,5 +249,3 @@ export function HookOfferMicroEditor() {
   );
 }
 
-// Re-export types so editor compiles even if unused locally
-export type _Marketing = HookData | OfferData | CtaData;
