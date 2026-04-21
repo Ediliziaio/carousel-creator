@@ -26,6 +26,14 @@ import {
   type QuoteBigData,
   type RoadmapData,
   type CtaData,
+  type HookData,
+  type ProblemSolutionData,
+  type MistakesData,
+  type FrameworkData,
+  type SocialProofData,
+  type OfferData,
+  type ObjectionData,
+  type TipPackData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -154,6 +162,14 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "quoteBig":    return <QuoteBig slide={slide} d={data as QuoteBigData} />;
     case "roadmap":     return <Roadmap slide={slide} d={data as RoadmapData} />;
     case "cta":         return <Cta slide={slide} d={data as CtaData} />;
+    case "hook":        return <Hook slide={slide} d={data as HookData} />;
+    case "problemSolution": return <ProblemSolution slide={slide} d={data as ProblemSolutionData} />;
+    case "mistakes":    return <Mistakes slide={slide} d={data as MistakesData} />;
+    case "framework":   return <Framework slide={slide} d={data as FrameworkData} />;
+    case "socialProof": return <SocialProof slide={slide} d={data as SocialProofData} />;
+    case "offer":       return <Offer slide={slide} d={data as OfferData} />;
+    case "objection":   return <Objection slide={slide} d={data as ObjectionData} />;
+    case "tipPack":     return <TipPack slide={slide} d={data as TipPackData} />;
   }
 }
 
@@ -702,6 +718,168 @@ function Cta({ slide, d }: { slide: Slide; d: CtaData }) {
       {d.subtitle && <p className="cta-sub" style={fieldStyle(slide, "subtitle")}>{d.subtitle}</p>}
       <div className="cta-button" style={fieldStyle(slide, "buttonLabel")}>{d.buttonLabel}</div>
       {d.handle && <div className="cta-handle">{d.handle}</div>}
+    </>
+  );
+}
+
+/* ===================== MARKETING TEMPLATES ===================== */
+
+function Hook({ slide, d }: { slide: Slide; d: HookData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="hook-eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 className="hook-text" style={fieldStyle(slide, "hook")}><HL text={d.hook} /></h1>
+      {d.subhook && <p className="hook-sub" style={fieldStyle(slide, "subhook")}>{d.subhook}</p>}
+      <div className="hook-swipe">{d.swipeLabel ?? "SCORRI →"}</div>
+    </>
+  );
+}
+
+function ProblemSolution({ slide, d }: { slide: Slide; d: ProblemSolutionData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <div className="ps-stack">
+        <div className="ps-card ps-problem">
+          <div className="ps-icon">⚠</div>
+          <div className="ps-label">{d.problem.label}</div>
+          <p className="ps-text" style={fieldStyle(slide, "problem.text")}>{d.problem.text}</p>
+        </div>
+        <div className="ps-arrow" aria-hidden>↓</div>
+        <div className="ps-card ps-solution">
+          <div className="ps-icon">✦</div>
+          <div className="ps-label">{d.solution.label}</div>
+          <p className="ps-text" style={fieldStyle(slide, "solution.text")}>{d.solution.text}</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Mistakes({ slide, d }: { slide: Slide; d: MistakesData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <ol className="mistakes-list">
+        {d.mistakes.map((m, i) => (
+          <li key={i} className="mistakes-item">
+            <div className="mistakes-num">{pad2(i + 1)}</div>
+            <div className="mistakes-body">
+              <div className="mistakes-icon">✕</div>
+              <h3 style={fieldStyle(slide, `mistakes.${i}.title`)}>{m.title}</h3>
+              <p>{m.why}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
+function Framework({ slide, d }: { slide: Slide; d: FrameworkData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="fw-acronym" style={fieldStyle(slide, "acronym")}>{d.acronym}</div>
+      <ul className="fw-list">
+        {d.letters.map((l, i) => (
+          <li key={i} className="fw-row">
+            <div className="fw-letter">{l.letter}</div>
+            <div className="fw-body">
+              <div className="fw-name" style={fieldStyle(slide, `letters.${i}.name`)}>{l.name}</div>
+              <p className="fw-desc">{l.desc}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function SocialProof({ slide, d }: { slide: Slide; d: SocialProofData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <div className="sp-head">
+        {d.logoUrl && <img src={d.logoUrl} alt={d.clientName} className="sp-logo" />}
+        <div className="sp-client" style={fieldStyle(slide, "clientName")}>{d.clientName}</div>
+      </div>
+      <h1 className="sp-tagline" style={fieldStyle(slide, "tagline")}><HL text={d.tagline} /></h1>
+      <div className="sp-metrics">
+        {d.metrics.slice(0, 3).map((m, i) => (
+          <div key={i} className="sp-metric">
+            <div className="sp-value" style={fieldStyle(slide, `metrics.${i}.value`)}>
+              {m.value}{m.unit && <span className="sp-unit">{m.unit}</span>}
+            </div>
+            <div className="sp-label">{m.label}</div>
+          </div>
+        ))}
+      </div>
+      {d.summary && <p className="sp-summary" style={fieldStyle(slide, "summary")}>{d.summary}</p>}
+    </>
+  );
+}
+
+function Offer({ slide, d }: { slide: Slide; d: OfferData }) {
+  const cur = d.currency ?? "€";
+  return (
+    <div className="offer-card">
+      {d.badge && <div className="offer-badge">{d.badge}</div>}
+      <h2 className="offer-name" style={fieldStyle(slide, "productName")}>{d.productName}</h2>
+      <div className="offer-prices">
+        {d.priceOld && <span className="offer-old">{cur}{d.priceOld}</span>}
+        <span className="offer-new" style={fieldStyle(slide, "priceNew")}>{cur}{d.priceNew}</span>
+      </div>
+      <ul className="offer-includes">
+        {d.includes.map((inc, i) => (
+          <li key={i}><span className="offer-check">✓</span>{inc}</li>
+        ))}
+      </ul>
+      <div className="offer-cta" style={fieldStyle(slide, "ctaLabel")}>{d.ctaLabel}</div>
+      {d.urgency && <div className="offer-urgency" style={fieldStyle(slide, "urgency")}>{d.urgency}</div>}
+    </div>
+  );
+}
+
+function Objection({ slide, d }: { slide: Slide; d: ObjectionData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <div className="obj-stack">
+        <div className="obj-bubble obj-question">
+          <span className="obj-tag">CLIENTE</span>
+          <p style={fieldStyle(slide, "objection")}>"{d.objection}"</p>
+        </div>
+        <div className="obj-bubble obj-answer">
+          <span className="obj-tag">RISPOSTA</span>
+          <p style={fieldStyle(slide, "answer")}>{d.answer}</p>
+        </div>
+      </div>
+      {d.signOff && <div className="obj-signoff" style={fieldStyle(slide, "signOff")}>{d.signOff}</div>}
+    </>
+  );
+}
+
+function TipPack({ slide, d }: { slide: Slide; d: TipPackData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="tip-grid">
+        {d.tips.map((t, i) => (
+          <div key={i} className="tip-card">
+            <div className="tip-head">
+              <span className="tip-num">{pad2(i + 1)}</span>
+              {t.icon && <span className="tip-icon">{t.icon}</span>}
+            </div>
+            <h3 style={fieldStyle(slide, `tips.${i}.title`)}>{t.title}</h3>
+            <p>{t.text}</p>
+          </div>
+        ))}
+      </div>
+      <div className="tip-save">{d.saveLabel ?? "SALVA QUESTO POST"}</div>
     </>
   );
 }

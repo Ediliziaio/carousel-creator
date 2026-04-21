@@ -24,6 +24,14 @@ import type {
   QuoteBigData,
   RoadmapData,
   CtaData,
+  HookData,
+  ProblemSolutionData,
+  MistakesData,
+  FrameworkData,
+  SocialProofData,
+  OfferData,
+  ObjectionData,
+  TipPackData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -63,6 +71,14 @@ export const LIMITS = {
   processSteps: { min: 3, max: 6 },
   prosCons: { min: 2, max: 5 },
   roadmap: { min: 3, max: 5 },
+  mistakes: { min: 3, max: 5 },
+  frameworkLetters: { min: 3, max: 6 },
+  offerIncludes: { min: 3, max: 5 },
+  tips: { min: 3, max: 6 },
+  hookMin: 5,
+  hookMax: 90,
+  objectionMax: 200,
+  letterMax: 3,
   quoteMin: 10,
   quoteMax: 280,
   authorMax: 60,
@@ -371,6 +387,97 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.buttonLabel)) err("buttonLabel", `Bottone: ${REQUIRED}`);
       else if (d.buttonLabel.length > LIMITS.buttonMax)
         err("buttonLabel", `Bottone: massimo ${LIMITS.buttonMax} caratteri`);
+      break;
+    }
+    case "hook": {
+      const d = data as HookData;
+      if (empty(d.hook)) err("hook", `Hook: ${REQUIRED}`);
+      else if (d.hook.length < LIMITS.hookMin || d.hook.length > LIMITS.hookMax)
+        err("hook", `Hook: tra ${LIMITS.hookMin} e ${LIMITS.hookMax} caratteri (hai ${d.hook.length})`);
+      break;
+    }
+    case "problemSolution": {
+      const d = data as ProblemSolutionData;
+      if (empty(d.problem?.text)) err("problem.text", `Problema: ${REQUIRED}`);
+      if (empty(d.solution?.text)) err("solution.text", `Soluzione: ${REQUIRED}`);
+      break;
+    }
+    case "mistakes": {
+      const d = data as MistakesData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (d.mistakes.length < LIMITS.mistakes.min)
+        err("mistakes", `Errori: servono almeno ${LIMITS.mistakes.min} voci (hai ${d.mistakes.length})`);
+      if (d.mistakes.length > LIMITS.mistakes.max)
+        err("mistakes", `Errori: massimo ${LIMITS.mistakes.max}`);
+      d.mistakes.forEach((m, i) => {
+        if (empty(m.title)) err(`mistakes.${i}.title`, `Errore ${i + 1}: titolo obbligatorio`);
+      });
+      break;
+    }
+    case "framework": {
+      const d = data as FrameworkData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (empty(d.acronym)) err("acronym", `Acronimo: ${REQUIRED}`);
+      if (d.letters.length < LIMITS.frameworkLetters.min)
+        err("letters", `Lettere: servono almeno ${LIMITS.frameworkLetters.min} (hai ${d.letters.length})`);
+      if (d.letters.length > LIMITS.frameworkLetters.max)
+        err("letters", `Lettere: massimo ${LIMITS.frameworkLetters.max}`);
+      d.letters.forEach((l, i) => {
+        if (empty(l.letter)) err(`letters.${i}.letter`, `Lettera ${i + 1}: ${REQUIRED}`);
+        else if (l.letter.length > LIMITS.letterMax)
+          err(`letters.${i}.letter`, `Lettera ${i + 1}: max ${LIMITS.letterMax} caratteri`);
+        if (empty(l.name)) err(`letters.${i}.name`, `Lettera ${i + 1}: nome obbligatorio`);
+      });
+      break;
+    }
+    case "socialProof": {
+      const d = data as SocialProofData;
+      if (empty(d.clientName)) err("clientName", `Cliente: ${REQUIRED}`);
+      if (empty(d.tagline)) err("tagline", `Tagline: ${REQUIRED}`);
+      if (d.metrics.length !== 3)
+        err("metrics", `Metriche: devono essere esattamente 3 (hai ${d.metrics.length})`);
+      d.metrics.forEach((m, i) => {
+        if (empty(m.value)) err(`metrics.${i}.value`, `Metrica ${i + 1}: valore obbligatorio`);
+        if (empty(m.label)) err(`metrics.${i}.label`, `Metrica ${i + 1}: etichetta obbligatoria`);
+      });
+      const u = checkImageUrl(d.logoUrl);
+      if (u) err("logoUrl", u);
+      break;
+    }
+    case "offer": {
+      const d = data as OfferData;
+      if (empty(d.productName)) err("productName", `Nome prodotto: ${REQUIRED}`);
+      if (empty(d.priceNew)) err("priceNew", `Prezzo: ${REQUIRED}`);
+      if (empty(d.ctaLabel)) err("ctaLabel", `Etichetta CTA: ${REQUIRED}`);
+      else if (d.ctaLabel.length > LIMITS.buttonMax)
+        err("ctaLabel", `CTA: massimo ${LIMITS.buttonMax} caratteri`);
+      if (d.includes.length < LIMITS.offerIncludes.min)
+        err("includes", `Inclusi: servono almeno ${LIMITS.offerIncludes.min} voci (hai ${d.includes.length})`);
+      if (d.includes.length > LIMITS.offerIncludes.max)
+        err("includes", `Inclusi: massimo ${LIMITS.offerIncludes.max}`);
+      d.includes.forEach((it, i) => { if (empty(it)) err(`includes.${i}`, `Incluso ${i + 1}: ${REQUIRED}`); });
+      break;
+    }
+    case "objection": {
+      const d = data as ObjectionData;
+      if (empty(d.objection)) err("objection", `Obiezione: ${REQUIRED}`);
+      else if (d.objection.length > LIMITS.objectionMax)
+        err("objection", `Obiezione: massimo ${LIMITS.objectionMax} caratteri`);
+      if (empty(d.answer)) err("answer", `Risposta: ${REQUIRED}`);
+      else if (d.answer.length > LIMITS.objectionMax)
+        err("answer", `Risposta: massimo ${LIMITS.objectionMax} caratteri`);
+      break;
+    }
+    case "tipPack": {
+      const d = data as TipPackData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (d.tips.length < LIMITS.tips.min)
+        err("tips", `Tip: servono almeno ${LIMITS.tips.min} voci (hai ${d.tips.length})`);
+      if (d.tips.length > LIMITS.tips.max)
+        err("tips", `Tip: massimo ${LIMITS.tips.max}`);
+      d.tips.forEach((t, i) => {
+        if (empty(t.title)) err(`tips.${i}.title`, `Tip ${i + 1}: titolo obbligatorio`);
+      });
       break;
     }
   }

@@ -27,6 +27,14 @@ import type {
   RoadmapData,
   RoadmapStatus,
   CtaData,
+  HookData,
+  ProblemSolutionData,
+  MistakesData,
+  FrameworkData,
+  SocialProofData,
+  OfferData,
+  ObjectionData,
+  TipPackData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -177,6 +185,14 @@ export function SlideEditorForm({ slide }: Props) {
     case "quoteBig":    body = <QuoteBigEditor d={draft as QuoteBigData} set={set as (d: QuoteBigData) => void} {...editorProps} />; break;
     case "roadmap":     body = <RoadmapEditor d={draft as RoadmapData} set={set as (d: RoadmapData) => void} {...editorProps} />; break;
     case "cta":         body = <CtaEditor d={draft as CtaData} set={set as (d: CtaData) => void} {...editorProps} />; break;
+    case "hook":        body = <HookEditor d={draft as HookData} set={set as (d: HookData) => void} {...editorProps} />; break;
+    case "problemSolution": body = <ProblemSolutionEditor d={draft as ProblemSolutionData} set={set as (d: ProblemSolutionData) => void} {...editorProps} />; break;
+    case "mistakes":    body = <MistakesEditor d={draft as MistakesData} set={set as (d: MistakesData) => void} {...editorProps} />; break;
+    case "framework":   body = <FrameworkEditor d={draft as FrameworkData} set={set as (d: FrameworkData) => void} {...editorProps} />; break;
+    case "socialProof": body = <SocialProofEditor d={draft as SocialProofData} set={set as (d: SocialProofData) => void} {...editorProps} />; break;
+    case "offer":       body = <OfferEditor d={draft as OfferData} set={set as (d: OfferData) => void} {...editorProps} />; break;
+    case "objection":   body = <ObjectionEditor d={draft as ObjectionData} set={set as (d: ObjectionData) => void} {...editorProps} />; break;
+    case "tipPack":     body = <TipPackEditor d={draft as TipPackData} set={set as (d: TipPackData) => void} {...editorProps} />; break;
   }
 
   return (
@@ -1033,6 +1049,253 @@ function CtaEditor({ d, set, errFor, slideId, overrides }: EditorProps<CtaData>)
         <Input data-field="buttonLabel" maxLength={LIMITS.buttonMax} value={d.buttonLabel} onChange={(e) => set({ ...d, buttonLabel: e.target.value })} placeholder="SALVA ORA →" />
       </Field>
       <Field label="Handle / URL (opzionale)"><Input value={d.handle ?? ""} onChange={(e) => set({ ...d, handle: e.target.value })} placeholder="@nomeutente" /></Field>
+    </div>
+  );
+}
+
+/* ---------------- Hook ---------------- */
+function HookEditor({ d, set, errFor, slideId, overrides }: EditorProps<HookData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} placeholder="LEGGI FINO ALLA FINE" /></Field>
+      <Field label="Hook" hint={`${LIMITS.hookMin}-${LIMITS.hookMax} caratteri`} error={errFor("hook")} slideId={slideId} fieldPath="hook" overrides={overrides}>
+        <Textarea data-field="hook" rows={3} maxLength={LIMITS.hookMax} value={d.hook} onChange={(e) => set({ ...d, hook: e.target.value })} placeholder="Il 90% sbaglia questo." />
+      </Field>
+      <p className="text-[10px] text-muted-foreground">{d.hook.length}/{LIMITS.hookMax}</p>
+      <Field label="Sub-hook (opzionale)" slideId={slideId} fieldPath="subhook" overrides={overrides}>
+        <Input value={d.subhook ?? ""} onChange={(e) => set({ ...d, subhook: e.target.value })} placeholder="E nessuno te lo dice." />
+      </Field>
+      <Field label="Etichetta swipe"><Input value={d.swipeLabel ?? ""} onChange={(e) => set({ ...d, swipeLabel: e.target.value })} placeholder="SCORRI →" /></Field>
+    </div>
+  );
+}
+
+/* ---------------- Problem / Solution ---------------- */
+function ProblemSolutionEditor({ d, set, errFor, slideId, overrides }: EditorProps<ProblemSolutionData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Problema</div>
+        <Input value={d.problem.label} onChange={(e) => set({ ...d, problem: { ...d.problem, label: e.target.value } })} placeholder="IL PROBLEMA" />
+        <Field label="Testo problema" error={errFor("problem.text")} slideId={slideId} fieldPath="problem.text" overrides={overrides}>
+          <Textarea data-field="problem.text" rows={2} value={d.problem.text} onChange={(e) => set({ ...d, problem: { ...d.problem, text: e.target.value } })} />
+        </Field>
+      </div>
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Soluzione</div>
+        <Input value={d.solution.label} onChange={(e) => set({ ...d, solution: { ...d.solution, label: e.target.value } })} placeholder="LA SOLUZIONE" />
+        <Field label="Testo soluzione" error={errFor("solution.text")} slideId={slideId} fieldPath="solution.text" overrides={overrides}>
+          <Textarea data-field="solution.text" rows={2} value={d.solution.text} onChange={(e) => set({ ...d, solution: { ...d.solution, text: e.target.value } })} />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Mistakes ---------------- */
+function MistakesEditor({ d, set, errFor, slideId, overrides }: EditorProps<MistakesData>) {
+  const mErr = errFor("mistakes");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      {mErr && <p data-field="mistakes" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {mErr}</p>}
+      <ArrayField
+        label={`Errori (${LIMITS.mistakes.min}–${LIMITS.mistakes.max})`}
+        items={d.mistakes}
+        onChange={(arr) => set({ ...d, mistakes: arr })}
+        maxItems={LIMITS.mistakes.max}
+        counter={<ItemCounter current={d.mistakes.length} min={LIMITS.mistakes.min} max={LIMITS.mistakes.max} unit="errori" />}
+        render={(v, on, i) => {
+          const tErr = errFor(`mistakes.${i}.title`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Errore {i + 1}</Label>
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`mistakes.${i}.title`} value={overrides?.[`mistakes.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`mistakes.${i}.title`} value={overrides?.[`mistakes.${i}.title`]} />
+                </div>
+              </div>
+              <Input data-field={`mistakes.${i}.title`} className={tErr ? "border-destructive" : ""} value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo errore *" />
+              <Textarea rows={2} value={v.why} onChange={(e) => on({ ...v, why: e.target.value })} placeholder="Perché è un errore" />
+              {tErr && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {tErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ title: "", why: "" }}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Framework ---------------- */
+function FrameworkEditor({ d, set, errFor, slideId, overrides }: EditorProps<FrameworkData>) {
+  const lErr = errFor("letters");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      <Field label="Acronimo" error={errFor("acronym")} slideId={slideId} fieldPath="acronym" overrides={overrides}>
+        <Input data-field="acronym" value={d.acronym} onChange={(e) => set({ ...d, acronym: e.target.value })} placeholder="AIDA" />
+      </Field>
+      {lErr && <p data-field="letters" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {lErr}</p>}
+      <ArrayField
+        label={`Lettere (${LIMITS.frameworkLetters.min}–${LIMITS.frameworkLetters.max})`}
+        items={d.letters}
+        onChange={(arr) => set({ ...d, letters: arr })}
+        maxItems={LIMITS.frameworkLetters.max}
+        counter={<ItemCounter current={d.letters.length} min={LIMITS.frameworkLetters.min} max={LIMITS.frameworkLetters.max} unit="lettere" />}
+        render={(v, on, i) => {
+          const letterErr = errFor(`letters.${i}.letter`);
+          const nameErr = errFor(`letters.${i}.name`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Lettera {i + 1}</Label>
+              <div className="grid grid-cols-[60px_1fr] gap-2">
+                <Input maxLength={LIMITS.letterMax} className={letterErr ? "border-destructive" : ""} value={v.letter} onChange={(e) => on({ ...v, letter: e.target.value })} placeholder="A" />
+                <Input className={nameErr ? "border-destructive" : ""} value={v.name} onChange={(e) => on({ ...v, name: e.target.value })} placeholder="Nome esteso *" />
+              </div>
+              <Textarea rows={2} value={v.desc} onChange={(e) => on({ ...v, desc: e.target.value })} placeholder="Descrizione" />
+              {(letterErr || nameErr) && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {letterErr || nameErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ letter: "", name: "", desc: "" }}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Social Proof ---------------- */
+function SocialProofEditor({ d, set, errFor, slideId, overrides }: EditorProps<SocialProofData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Cliente" error={errFor("clientName")} slideId={slideId} fieldPath="clientName" overrides={overrides}>
+        <Input data-field="clientName" value={d.clientName} onChange={(e) => set({ ...d, clientName: e.target.value })} />
+      </Field>
+      <Field label="Tagline" error={errFor("tagline")} slideId={slideId} fieldPath="tagline" overrides={overrides}>
+        <Textarea data-field="tagline" rows={2} value={d.tagline} onChange={(e) => set({ ...d, tagline: e.target.value })} />
+      </Field>
+      <ImageUploadField label="Logo (opzionale)" value={d.logoUrl} onChange={(url) => set({ ...d, logoUrl: url })} variant="avatar" />
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">3 Metriche</Label>
+      {d.metrics.slice(0, 3).map((m, i) => {
+        const valErr = errFor(`metrics.${i}.value`);
+        const labErr = errFor(`metrics.${i}.label`);
+        return (
+          <div key={i} className="space-y-2 rounded-md border border-border p-2">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Metrica {i + 1}</Label>
+            <div className="grid grid-cols-[1fr_80px] gap-2">
+              <Input className={valErr ? "border-destructive" : ""} value={m.value} onChange={(e) => { const ms = [...d.metrics]; ms[i] = { ...m, value: e.target.value }; set({ ...d, metrics: ms }); }} placeholder="+340" />
+              <Input value={m.unit ?? ""} onChange={(e) => { const ms = [...d.metrics]; ms[i] = { ...m, unit: e.target.value }; set({ ...d, metrics: ms }); }} placeholder="%" />
+            </div>
+            <Input className={labErr ? "border-destructive" : ""} value={m.label} onChange={(e) => { const ms = [...d.metrics]; ms[i] = { ...m, label: e.target.value }; set({ ...d, metrics: ms }); }} placeholder="Etichetta *" />
+          </div>
+        );
+      })}
+      <Field label="Sintesi (opzionale)" slideId={slideId} fieldPath="summary" overrides={overrides}>
+        <Textarea rows={2} value={d.summary ?? ""} onChange={(e) => set({ ...d, summary: e.target.value })} />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Offer ---------------- */
+function OfferEditor({ d, set, errFor, slideId, overrides }: EditorProps<OfferData>) {
+  const incErr = errFor("includes");
+  return (
+    <div className="space-y-4">
+      <Field label="Badge (opzionale)"><Input value={d.badge ?? ""} onChange={(e) => set({ ...d, badge: e.target.value })} placeholder="OFFERTA LIMITATA" /></Field>
+      <Field label="Nome prodotto" error={errFor("productName")} slideId={slideId} fieldPath="productName" overrides={overrides}>
+        <Input data-field="productName" value={d.productName} onChange={(e) => set({ ...d, productName: e.target.value })} />
+      </Field>
+      <div className="grid grid-cols-3 gap-2">
+        <Field label="Prezzo vecchio"><Input value={d.priceOld ?? ""} onChange={(e) => set({ ...d, priceOld: e.target.value })} placeholder="297" /></Field>
+        <Field label="Prezzo nuovo *" error={errFor("priceNew")} slideId={slideId} fieldPath="priceNew" overrides={overrides}>
+          <Input data-field="priceNew" value={d.priceNew} onChange={(e) => set({ ...d, priceNew: e.target.value })} placeholder="147" />
+        </Field>
+        <Field label="Valuta"><Input value={d.currency ?? "€"} onChange={(e) => set({ ...d, currency: e.target.value })} /></Field>
+      </div>
+      {incErr && <p data-field="includes" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {incErr}</p>}
+      <ArrayField
+        label={`Inclusi (${LIMITS.offerIncludes.min}–${LIMITS.offerIncludes.max})`}
+        items={d.includes}
+        onChange={(arr) => set({ ...d, includes: arr })}
+        maxItems={LIMITS.offerIncludes.max}
+        counter={<ItemCounter current={d.includes.length} min={LIMITS.offerIncludes.min} max={LIMITS.offerIncludes.max} unit="inclusi" />}
+        render={(v, on, i) => {
+          const e = errFor(`includes.${i}`);
+          return <Input data-field={`includes.${i}`} className={e ? "border-destructive" : ""} value={v} onChange={(ev) => on(ev.target.value)} placeholder={`Incluso ${i + 1}`} />;
+        }}
+        empty=""
+      />
+      <Field label="Etichetta CTA" error={errFor("ctaLabel")} slideId={slideId} fieldPath="ctaLabel" overrides={overrides}>
+        <Input data-field="ctaLabel" maxLength={LIMITS.buttonMax} value={d.ctaLabel} onChange={(e) => set({ ...d, ctaLabel: e.target.value })} placeholder="ACQUISTA ORA →" />
+      </Field>
+      <Field label="Urgenza (opzionale)" slideId={slideId} fieldPath="urgency" overrides={overrides}>
+        <Input value={d.urgency ?? ""} onChange={(e) => set({ ...d, urgency: e.target.value })} placeholder="Solo per i primi 50 — scade in 48h" />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Objection ---------------- */
+function ObjectionEditor({ d, set, errFor, slideId, overrides }: EditorProps<ObjectionData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Obiezione" hint={`max ${LIMITS.objectionMax} caratteri`} error={errFor("objection")} slideId={slideId} fieldPath="objection" overrides={overrides}>
+        <Textarea data-field="objection" rows={3} maxLength={LIMITS.objectionMax} value={d.objection} onChange={(e) => set({ ...d, objection: e.target.value })} />
+      </Field>
+      <Field label="Risposta" hint={`max ${LIMITS.objectionMax} caratteri`} error={errFor("answer")} slideId={slideId} fieldPath="answer" overrides={overrides}>
+        <Textarea data-field="answer" rows={3} maxLength={LIMITS.objectionMax} value={d.answer} onChange={(e) => set({ ...d, answer: e.target.value })} />
+      </Field>
+      <Field label="Chiusura (opzionale)" slideId={slideId} fieldPath="signOff" overrides={overrides}>
+        <Input value={d.signOff ?? ""} onChange={(e) => set({ ...d, signOff: e.target.value })} placeholder="P.S. provalo gratis" />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Tip Pack ---------------- */
+function TipPackEditor({ d, set, errFor, slideId, overrides }: EditorProps<TipPackData>) {
+  const tErr = errFor("tips");
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}><Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} /></Field>
+      <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}><Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} /></Field>
+      {tErr && <p data-field="tips" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {tErr}</p>}
+      <ArrayField
+        label={`Tip (${LIMITS.tips.min}–${LIMITS.tips.max})`}
+        items={d.tips}
+        onChange={(arr) => set({ ...d, tips: arr })}
+        maxItems={LIMITS.tips.max}
+        counter={<ItemCounter current={d.tips.length} min={LIMITS.tips.min} max={LIMITS.tips.max} unit="tip" />}
+        render={(v, on, i) => {
+          const titleErr = errFor(`tips.${i}.title`);
+          return (
+            <div className="space-y-2 rounded-md border border-border p-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Tip {i + 1}</Label>
+                <div className="flex items-center gap-1">
+                  <FontSizeSlider compact slideId={slideId!} fieldPath={`tips.${i}.title`} value={overrides?.[`tips.${i}.title`]} />
+                  <TextStylePopover slideId={slideId} fieldPath={`tips.${i}.title`} value={overrides?.[`tips.${i}.title`]} />
+                </div>
+              </div>
+              <div className="grid grid-cols-[60px_1fr] gap-2">
+                <Input value={v.icon ?? ""} onChange={(e) => on({ ...v, icon: e.target.value })} placeholder="⚡" />
+                <Input data-field={`tips.${i}.title`} className={titleErr ? "border-destructive" : ""} value={v.title} onChange={(e) => on({ ...v, title: e.target.value })} placeholder="Titolo tip *" />
+              </div>
+              <Textarea rows={2} value={v.text} onChange={(e) => on({ ...v, text: e.target.value })} placeholder="Descrizione" />
+              {titleErr && <p className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {titleErr}</p>}
+            </div>
+          );
+        }}
+        empty={{ icon: "", title: "", text: "" }}
+      />
+      <Field label="Etichetta save"><Input value={d.saveLabel ?? ""} onChange={(e) => set({ ...d, saveLabel: e.target.value })} placeholder="SALVA QUESTO POST" /></Field>
     </div>
   );
 }
