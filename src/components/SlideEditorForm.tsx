@@ -604,10 +604,10 @@ function ChartDonutEditor({ d, set, errFor, slideId, overrides }: { d: ChartDonu
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Segmento {i + 1}</Label>
               <TextStylePopover slideId={slideId} fieldPath={`segments.${i}.label`} value={overrides?.[`segments.${i}.label`]} />
             </div>
-            <div className="grid grid-cols-[1fr_100px_50px] gap-2">
-              <Input value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
+            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_100px_50px]">
+              <Input className="col-span-2 sm:col-span-1" value={v.label} onChange={(e) => on({ ...v, label: e.target.value })} placeholder="Etichetta" />
               <Input type="number" value={v.value} onChange={(e) => on({ ...v, value: Number(e.target.value) || 0 })} placeholder="0" />
-              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 p-1" />
+              <Input type="color" value={v.color ?? "#00E5FF"} onChange={(e) => on({ ...v, color: e.target.value })} className="h-9 w-full p-1" />
             </div>
           </div>
         )}
