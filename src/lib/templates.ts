@@ -38,7 +38,15 @@ export type TemplateId =
   | "bonusStack"
   | "guarantee"
   | "faq"
-  | "quickWin";
+  | "quickWin"
+  | "mediaHero"
+  | "polaroidStack"
+  | "splitDuo"
+  | "magazineCover"
+  | "chartArea"
+  | "chartCompareBar"
+  | "kpiGrid"
+  | "funnelChart";
 
 export interface SplitData {
   eyebrow: string;
@@ -277,6 +285,83 @@ export interface QuickWinData {
   expectedResult?: string;
   timeBadge?: string;
 }
+export interface MediaHeroData {
+  imageUrl?: string;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  overlayIntensity?: "soft" | "strong";
+}
+export interface PolaroidItem {
+  url?: string;
+  caption?: string;
+  date?: string;
+}
+export interface PolaroidStackData {
+  eyebrow?: string;
+  title: string;
+  polaroids: PolaroidItem[];
+}
+export interface SplitDuoData {
+  eyebrow?: string;
+  leftImage: { url?: string; label: string };
+  rightImage: { url?: string; label: string };
+  centerBadge: string;
+  caption?: string;
+}
+export interface CoverLine {
+  text: string;
+  pageRef?: string;
+}
+export interface MagazineCoverData {
+  masthead: string;
+  issueLabel?: string;
+  imageUrl?: string;
+  mainHeadline: string;
+  coverLines: CoverLine[];
+}
+export interface ChartAreaData {
+  eyebrow: string;
+  title: string;
+  xLabels: string[];
+  values: number[];
+  unit?: string;
+  peakLabel?: string;
+  trend?: "up" | "down";
+}
+export interface ChartCompareBarData {
+  eyebrow: string;
+  title: string;
+  seriesA: { label: string; color?: string };
+  seriesB: { label: string; color?: string };
+  rows: { label: string; valueA: number; valueB: number }[];
+  unit?: string;
+}
+export interface KpiItem {
+  label: string;
+  value: string;
+  unit?: string;
+  delta: string;
+  trend: "up" | "down" | "flat";
+  spark: number[];
+}
+export interface KpiGridData {
+  eyebrow: string;
+  title: string;
+  kpis: KpiItem[]; // exactly 4
+}
+export interface FunnelStage {
+  label: string;
+  value: string;
+  conversionPercent?: string;
+}
+export interface FunnelChartData {
+  eyebrow: string;
+  title: string;
+  stages: FunnelStage[];
+  summary?: string;
+}
 
 export type AnyTemplateData =
   | SplitData
@@ -315,7 +400,15 @@ export type AnyTemplateData =
   | BonusStackData
   | GuaranteeData
   | FaqData
-  | QuickWinData;
+  | QuickWinData
+  | MediaHeroData
+  | PolaroidStackData
+  | SplitDuoData
+  | MagazineCoverData
+  | ChartAreaData
+  | ChartCompareBarData
+  | KpiGridData
+  | FunnelChartData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -526,6 +619,14 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   guarantee: { label: "Garanzia / Risk reversal", desc: "Sigillo garanzia + promessa anti-rischio" },
   faq: { label: "FAQ", desc: "Domande & risposte in formato accordion" },
   quickWin: { label: "Quick win", desc: "Azione rapida da fare ora con step" },
+  mediaHero: { label: "Media hero", desc: "Foto fullbleed + titolo overlay" },
+  polaroidStack: { label: "Polaroid stack", desc: "3 polaroid ruotate stile moodboard" },
+  splitDuo: { label: "Split duo", desc: "Due immagini con badge centrale" },
+  magazineCover: { label: "Magazine cover", desc: "Copertina editoriale + cover lines" },
+  chartArea: { label: "Grafico ad area", desc: "Curva area gradient con picco" },
+  chartCompareBar: { label: "Barre confronto", desc: "Barre raggruppate noi vs loro" },
+  kpiGrid: { label: "Dashboard KPI", desc: "4 KPI con sparkline e delta" },
+  funnelChart: { label: "Funnel conversione", desc: "Trapezi a step decrescenti" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -536,6 +637,8 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
   "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
   "urgency", "bonusStack", "guarantee", "faq", "quickWin",
+  "mediaHero", "polaroidStack", "splitDuo", "magazineCover",
+  "chartArea", "chartCompareBar", "kpiGrid", "funnelChart",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -904,6 +1007,93 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         expectedResult: "+30% di click sul link in bio nelle prime 24h.",
         timeBadge: "60 sec",
       } as QuickWinData;
+    case "mediaHero":
+      return {
+        imageUrl: undefined,
+        eyebrow: "STORY",
+        title: "Il viaggio che cambia tutto.",
+        subtitle: "Una foto, una promessa.",
+        ctaLabel: "SCOPRI →",
+        overlayIntensity: "strong",
+      } as MediaHeroData;
+    case "polaroidStack":
+      return {
+        eyebrow: "MOODBOARD",
+        title: "Tre momenti, una storia.",
+        polaroids: [
+          { url: undefined, caption: "Backstage", date: "Mag 2025" },
+          { url: undefined, caption: "Il primo cliente", date: "Giu 2025" },
+          { url: undefined, caption: "Il lancio", date: "Lug 2025" },
+        ],
+      } as PolaroidStackData;
+    case "splitDuo":
+      return {
+        eyebrow: "CONFRONTO",
+        leftImage: { url: undefined, label: "PRIMA" },
+        rightImage: { url: undefined, label: "DOPO" },
+        centerBadge: "VS",
+        caption: "Lo stesso brand, due mondi.",
+      } as SplitDuoData;
+    case "magazineCover":
+      return {
+        masthead: "VOGUE",
+        issueLabel: "N° 12 · Nov 2025",
+        imageUrl: undefined,
+        mainHeadline: "La nuova era del personal brand.",
+        coverLines: [
+          { text: "Come Maria ha 10x il fatturato", pageRef: "p. 32" },
+          { text: "5 trend che cambieranno il 2026", pageRef: "p. 48" },
+          { text: "Intervista esclusiva", pageRef: "p. 12" },
+          { text: "Speciale: AI per creator", pageRef: "p. 62" },
+        ],
+      } as MagazineCoverData;
+    case "chartArea":
+      return {
+        eyebrow: "ANDAMENTO",
+        title: "Crescita organica 2025.",
+        xLabels: ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug"],
+        values: [12, 18, 22, 31, 28, 44, 58],
+        unit: "k",
+        peakLabel: "Picco virale",
+        trend: "up",
+      } as ChartAreaData;
+    case "chartCompareBar":
+      return {
+        eyebrow: "POSIZIONAMENTO",
+        title: "Noi vs i competitor.",
+        seriesA: { label: "BRAND A" },
+        seriesB: { label: "BRAND B" },
+        rows: [
+          { label: "Engagement rate", valueA: 8.4, valueB: 3.1 },
+          { label: "Costo per lead", valueA: 12, valueB: 38 },
+          { label: "Tempo risposta", valueA: 2, valueB: 18 },
+          { label: "Satisfaction", valueA: 94, valueB: 71 },
+        ],
+        unit: "",
+      } as ChartCompareBarData;
+    case "kpiGrid":
+      return {
+        eyebrow: "DASHBOARD Q4",
+        title: "I numeri che contano.",
+        kpis: [
+          { label: "Revenue", value: "84.2", unit: "k€", delta: "+24%", trend: "up", spark: [12, 18, 22, 28, 34, 41, 52] },
+          { label: "Nuovi clienti", value: "247", delta: "+12%", trend: "up", spark: [10, 12, 14, 18, 22, 24, 28] },
+          { label: "Churn rate", value: "2.1", unit: "%", delta: "-0.4%", trend: "down", spark: [4, 3.5, 3, 2.8, 2.5, 2.3, 2.1] },
+          { label: "NPS score", value: "72", delta: "+5", trend: "up", spark: [60, 62, 65, 67, 68, 70, 72] },
+        ],
+      } as KpiGridData;
+    case "funnelChart":
+      return {
+        eyebrow: "FUNNEL",
+        title: "Da visitatore a cliente.",
+        stages: [
+          { label: "Visitatori sito", value: "10.000", conversionPercent: "100%" },
+          { label: "Lead acquisiti", value: "1.200", conversionPercent: "12%" },
+          { label: "Demo prenotate", value: "320", conversionPercent: "27%" },
+          { label: "Clienti chiusi", value: "84", conversionPercent: "26%" },
+        ],
+        summary: "Conversione totale 0,84% — sopra benchmark settore.",
+      } as FunnelChartData;
   }
 }
 
@@ -1218,6 +1408,77 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "timeBadge", label: "Badge tempo" },
       ];
       d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}`, label: `Step ${i + 1}` }));
+      return out;
+    }
+    case "mediaHero":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "subtitle", label: "Sottotitolo" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+    case "polaroidStack": {
+      const d = data as PolaroidStackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.polaroids?.forEach((_, i) => out.push({ path: `polaroids.${i}.caption`, label: `Polaroid ${i + 1} – caption` }));
+      return out;
+    }
+    case "splitDuo":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "leftImage.label", label: "Etichetta sinistra" },
+        { path: "rightImage.label", label: "Etichetta destra" },
+        { path: "centerBadge", label: "Badge centrale" },
+        { path: "caption", label: "Caption" },
+      ];
+    case "magazineCover": {
+      const d = data as MagazineCoverData | undefined;
+      const out = [
+        { path: "masthead", label: "Masthead" },
+        { path: "issueLabel", label: "Numero / Data" },
+        { path: "mainHeadline", label: "Headline" },
+      ];
+      d?.coverLines?.forEach((_, i) => out.push({ path: `coverLines.${i}.text`, label: `Cover line ${i + 1}` }));
+      return out;
+    }
+    case "chartArea":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "peakLabel", label: "Etichetta picco" },
+      ];
+    case "chartCompareBar": {
+      const d = data as ChartCompareBarData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.rows?.forEach((_, i) => out.push({ path: `rows.${i}.label`, label: `Riga ${i + 1}` }));
+      return out;
+    }
+    case "kpiGrid": {
+      const d = data as KpiGridData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.kpis?.forEach((_, i) => {
+        out.push({ path: `kpis.${i}.label`, label: `KPI ${i + 1} – label` });
+        out.push({ path: `kpis.${i}.value`, label: `KPI ${i + 1} – valore` });
+      });
+      return out;
+    }
+    case "funnelChart": {
+      const d = data as FunnelChartData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "summary", label: "Sintesi" },
+      ];
+      d?.stages?.forEach((_, i) => out.push({ path: `stages.${i}.label`, label: `Stadio ${i + 1}` }));
       return out;
     }
   }

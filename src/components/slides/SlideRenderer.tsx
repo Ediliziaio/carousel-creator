@@ -39,6 +39,14 @@ import {
   type GuaranteeData,
   type FaqData,
   type QuickWinData,
+  type MediaHeroData,
+  type PolaroidStackData,
+  type SplitDuoData,
+  type MagazineCoverData,
+  type ChartAreaData,
+  type ChartCompareBarData,
+  type KpiGridData,
+  type FunnelChartData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -207,6 +215,14 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "guarantee":   return <Guarantee slide={slide} d={data as GuaranteeData} />;
     case "faq":         return <Faq slide={slide} d={data as FaqData} />;
     case "quickWin":    return <QuickWin slide={slide} d={data as QuickWinData} />;
+    case "mediaHero":   return <MediaHero slide={slide} d={data as MediaHeroData} />;
+    case "polaroidStack": return <PolaroidStack slide={slide} d={data as PolaroidStackData} />;
+    case "splitDuo":    return <SplitDuo slide={slide} d={data as SplitDuoData} />;
+    case "magazineCover": return <MagazineCover slide={slide} d={data as MagazineCoverData} />;
+    case "chartArea":   return <ChartArea slide={slide} d={data as ChartAreaData} brand={brand} />;
+    case "chartCompareBar": return <ChartCompareBar slide={slide} d={data as ChartCompareBarData} brand={brand} />;
+    case "kpiGrid":     return <KpiGrid slide={slide} d={data as KpiGridData} brand={brand} />;
+    case "funnelChart": return <FunnelChart slide={slide} d={data as FunnelChartData} brand={brand} />;
   }
 }
 
@@ -1024,6 +1040,296 @@ function QuickWin({ slide, d }: { slide: Slide; d: QuickWinData }) {
           <span className="qw-result-tag">RISULTATO</span> {d.expectedResult}
         </div>
       )}
+    </>
+  );
+}
+
+/* ===================== NEW WOW MEDIA + CHART TEMPLATES ===================== */
+
+function MediaHero({ slide, d }: { slide: Slide; d: MediaHeroData }) {
+  const intensity = d.overlayIntensity ?? "strong";
+  return (
+    <>
+      <div className={`mh-bg ${d.imageUrl ? "" : "empty"}`}>
+        {d.imageUrl ? <img src={d.imageUrl} alt="" /> : <div className="mh-placeholder">Carica una foto fullbleed</div>}
+        <div className={`mh-veil mh-veil-${intensity}`} />
+      </div>
+      <div className="mh-content">
+        {d.eyebrow && <div className="mh-eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        <h1 className="mh-title" style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+        {d.subtitle && <div className="mh-sub" style={fieldStyle(slide, "subtitle")}>{d.subtitle}</div>}
+        {d.ctaLabel && <div className="mh-cta" style={fieldStyle(slide, "ctaLabel")}>{d.ctaLabel}</div>}
+      </div>
+    </>
+  );
+}
+
+function PolaroidStack({ slide, d }: { slide: Slide; d: PolaroidStackData }) {
+  const rotations = [-6, 2, 5];
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="ps-stack">
+        {d.polaroids.slice(0, 3).map((p, i) => (
+          <figure key={i} className="ps-polaroid" style={{ transform: `rotate(${rotations[i] ?? 0}deg)` }}>
+            <div className="ps-photo">
+              {p.url ? <img src={p.url} alt={p.caption ?? ""} /> : <div className="ps-empty">Foto {i + 1}</div>}
+            </div>
+            <figcaption className="ps-caption">
+              <span className="ps-caption-text" style={fieldStyle(slide, `polaroids.${i}.caption`)}>{p.caption}</span>
+              {p.date && <span className="ps-caption-date">{p.date}</span>}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function SplitDuo({ slide, d }: { slide: Slide; d: SplitDuoData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="sd-eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <div className="sd-grid">
+        <div className="sd-side sd-left">
+          {d.leftImage.url ? <img src={d.leftImage.url} alt="" /> : <div className="sd-empty">Immagine sinistra</div>}
+          <div className="sd-veil" />
+          <div className="sd-label" style={fieldStyle(slide, "leftImage.label")}>{d.leftImage.label}</div>
+        </div>
+        <div className="sd-badge" style={fieldStyle(slide, "centerBadge")}>{d.centerBadge}</div>
+        <div className="sd-side sd-right">
+          {d.rightImage.url ? <img src={d.rightImage.url} alt="" /> : <div className="sd-empty">Immagine destra</div>}
+          <div className="sd-veil" />
+          <div className="sd-label" style={fieldStyle(slide, "rightImage.label")}>{d.rightImage.label}</div>
+        </div>
+      </div>
+      {d.caption && <div className="sd-caption" style={fieldStyle(slide, "caption")}>{d.caption}</div>}
+    </>
+  );
+}
+
+function MagazineCover({ slide, d }: { slide: Slide; d: MagazineCoverData }) {
+  return (
+    <>
+      <div className="mc-masthead" style={fieldStyle(slide, "masthead")}>{d.masthead}</div>
+      {d.issueLabel && <div className="mc-issue" style={fieldStyle(slide, "issueLabel")}>{d.issueLabel}</div>}
+      <div className="mc-photo">
+        {d.imageUrl ? <img src={d.imageUrl} alt="" /> : <div className="mc-empty">Foto centrale</div>}
+        <div className="mc-photo-veil" />
+      </div>
+      <div className="mc-headline-wrap">
+        <h1 className="mc-headline" style={fieldStyle(slide, "mainHeadline")}><HL text={d.mainHeadline} /></h1>
+      </div>
+      <ul className="mc-lines">
+        {d.coverLines.slice(0, 4).map((cl, i) => (
+          <li key={i} className="mc-line">
+            <span className="mc-line-dot">▸</span>
+            <span className="mc-line-text" style={fieldStyle(slide, `coverLines.${i}.text`)}>{cl.text}</span>
+            {cl.pageRef && <span className="mc-line-ref">{cl.pageRef}</span>}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function ChartArea({ slide, d, brand }: { slide: Slide; d: ChartAreaData; brand: BrandSettings }) {
+  const w = 800, h = 320, pad = 40;
+  const max = Math.max(1, ...d.values);
+  const min = Math.min(0, ...d.values);
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / Math.max(1, d.values.length - 1);
+  const points = d.values.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return { x, y, v };
+  });
+  // Smooth path with quadratic curves
+  let path = "";
+  points.forEach((p, i) => {
+    if (i === 0) path += `M ${p.x} ${p.y}`;
+    else {
+      const prev = points[i - 1];
+      const cx = (prev.x + p.x) / 2;
+      path += ` Q ${cx} ${prev.y} ${cx} ${(prev.y + p.y) / 2} T ${p.x} ${p.y}`;
+    }
+  });
+  const peakIdx = d.values.reduce((mi, v, i, a) => (v > a[mi] ? i : mi), 0);
+  const peak = points[peakIdx];
+  const trendUp = d.trend !== "down";
+  return (
+    <>
+      <div className="ca-head">
+        {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        <span className={`ca-trend ${trendUp ? "up" : "down"}`}>{trendUp ? "▲" : "▼"} {d.unit ?? ""}</span>
+      </div>
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="ca-wrap">
+        <svg className="ca-svg" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={`ca-grad-${slide.id}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={brand.accent} stopOpacity="0.55" />
+              <stop offset="60%" stopColor={brand.accent} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={brand.accent} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[0.2, 0.4, 0.6, 0.8].map((g) => (
+            <line key={g} x1={pad} x2={w - pad} y1={pad + (h - pad * 2) * g} y2={pad + (h - pad * 2) * g}
+              stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+          ))}
+          <path d={`${path} L ${points[points.length - 1].x} ${h - pad} L ${pad} ${h - pad} Z`} fill={`url(#ca-grad-${slide.id})`} />
+          <path d={path} fill="none" stroke={brand.accent} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Peak highlight */}
+          <circle cx={peak.x} cy={peak.y} r="9" fill={brand.accent} opacity="0.25" />
+          <circle cx={peak.x} cy={peak.y} r="5" fill={brand.accent} stroke={brand.bgColor} strokeWidth="2" />
+          {d.peakLabel && (
+            <g>
+              <rect x={peak.x - 60} y={peak.y - 38} width="120" height="24" rx="6" fill={brand.accent} />
+              <text x={peak.x} y={peak.y - 22} textAnchor="middle" fontSize="13" fontWeight="800" fill={brand.bgColor}>
+                {d.peakLabel}: {peak.v}{d.unit ?? ""}
+              </text>
+            </g>
+          )}
+          {d.xLabels.map((lb, i) => (
+            <text key={i} x={pad + i * stepX} y={h - 10} textAnchor="middle" fontSize="13" fill="rgba(255,255,255,0.55)">
+              {lb}
+            </text>
+          ))}
+        </svg>
+      </div>
+    </>
+  );
+}
+
+function ChartCompareBar({ slide, d, brand }: { slide: Slide; d: ChartCompareBarData; brand: BrandSettings }) {
+  const colorA = d.seriesA.color ?? brand.accent;
+  const colorB = d.seriesB.color ?? brand.accentSecondary;
+  const max = Math.max(1, ...d.rows.flatMap((r) => [r.valueA, r.valueB]));
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="ccb-legend">
+        <span className="ccb-legend-item"><span className="ccb-dot" style={{ background: colorA }} />{d.seriesA.label}</span>
+        <span className="ccb-legend-item"><span className="ccb-dot" style={{ background: colorB }} />{d.seriesB.label}</span>
+      </div>
+      <div className="ccb-list">
+        {d.rows.map((r, i) => {
+          const pa = (r.valueA / max) * 100;
+          const pb = (r.valueB / max) * 100;
+          const winner = r.valueA >= r.valueB ? "a" : "b";
+          return (
+            <div key={i} className="ccb-row">
+              <div className="ccb-label" style={fieldStyle(slide, `rows.${i}.label`)}>{r.label}</div>
+              <div className="ccb-bars">
+                <div className="ccb-bar-wrap">
+                  <div className={`ccb-bar ${winner === "a" ? "win" : ""}`} style={{ width: `${pa}%`, background: colorA }} />
+                  <span className="ccb-val">{r.valueA}{d.unit ?? ""}</span>
+                </div>
+                <div className="ccb-bar-wrap">
+                  <div className={`ccb-bar ${winner === "b" ? "win" : ""}`} style={{ width: `${pb}%`, background: colorB }} />
+                  <span className="ccb-val">{r.valueB}{d.unit ?? ""}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function KpiGrid({ slide, d, brand }: { slide: Slide; d: KpiGridData; brand: BrandSettings }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="kpi-grid">
+        {d.kpis.slice(0, 4).map((k, i) => {
+          const trendCls = k.trend === "up" ? "up" : k.trend === "down" ? "down" : "flat";
+          const sw = 200, sh = 50, sp = 4;
+          const max = Math.max(...k.spark);
+          const min = Math.min(...k.spark);
+          const range = max - min || 1;
+          const stepX = (sw - sp * 2) / Math.max(1, k.spark.length - 1);
+          const path = k.spark
+            .map((v, idx) => {
+              const x = sp + idx * stepX;
+              const y = sh - sp - ((v - min) / range) * (sh - sp * 2);
+              return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+            })
+            .join(" ");
+          const sparkColor = k.trend === "down" ? "#ef4444" : brand.accent;
+          return (
+            <div key={i} className="kpi-cell">
+              <div className="kpi-label" style={fieldStyle(slide, `kpis.${i}.label`)}>{k.label}</div>
+              <div className="kpi-value-row">
+                <span className="kpi-value" style={fieldStyle(slide, `kpis.${i}.value`)}>{k.value}</span>
+                {k.unit && <span className="kpi-unit">{k.unit}</span>}
+              </div>
+              <div className={`kpi-delta ${trendCls}`}>
+                <span className="kpi-arrow">{k.trend === "up" ? "▲" : k.trend === "down" ? "▼" : "■"}</span>
+                {k.delta}
+              </div>
+              <svg className="kpi-spark" viewBox={`0 0 ${sw} ${sh}`} preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id={`spark-${slide.id}-${i}`} x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor={sparkColor} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={sparkColor} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d={`${path} L ${sw - sp} ${sh - sp} L ${sp} ${sh - sp} Z`} fill={`url(#spark-${slide.id}-${i})`} />
+                <path d={path} fill="none" stroke={sparkColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function FunnelChart({ slide, d, brand }: { slide: Slide; d: FunnelChartData; brand: BrandSettings }) {
+  const n = d.stages.length;
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <div className="fn-stack">
+        {d.stages.map((s, i) => {
+          const top = 100 - i * (90 / n);
+          const bot = 100 - (i + 1) * (90 / n);
+          const left = (100 - top) / 2;
+          const right = 100 - left;
+          const left2 = (100 - bot) / 2;
+          const right2 = 100 - left2;
+          const opacity = 1 - i * 0.12;
+          return (
+            <div key={i} className="fn-row">
+              <div
+                className="fn-trapezoid"
+                style={{
+                  background: `linear-gradient(135deg, ${brand.accent}, ${brand.accentSecondary})`,
+                  opacity,
+                  clipPath: `polygon(${left}% 0%, ${right}% 0%, ${right2}% 100%, ${left2}% 100%)`,
+                }}
+              >
+                <span className="fn-value">{s.value}</span>
+              </div>
+              <div className="fn-meta">
+                <div className="fn-label" style={fieldStyle(slide, `stages.${i}.label`)}>{s.label}</div>
+                {s.conversionPercent && (
+                  <div className="fn-conv">
+                    <span className="fn-conv-tag">CONV</span> {s.conversionPercent}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {d.summary && <div className="fn-summary" style={fieldStyle(slide, "summary")}>{d.summary}</div>}
     </>
   );
 }
