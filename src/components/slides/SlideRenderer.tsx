@@ -20,6 +20,12 @@ import {
   type ChartLineData,
   type FeatureData,
   type TestimonialData,
+  type MythData,
+  type ProcessData,
+  type ProsConsData,
+  type QuoteBigData,
+  type RoadmapData,
+  type CtaData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -142,6 +148,12 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
     case "chartLine":   return <ChartLine slide={slide} d={data as ChartLineData} brand={brand} />;
     case "feature":     return <Feature slide={slide} d={data as FeatureData} />;
     case "testimonial": return <Testimonial slide={slide} d={data as TestimonialData} />;
+    case "myth":        return <Myth slide={slide} d={data as MythData} />;
+    case "process":     return <Process slide={slide} d={data as ProcessData} />;
+    case "prosCons":    return <ProsCons slide={slide} d={data as ProsConsData} />;
+    case "quoteBig":    return <QuoteBig slide={slide} d={data as QuoteBigData} />;
+    case "roadmap":     return <Roadmap slide={slide} d={data as RoadmapData} />;
+    case "cta":         return <Cta slide={slide} d={data as CtaData} />;
   }
 }
 
