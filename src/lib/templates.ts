@@ -178,6 +178,13 @@ export interface RoadmapData {
   title: string;
   milestones: { status: RoadmapStatus; period: string; title: string; desc: string }[];
 }
+export interface CtaData {
+  eyebrow?: string;
+  headline: string;
+  subtitle?: string;
+  buttonLabel: string;
+  handle?: string;
+}
 export interface HookData {
   eyebrow?: string;
   hook: string;
