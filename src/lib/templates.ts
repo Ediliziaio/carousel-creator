@@ -178,12 +178,57 @@ export interface RoadmapData {
   title: string;
   milestones: { status: RoadmapStatus; period: string; title: string; desc: string }[];
 }
-export interface CtaData {
+export interface HookData {
   eyebrow?: string;
-  headline: string;
-  subtitle?: string;
-  buttonLabel: string;
-  handle?: string;
+  hook: string;
+  subhook?: string;
+  swipeLabel?: string;
+}
+export interface ProblemSolutionData {
+  eyebrow: string;
+  problem: { label: string; text: string };
+  solution: { label: string; text: string };
+}
+export interface MistakesData {
+  eyebrow: string;
+  title: string;
+  mistakes: { title: string; why: string }[];
+}
+export interface FrameworkData {
+  eyebrow: string;
+  title: string;
+  acronym: string;
+  letters: { letter: string; name: string; desc: string }[];
+}
+export interface SocialProofData {
+  eyebrow: string;
+  clientName: string;
+  tagline: string;
+  metrics: { value: string; unit?: string; label: string }[];
+  summary?: string;
+  logoUrl?: string;
+}
+export interface OfferData {
+  badge?: string;
+  productName: string;
+  priceOld?: string;
+  priceNew: string;
+  currency?: string;
+  includes: string[];
+  ctaLabel: string;
+  urgency?: string;
+}
+export interface ObjectionData {
+  eyebrow?: string;
+  objection: string;
+  answer: string;
+  signOff?: string;
+}
+export interface TipPackData {
+  eyebrow: string;
+  title: string;
+  tips: { icon?: string; title: string; text: string }[];
+  saveLabel?: string;
 }
 
 export type AnyTemplateData =
@@ -210,7 +255,15 @@ export type AnyTemplateData =
   | ProsConsData
   | QuoteBigData
   | RoadmapData
-  | CtaData;
+  | CtaData
+  | HookData
+  | ProblemSolutionData
+  | MistakesData
+  | FrameworkData
+  | SocialProofData
+  | OfferData
+  | ObjectionData
+  | TipPackData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -395,6 +448,14 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   quoteBig: { label: "Citazione XXL", desc: "Quote tipografica gigante" },
   roadmap: { label: "Roadmap", desc: "Milestone con stati" },
   cta: { label: "Call To Action", desc: "Slide finale con bottone" },
+  hook: { label: "Hook iniziale", desc: "Frase shock che ferma lo scroll" },
+  problemSolution: { label: "Problema → Soluzione", desc: "Pain in alto, promessa in basso" },
+  mistakes: { label: "Errori da evitare", desc: "Lista numerata di errori tipici" },
+  framework: { label: "Framework / Acronimo", desc: "Acronimo verticale spiegato" },
+  socialProof: { label: "Risultati clienti", desc: "3 metriche + case study" },
+  offer: { label: "Offerta / Pricing", desc: "Card prezzo con CTA grande" },
+  objection: { label: "Obiezione → Risposta", desc: "Bubble chat per scogliere dubbi" },
+  tipPack: { label: "Pacchetto consigli", desc: "Mini-card numerate da salvare" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -403,6 +464,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "gallery", "imageQuote", "chartBar", "chartDonut", "chartLine",
   "feature", "testimonial",
   "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
+  "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -632,6 +694,91 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         buttonLabel: "SALVA ORA →",
         handle: "@edoardo_barravecchia",
       } as CtaData;
+    case "hook":
+      return {
+        eyebrow: "LEGGI FINO ALLA FINE",
+        hook: "Il 90% sbaglia questo.",
+        subhook: "E nessuno te lo dice.",
+        swipeLabel: "SCORRI →",
+      } as HookData;
+    case "problemSolution":
+      return {
+        eyebrow: "Problema → Soluzione",
+        problem: { label: "IL PROBLEMA", text: "Spendi ore a scrivere contenuti che non convertono." },
+        solution: { label: "LA SOLUZIONE", text: "Un framework testato che riduce i tempi del 70% e triplica le conversioni." },
+      } as ProblemSolutionData;
+    case "mistakes":
+      return {
+        eyebrow: "Errori comuni",
+        title: "I 4 errori che ti costano clienti.",
+        mistakes: [
+          { title: "Vendere subito", why: "Le persone comprano da chi conoscono. Prima dai valore." },
+          { title: "Parlare di te", why: "Il tuo cliente vuole sentire parlare dei suoi problemi, non dei tuoi servizi." },
+          { title: "Niente CTA chiara", why: "Se non dici cosa fare, nessuno farà nulla." },
+          { title: "Pubblicare a caso", why: "Senza un calendario coerente l'algoritmo ti penalizza." },
+        ],
+      } as MistakesData;
+    case "framework":
+      return {
+        eyebrow: "Framework",
+        title: "Il metodo AIDA.",
+        acronym: "AIDA",
+        letters: [
+          { letter: "A", name: "Attention", desc: "Cattura l'attenzione nei primi 3 secondi." },
+          { letter: "I", name: "Interest", desc: "Crea curiosità con un dato o una promessa." },
+          { letter: "D", name: "Desire", desc: "Mostra il risultato che otterrà." },
+          { letter: "A", name: "Action", desc: "Chiudi con una CTA chiara e diretta." },
+        ],
+      } as FrameworkData;
+    case "socialProof":
+      return {
+        eyebrow: "Caso studio",
+        clientName: "ACME SRL",
+        tagline: "Da 0 a 10k follower in 90 giorni.",
+        metrics: [
+          { value: "+340", unit: "%", label: "Engagement" },
+          { value: "12", unit: "sett", label: "Tempo" },
+          { value: "0", unit: "€", label: "Ads spent" },
+        ],
+        summary: "Sistema di contenuti organici basato su carosello + reel a tema verticale.",
+        logoUrl: undefined,
+      } as SocialProofData;
+    case "offer":
+      return {
+        badge: "OFFERTA LIMITATA",
+        productName: "Carosello Sistema Pro",
+        priceOld: "297",
+        priceNew: "147",
+        currency: "€",
+        includes: [
+          "30 template editabili",
+          "Guida video 2h",
+          "Community privata",
+          "Aggiornamenti a vita",
+        ],
+        ctaLabel: "ACQUISTA ORA →",
+        urgency: "Solo per i primi 50 — scade in 48h",
+      } as OfferData;
+    case "objection":
+      return {
+        eyebrow: "Obiezione comune",
+        objection: "Ma io non ho tempo di postare ogni giorno…",
+        answer: "Non serve postare ogni giorno. 3 caroselli a settimana ben fatti battono 30 post mediocri. Te lo dimostro.",
+        signOff: "P.S. Provalo gratis per 14 giorni.",
+      } as ObjectionData;
+    case "tipPack":
+      return {
+        eyebrow: "Quick wins",
+        title: "5 modi per crescere su Instagram in 30 secondi.",
+        tips: [
+          { icon: "⚡", title: "Hook potente", text: "Le prime 3 parole decidono se leggono." },
+          { icon: "🎯", title: "1 idea = 1 post", text: "Non infilare 10 concetti in una slide." },
+          { icon: "💾", title: "Save-bait", text: "Crea contenuti che la gente vuole rivedere." },
+          { icon: "🔁", title: "CTA al riuso", text: "Dì sempre cosa fare dopo averlo letto." },
+          { icon: "📊", title: "Misura tutto", text: "Replica solo ciò che ha funzionato." },
+        ],
+        saveLabel: "SALVA QUESTO POST",
+      } as TipPackData;
   }
 }
 
@@ -834,6 +981,70 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "subtitle", label: "Sottotitolo" },
         { path: "buttonLabel", label: "Bottone" },
       ];
+    case "hook":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "hook", label: "Hook" },
+        { path: "subhook", label: "Sub-hook" },
+      ];
+    case "problemSolution":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "problem.text", label: "Problema" },
+        { path: "solution.text", label: "Soluzione" },
+      ];
+    case "mistakes": {
+      const d = data as MistakesData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.mistakes?.forEach((_, i) => out.push({ path: `mistakes.${i}.title`, label: `Errore ${i + 1}` }));
+      return out;
+    }
+    case "framework": {
+      const d = data as FrameworkData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "acronym", label: "Acronimo" },
+      ];
+      d?.letters?.forEach((_, i) => out.push({ path: `letters.${i}.name`, label: `Lettera ${i + 1} – nome` }));
+      return out;
+    }
+    case "socialProof": {
+      const d = data as SocialProofData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "clientName", label: "Cliente" },
+        { path: "tagline", label: "Tagline" },
+        { path: "summary", label: "Sintesi" },
+      ];
+      d?.metrics?.forEach((_, i) => out.push({ path: `metrics.${i}.value`, label: `Metrica ${i + 1}` }));
+      return out;
+    }
+    case "offer":
+      return [
+        { path: "productName", label: "Prodotto" },
+        { path: "priceNew", label: "Prezzo nuovo" },
+        { path: "ctaLabel", label: "Bottone CTA" },
+        { path: "urgency", label: "Urgenza" },
+      ];
+    case "objection":
+      return [
+        { path: "objection", label: "Obiezione" },
+        { path: "answer", label: "Risposta" },
+        { path: "signOff", label: "Chiusura" },
+      ];
+    case "tipPack": {
+      const d = data as TipPackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.tips?.forEach((_, i) => out.push({ path: `tips.${i}.title`, label: `Tip ${i + 1}` }));
+      return out;
+    }
   }
 }
 
