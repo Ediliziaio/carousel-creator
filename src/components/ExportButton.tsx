@@ -48,6 +48,7 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
   const slides = useCarousel((s) => s.slides);
   const setActive = useCarousel((s) => s.setActive);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
+  const brand = useCarousel((s) => s.brand);
   const languages = useCarousel((s) => s.brand.languages);
   const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
 
@@ -70,14 +71,14 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
         const node = exportRefs.current.get(activeSlideId);
         if (!node) throw new Error("Slide attiva non trovata nel DOM di export.");
         const num = (activeIndex + 1).toString().padStart(2, "0");
-        method = await downloadSinglePng(node, `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`);
+        method = await downloadSinglePng(node, `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`, brand);
         toast.success("PNG esportata");
       } else {
         const nodes = slides
           .map((s) => exportRefs.current.get(s.id))
           .filter((n): n is HTMLDivElement => !!n);
         if (nodes.length === 0) throw new Error("Nessuna slide pronta per l'export.");
-        method = await downloadZipFromNodes(nodes, `${slugify(brandTitle)}${langSuffix}`);
+        method = await downloadZipFromNodes(nodes, `${slugify(brandTitle)}${langSuffix}`, brand);
         toast.success(`${nodes.length} PNG esportate in ZIP`);
       }
       if (method === "new-tab") {
