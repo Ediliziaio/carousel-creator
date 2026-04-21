@@ -380,6 +380,132 @@ export const useCarousel = create<CarouselState>()(
       resetBrandToDefault: () =>
         set((s) => withHistory(s, { brand: DEFAULT_BRAND })),
 
+      /* Carousel presets */
+      loadCarouselPreset: (presetId) =>
+        set((s) => {
+          const preset = getCarouselPreset(presetId);
+          if (!preset) return {};
+          const slides: Slide[] = preset.slides.map((ps) => ({
+            id: crypto.randomUUID(),
+            template: ps.template,
+            format: ps.format ?? "portrait",
+            data: buildPresetSlideData(ps.template, ps.overrides),
+          }));
+          return withHistory(s, {
+            slides,
+            activeId: slides[0]?.id ?? null,
+          });
+        }),
+
+      appendCarouselPreset: (presetId) =>
+        set((s) => {
+          const preset = getCarouselPreset(presetId);
+          if (!preset) return {};
+          const newSlides: Slide[] = preset.slides.map((ps) => ({
+            id: crypto.randomUUID(),
+            template: ps.template,
+            format: ps.format ?? "portrait",
+            data: buildPresetSlideData(ps.template, ps.overrides),
+          }));
+          return withHistory(s, {
+            slides: [...s.slides, ...newSlides],
+            activeId: newSlides[0]?.id ?? s.activeId,
+          });
+        }),
+
+      /* Quick offer propagation */
+      propagateOfferFields: (patch, opts) => {
+        const state = get();
+        let offerCount = 0;
+        let ctaCount = 0;
+        const offerDefaults = makeDefaultData("offer") as Record<string, unknown>;
+        const ctaDefaults = makeDefaultData("cta") as Record<string, unknown>;
+
+        const applyOfferPatch = (current: Record<string, unknown>): Record<string, unknown> => {
+          const next: Record<string, unknown> = { ...current };
+          const fields: (keyof typeof patch)[] = ["ctaLabel", "priceNew", "priceOld", "currency", "urgency", "badge"];
+          for (const f of fields) {
+            const v = patch[f];
+            if (v === undefined) continue;
+            const cur = current[f];
+            const def = offerDefaults[f];
+            if (opts.overwriteCustom || cur === undefined || cur === "" || cur === def) {
+              next[f] = v;
+            }
+          }
+          // Derive badge from urgency when badge missing.
+          if (!patch.badge && patch.urgency && (!current.badge || current.badge === offerDefaults.badge)) {
+            next.badge = patch.urgency;
+          }
+          return next;
+        };
+
+        const applyCtaPatch = (current: Record<string, unknown>): Record<string, unknown> => {
+          if (patch.ctaLabel === undefined) return current;
+          const cur = current.buttonLabel;
+          const def = ctaDefaults.buttonLabel;
+          if (opts.overwriteCustom || cur === undefined || cur === "" || cur === def) {
+            return { ...current, buttonLabel: patch.ctaLabel };
+          }
+          return current;
+        };
+
+        const transformData = (template: TemplateId, data: AnyTemplateData): AnyTemplateData => {
+          if (template === "offer") {
+            offerCount++;
+            return applyOfferPatch(data as unknown as Record<string, unknown>) as unknown as AnyTemplateData;
+          }
+          if (template === "cta") {
+            ctaCount++;
+            return applyCtaPatch(data as unknown as Record<string, unknown>) as unknown as AnyTemplateData;
+          }
+          return data;
+        };
+
+        const slides: Slide[] = state.slides.map((sl) => {
+          if (sl.template !== "offer" && sl.template !== "cta") return sl;
+          const d = sl.data;
+          if (typeof d === "object" && d !== null && (d as { __i18n?: boolean }).__i18n) {
+            const w = d as { __i18n: true; byLang: Record<string, AnyTemplateData> };
+            const byLang: Record<string, AnyTemplateData> = {};
+            for (const [lang, langData] of Object.entries(w.byLang)) {
+              byLang[lang] = transformData(sl.template, langData);
+            }
+            return { ...sl, data: { __i18n: true as const, byLang } };
+          }
+          return { ...sl, data: transformData(sl.template, d as AnyTemplateData) };
+        });
+
+        set(withHistory(state, { slides }));
+        return { offerCount, ctaCount };
+      },
+
+      /* Content import */
+      importContentBundle: (items, mode) =>
+        set((s) => {
+          const newSlides: Slide[] = items.map((it) => ({
+            id: crypto.randomUUID(),
+            template: it.template,
+            format: "portrait",
+            data: it.data,
+          }));
+          if (newSlides.length === 0) return {};
+          if (mode === "replace") {
+            return withHistory(s, {
+              slides: newSlides,
+              activeId: newSlides[0].id,
+            });
+          }
+          return withHistory(s, {
+            slides: [...s.slides, ...newSlides],
+            activeId: newSlides[0].id,
+          });
+        }),
+
+      setStrictExport: (v) => set({ strictExport: v }),
+      setValidationOverlay: (v) => set({ validationOverlay: v }),
+
+
       undo: () =>
         set((s) => {
           const last = s.past[s.past.length - 1];
