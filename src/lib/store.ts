@@ -9,9 +9,12 @@ import {
   type SlideDataField,
   type TextStyle,
   type SlideCombo,
+  type CtaData,
+  type OfferData,
   DEFAULT_BRAND,
   DEFAULT_EFFECTS,
   makeDefaultSlide,
+  makeDefaultData,
 } from "./templates";
 import {
   type BrandPreset,
@@ -23,6 +26,8 @@ import {
 } from "./presets";
 import { type CarouselSnapshot, pushSnapshot, snapshot } from "./history";
 import { setSlideData, getSlideData } from "./i18n";
+import { getCarouselPreset, buildPresetSlideData } from "./carouselPresets";
+import type { ImportedItem } from "./contentImport";
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
