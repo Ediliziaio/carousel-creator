@@ -9,11 +9,12 @@ import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
+import { ExportBatchPreviewDialog } from "@/components/ExportBatchPreviewDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Upload, FileJson, Undo2, Redo2, Eye } from "lucide-react";
+import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid } from "lucide-react";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -45,6 +46,7 @@ function Index() {
 
   const [editorTab, setEditorTab] = useState<string>("form");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [batchOpen, setBatchOpen] = useState(false);
 
   useEffect(() => {
     const handler = () => setEditorTab("form");
@@ -168,6 +170,9 @@ function Index() {
           <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} disabled={!activeSlide}>
             <Eye className="mr-1 h-4 w-4" /> Anteprima
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setBatchOpen(true)} disabled={slides.length === 0}>
+            <LayoutGrid className="mr-1 h-4 w-4" /> Anteprima ZIP
+          </Button>
           <ExportButton
             exportRefs={exportRefs}
             activeSlideId={activeSlide?.id ?? null}
@@ -231,6 +236,7 @@ function Index() {
       </div>
 
       <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
+      <ExportBatchPreviewDialog open={batchOpen} onOpenChange={setBatchOpen} brandTitle={brand.carouselTitle} />
     </div>
   );
 }
