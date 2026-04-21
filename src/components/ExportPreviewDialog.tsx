@@ -94,7 +94,7 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
   const validation = validateSlide(slide, lang, brand.defaultLanguage);
   const num = (slideIndex + 1).toString().padStart(2, "0");
   const langSuffix = brand.languages.length > 1 ? `-${lang}` : "";
-  const filename = `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`;
+  const filename = `${slugify(brandTitle)}-slide-${num}-${dim.w}x${dim.h}${langSuffix}.png`;
 
   const onDownload = async () => {
     if (!captureRef.current) return;
