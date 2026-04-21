@@ -1,55 +1,70 @@
 
-# Carousel Generator — 10 template stile dark/ciano
+# Tre miglioramenti all'export e al form
 
-Strumento web per creare caroselli Instagram (1080×1350) basati sui 10 layout del tuo HTML, con esportazione PNG.
+## 1. Export PNG con fallback (no più crash da file-saver)
 
-## Cosa potrai fare
-1. **Scegliere uno dei 10 template** per ogni slide del carosello
-2. **Compilare i contenuti** tramite form guidato (campi diversi per ogni template)
-3. **Vedere l'anteprima live** identica all'HTML caricato (formato 1080×1350 scalato)
-4. **Riordinare/duplicare/eliminare** le slide
-5. **Personalizzare brand**: handle (@edoardo_barravecchia → tuo), colore accent (ciano default + magenta + custom hex), titolo carosello, font opzionali
-6. **Switch form ↔ JSON**: editor visuale con tab che mostra/permette di modificare il JSON sottostante (importa/esporta `.json`)
-7. **Esportare in PNG 1080×1350** — singola slide o ZIP con tutte le slide numerate (`slide-01.png`, `slide-02.png`...)
+Nuovo modulo `src/lib/download.ts` con funzione `saveBlob(blob, filename)` che prova in ordine:
+1. **`file-saver`** (via dynamic import, così se il pacchetto rompe il modulo non crasha l'app)
+2. **Fallback nativo**: crea un `<a download>`, lo clicca e revoca l'`objectURL`
+3. **Ultimo fallback**: apre il blob in una nuova tab con un toast che dice "Tasto destro → Salva immagine come..."
 
-## I 10 template supportati
-1. **Split 50/50** — titolo a sx, paragrafo + lista a dx
-2. **Griglia 2×2** — titolo + 4 riquadri numerati
-3. **Numero gigante** — cifra enorme a sx, titolo+testo a dx
-4. **Frase centrale** — eyebrow + claim grande centrato + sub
-5. **Timeline verticale** — titolo + step con pallini ciano
-6. **Prima / Dopo** — due colonne a confronto (la "dopo" evidenziata in ciano)
-7. **Scheda definizione** — parola chiave stile vocabolario + categoria + pronuncia + significato
-8. **Quote / citazione** (dedotto dal pattern) — citazione + autore
-9. **Lista numerata grande** — titolo + elementi numerati
-10. **Cover / Outro** — slide iniziale brand o finale CTA
+`src/lib/export.ts` viene aggiornato per usare `saveBlob` invece di importare `saveAs` direttamente. Risultato: anche se il bundler ha problemi con `file-saver`, l'export funziona e l'utente vede sempre un messaggio chiaro invece della pagina bianca.
 
-> Per ogni slide: header (brand + counter "01/10") e footer (handle + numerazione) automatici, gestiti dal sistema.
+Tutti gli errori di export vengono mostrati con `toast.error(...)` già presente, ma in più aggiungo un **banner inline** sotto la toolbar (componente `ExportErrorBanner`) che resta visibile finché non viene chiuso, con il messaggio completo dell'errore (utile se l'utente lo perde nel toast).
 
-## Struttura UI
+## 2. Bottone export unificato con menu Single PNG / ZIP
 
-**Layout a 3 colonne:**
-- **Sinistra — Sidebar slide**: lista miniature drag-to-reorder, pulsante "+ aggiungi slide" che apre picker dei 10 template, duplica/elimina
-- **Centro — Anteprima**: rendering 1:1 del template attivo, scalato per stare nel viewport, con sfondo dark che ricorda Instagram
-- **Destra — Pannello editor**: due tab → **Form** (campi specifici per il template selezionato: title, eyebrow, items[], etc.) e **JSON** (textarea sincronizzata)
+I due bottoni separati attuali ("PNG slide" + "ZIP (N)") vengono uniti in un unico bottone **"Export"** con `DropdownMenu` (shadcn, già installato) che apre due voci:
 
-**Toolbar in alto:**
-- Titolo carosello (editable inline)
-- Impostazioni brand (modal): handle, colore accent, eventuale font
-- Import JSON / Export JSON
-- **Export PNG (slide corrente)** / **Export ZIP (tutto il carosello)**
+- **PNG — slide corrente** (`slide-NN.png`) — disabilitato se nessuna slide attiva
+- **ZIP — tutte le slide (N)** (`titolo-carosello.zip`) — disabilitato se 0 slide
 
-## Come funziona l'export
-Le slide vengono renderizzate in un container nascosto a dimensione reale 1080×1350 (no scaling), catturate con `html-to-image` (più affidabile di html2canvas con font web), e impacchettate in uno ZIP via `jszip`. Font Figtree + JetBrains Mono caricati e attesi prima dell'export per evitare fallback.
+Lo stato `exporting` resta uno solo e mostra lo spinner sul bottone principale durante l'operazione. Più pulito visivamente e fa esattamente quello che hai chiesto: scelta esplicita al momento del click.
 
-## Stack
-- TanStack Start (route singola `/`, niente backend serve)
-- Tailwind v4 + design system esistente per la **UI dell'app**
-- CSS custom isolato per il rendering delle slide (replica fedele del tuo HTML, variabili CSS per accent color)
-- `html-to-image` + `jszip` + `file-saver` per l'export
-- Stato gestito in memoria React (zustand) — niente persistenza, usa-e-getta come richiesto
+## 3. Validazione dei campi obbligatori prima dell'export
 
-## Fuori scope (per restare snelli)
-- Nessun salvataggio cloud / account
-- Nessun upload immagini nelle slide (i template sono solo testo + grafica generativa)
-- Nessuna generazione AI dei contenuti
+Nuovo file `src/lib/validation.ts` con:
+
+```text
+validateSlide(slide) → { valid: boolean; errors: { field: string; message: string }[] }
+validateAllSlides(slides) → { slideId, slideIndex, errors[] }[]
+```
+
+**Regole obbligatorie per template** (in italiano, mostrate all'utente):
+- **split**: `title` non vuoto
+- **grid2x2**: `title` non vuoto + tutte e 4 le celle con `title` non vuoto
+- **bignum**: `number` + `title` non vuoti
+- **center**: `title` non vuoto
+- **timeline**: `title` non vuoto + almeno 1 step con `title`
+- **compare**: `title` + `before.title` + `after.title` non vuoti + almeno 1 voce per lato
+- **vocab**: `word` + `def` non vuoti
+- **qa**: `question` + almeno 1 paragrafo di risposta non vuoto
+- **checklist**: `title` + almeno 1 voce con `title`
+- **stat**: `value` + `label` non vuoti
+
+**Dove appare la validazione:**
+
+a) **Nel form (live)**: ogni campo obbligatorio mancante mostra un bordo rosso + messaggio sotto ("Campo obbligatorio"). Componente `Field` esteso con prop `error?: string`. La sidebar mostra un puntino rosso vicino alle slide invalide.
+
+b) **All'export**: prima di lanciare PNG o ZIP, `validateAllSlides()` viene eseguita. Se ci sono errori:
+- L'export viene **bloccato**
+- Si apre un `AlertDialog` con la lista delle slide invalide e i campi mancanti (es. *"Slide 03 (Timeline): Titolo mancante, almeno uno step richiesto"*)
+- Due bottoni: "Vai alla prima slide invalida" (seleziona quella slide e chiude) o "Annulla"
+
+c) **Override per emergenza**: nel dialog c'è una checkbox "Esporta comunque" che permette di bypassare la validazione (utile se vuoi un mockup veloce).
+
+## File toccati
+
+- `src/lib/download.ts` *(nuovo)* — fallback chain per il salvataggio blob
+- `src/lib/export.ts` — usa `saveBlob`, rimuove import diretto di `file-saver`
+- `src/lib/validation.ts` *(nuovo)* — regole + funzioni di validazione per i 10 template
+- `src/components/ExportButton.tsx` *(nuovo)* — bottone unificato con dropdown + dialog di validazione
+- `src/components/ExportErrorBanner.tsx` *(nuovo)* — banner persistente per errori export
+- `src/components/SlideEditorForm.tsx` — `Field` con prop `error`, integrazione validazione live
+- `src/components/SlidesSidebar.tsx` — puntino rosso sulle slide invalide
+- `src/routes/index.tsx` — sostituisce i due bottoni export con `ExportButton`, monta `ExportErrorBanner`
+- `src/lib/store.ts` — nessuna modifica strutturale (la validazione è derivata, non in store)
+
+## Fuori scope
+- Validazione del JSON nel tab "JSON" (il parsing JSON ha già il suo error handling)
+- Validazione su lunghezza testi / overflow visivo (richiederebbe misurare il rendering)
