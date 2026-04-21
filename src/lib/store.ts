@@ -26,6 +26,12 @@ import { type CarouselSnapshot, pushSnapshot, snapshot } from "./history";
 import { setSlideData, getSlideData } from "./i18n";
 import { getCarouselPreset, buildPresetSlideData } from "./carouselPresets";
 import type { ImportedItem } from "./contentImport";
+import {
+  type OfferPreset,
+  type OfferPresetValues,
+  BUILT_IN_OFFER_PRESETS,
+  makeOfferPreset,
+} from "./offerPresets";
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
@@ -136,6 +142,15 @@ interface CarouselState {
   /** Strict export toggle */
   setStrictExport: (v: boolean) => void;
   setValidationOverlay: (v: boolean) => void;
+
+  /** Bulk update marketing slides (hook/offer/cta) — single undo entry */
+  bulkUpdateMarketingSlides: (updates: { slideId: string; patch: Record<string, unknown> }[]) => void;
+
+  /** Offer presets (Quick Offer reusable values) */
+  offerPresets: OfferPreset[];
+  saveOfferPreset: (name: string, values: OfferPresetValues) => void;
+  deleteOfferPreset: (id: string) => void;
+  renameOfferPreset: (id: string, name: string) => void;
 
   undo: () => void;
   redo: () => void;
@@ -503,6 +518,40 @@ export const useCarousel = create<CarouselState>()(
       setStrictExport: (v) => set({ strictExport: v }),
       setValidationOverlay: (v) => set({ validationOverlay: v }),
 
+      bulkUpdateMarketingSlides: (updates) =>
+        set((s) => {
+          const map = new Map(updates.map((u) => [u.slideId, u.patch]));
+          const slides = s.slides.map((sl) => {
+            const patch = map.get(sl.id);
+            if (!patch) return sl;
+            const lang = s.activeLang;
+            const def = s.brand.defaultLanguage;
+            const current = getSlideData(sl, lang, def) as unknown as Record<string, unknown>;
+            const merged = { ...current, ...patch } as unknown as AnyTemplateData;
+            return { ...sl, data: setSlideData(sl.data, lang, merged, def) };
+          });
+          return withHistory(s, { slides });
+        }),
+
+      offerPresets: BUILT_IN_OFFER_PRESETS,
+
+      saveOfferPreset: (name, values) =>
+        set((s) => ({
+          offerPresets: [...s.offerPresets, makeOfferPreset(name, values)],
+        })),
+
+      deleteOfferPreset: (id) =>
+        set((s) => ({
+          offerPresets: s.offerPresets.filter((p) => p.id !== id || p.builtIn),
+        })),
+
+      renameOfferPreset: (id, name) =>
+        set((s) => ({
+          offerPresets: s.offerPresets.map((p) =>
+            p.id === id && !p.builtIn ? { ...p, name: name.trim() || p.name } : p,
+          ),
+        })),
+
 
       undo: () =>
         set((s) => {
@@ -552,6 +601,7 @@ export const useCarousel = create<CarouselState>()(
         lastFontSizeByFieldType: s.lastFontSizeByFieldType,
         strictExport: s.strictExport,
         validationOverlay: s.validationOverlay,
+        offerPresets: s.offerPresets.filter((p) => !p.builtIn),
       }),
       merge: (persistedState, currentState) => {
         const ps = persistedState as Partial<{
@@ -563,8 +613,10 @@ export const useCarousel = create<CarouselState>()(
           lastFontSizeByFieldType: Record<string, number>;
           strictExport: boolean;
           validationOverlay: boolean;
+          offerPresets: OfferPreset[];
         }> | undefined;
         const customPresets = ps?.brandPresets ?? [];
+        const customOfferPresets = ps?.offerPresets ?? [];
         const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
         return {
           ...currentState,
@@ -576,6 +628,7 @@ export const useCarousel = create<CarouselState>()(
           lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
           strictExport: ps?.strictExport ?? true,
           validationOverlay: ps?.validationOverlay ?? true,
+          offerPresets: [...BUILT_IN_OFFER_PRESETS, ...customOfferPresets.filter((p) => !p.builtIn)],
         };
       },
     },
