@@ -1170,6 +1170,56 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
       d?.tips?.forEach((_, i) => out.push({ path: `tips.${i}.title`, label: `Tip ${i + 1}` }));
       return out;
     }
+    case "urgency":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "headline", label: "Headline" },
+        { path: "deadline", label: "Countdown" },
+        { path: "unitsLeft", label: "Posti rimasti" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+    case "bonusStack": {
+      const d = data as BonusStackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+        { path: "totalValue", label: "Valore totale" },
+        { path: "yourPrice", label: "Prezzo finale" },
+        { path: "ctaLabel", label: "CTA" },
+      ];
+      d?.bonuses?.forEach((_, i) => out.push({ path: `bonuses.${i}.name`, label: `Bonus ${i + 1}` }));
+      return out;
+    }
+    case "guarantee":
+      return [
+        { path: "badge", label: "Badge" },
+        { path: "headline", label: "Headline" },
+        { path: "body", label: "Testo" },
+        { path: "terms", label: "Condizioni" },
+      ];
+    case "faq": {
+      const d = data as FaqData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.items?.forEach((_, i) => {
+        out.push({ path: `items.${i}.q`, label: `Domanda ${i + 1}` });
+        out.push({ path: `items.${i}.a`, label: `Risposta ${i + 1}` });
+      });
+      return out;
+    }
+    case "quickWin": {
+      const d = data as QuickWinData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "instruction", label: "Istruzione" },
+        { path: "expectedResult", label: "Risultato atteso" },
+        { path: "timeBadge", label: "Badge tempo" },
+      ];
+      d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}`, label: `Step ${i + 1}` }));
+      return out;
+    }
   }
 }
 
