@@ -35,10 +35,10 @@ import {
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
-  text:  ["cover", "center", "split", "bignum", "myth", "quoteBig", "hook", "objection"],
-  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "process", "prosCons", "roadmap", "problemSolution", "mistakes", "framework", "socialProof", "tipPack"],
+  text:  ["cover", "center", "split", "bignum", "myth", "quoteBig", "hook", "objection", "urgency", "guarantee", "quickWin"],
+  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "process", "prosCons", "roadmap", "problemSolution", "mistakes", "framework", "socialProof", "tipPack", "faq"],
   media: ["gallery", "imageQuote", "feature", "testimonial"],
-  ref:   ["vocab", "qa", "cta", "offer"],
+  ref:   ["vocab", "qa", "cta", "offer", "bonusStack"],
 };
 
 /** Merge persisted picker state with defaults so newly-added templates/categories appear. */

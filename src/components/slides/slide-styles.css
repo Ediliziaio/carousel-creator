@@ -916,3 +916,211 @@
 .mkt-ico-minimal .tpl-mistakes .ico::before,
 .mkt-ico-minimal .tpl-prosCons .ico-x::before { content: "—"; }
 .mkt-ico-minimal .tpl-prosCons .ico-check::before { content: "·"; }
+
+/* ===================== Urgency ===================== */
+.tpl-urgency .body { justify-content: center; align-items: center; text-align: center; gap: 18px; }
+.tpl-urgency .urg-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  letter-spacing: .28em; color: #ff6b6b; font-weight: 800; text-transform: uppercase;
+  padding: 8px 18px; border: 2px solid #ff6b6b; border-radius: 999px;
+  animation: hook-pulse 1.6s ease-in-out infinite;
+}
+.tpl-urgency .urg-headline {
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 44px; line-height: 1.1; letter-spacing: -0.025em;
+  color: var(--text-strong); margin: 12px 0 0; max-width: 820px;
+}
+.tpl-urgency .urg-timer {
+  font-family: 'JetBrains Mono', monospace; font-weight: 900;
+  font-size: 140px; line-height: 1; letter-spacing: -0.04em;
+  color: var(--cyan);
+  text-shadow: 0 0 40px color-mix(in oklab, var(--cyan) 60%, transparent);
+  margin: 8px 0;
+}
+.tpl-urgency .urg-units {
+  font-family: 'JetBrains Mono', monospace; font-size: 18px;
+  letter-spacing: .18em; color: #ff6b6b; font-weight: 700; text-transform: uppercase;
+}
+.tpl-urgency .urg-cta {
+  margin-top: 12px; padding: 18px 40px; background: var(--cyan); color: #000;
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 22px; letter-spacing: .14em; text-transform: uppercase;
+  border-radius: 999px;
+  box-shadow: 0 16px 48px color-mix(in oklab, var(--cyan) 35%, transparent);
+}
+.fmt-story.tpl-urgency .urg-timer { font-size: 110px; }
+.fmt-landscape.tpl-urgency .urg-timer { font-size: 160px; }
+
+/* ===================== Bonus Stack ===================== */
+.tpl-bonusStack .body { padding-top: 16px; }
+.tpl-bonusStack h1 {
+  font-size: 38px; margin: 8px 0 18px;
+  color: var(--text-strong); line-height: 1.1; letter-spacing: -0.02em;
+}
+.tpl-bonusStack .bs-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tpl-bonusStack .bs-row {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 12px;
+  align-items: center; padding: 14px 18px;
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+.tpl-bonusStack .bs-check {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--cyan); color: #000;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 20px;
+}
+.tpl-bonusStack .bs-name {
+  font-family: var(--font-heading); font-weight: 700;
+  font-size: 17px; color: var(--text-strong); line-height: 1.2;
+}
+.tpl-bonusStack .bs-desc {
+  font-size: 13px; color: var(--text-soft); margin-top: 2px;
+}
+.tpl-bonusStack .bs-value {
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 22px; color: var(--cyan);
+}
+.tpl-bonusStack .bs-totals {
+  margin-top: 18px; padding: 18px 22px;
+  background: color-mix(in oklab, var(--cyan) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cyan) 30%, transparent);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.tpl-bonusStack .bs-total-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.tpl-bonusStack .bs-total-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  letter-spacing: .2em; color: var(--muted); text-transform: uppercase;
+}
+.tpl-bonusStack .bs-total-old {
+  font-size: 24px; color: var(--muted); text-decoration: line-through;
+  text-decoration-color: rgba(255,107,107,.6); text-decoration-thickness: 3px;
+}
+.tpl-bonusStack .bs-final .bs-total-label { color: var(--text-strong); font-weight: 800; }
+.tpl-bonusStack .bs-total-new {
+  font-family: var(--font-heading); font-weight: 900;
+  font-size: 56px; line-height: 1; color: var(--cyan);
+  letter-spacing: -0.04em;
+}
+.tpl-bonusStack .bs-cta {
+  margin-top: 18px; padding: 18px 32px;
+  background: var(--cyan); color: #000;
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 18px; letter-spacing: .14em; text-transform: uppercase;
+  border-radius: 999px; text-align: center;
+}
+
+/* ===================== Guarantee ===================== */
+.tpl-guarantee .body { justify-content: center; align-items: center; text-align: center; gap: 14px; }
+.tpl-guarantee .grt-seal {
+  font-size: 120px; line-height: 1;
+  filter: drop-shadow(0 12px 32px color-mix(in oklab, var(--cyan) 40%, transparent));
+}
+.tpl-guarantee .grt-badge {
+  display: inline-block; padding: 8px 20px;
+  background: var(--cyan); color: #000;
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 13px; letter-spacing: .22em; text-transform: uppercase;
+  border-radius: 999px;
+}
+.tpl-guarantee .grt-headline {
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 40px; line-height: 1.1; letter-spacing: -0.025em;
+  color: var(--text-strong); margin: 8px 0 0; max-width: 760px;
+}
+.tpl-guarantee .grt-body {
+  font-size: 19px; color: var(--text); line-height: 1.5;
+  max-width: 720px; margin: 0;
+}
+.tpl-guarantee .grt-terms {
+  margin-top: 8px; font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; letter-spacing: .14em; color: var(--muted);
+}
+
+/* ===================== FAQ ===================== */
+.tpl-faq h1 {
+  font-size: 38px; margin: 10px 0 20px;
+  color: var(--text-strong); line-height: 1.1; letter-spacing: -0.02em;
+}
+.tpl-faq .faq-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 14px;
+  flex: 1; align-content: start;
+}
+.tpl-faq .faq-item {
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 14px; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tpl-faq .faq-q,
+.tpl-faq .faq-a {
+  display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start;
+  font-size: 17px; line-height: 1.4;
+}
+.tpl-faq .faq-q { color: var(--text-strong); font-weight: 700; }
+.tpl-faq .faq-a { color: var(--text-soft); font-weight: 400; }
+.tpl-faq .faq-q-mark,
+.tpl-faq .faq-a-mark {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-weight: 800;
+  font-size: 13px;
+}
+.tpl-faq .faq-q-mark { background: var(--cyan); color: #000; }
+.tpl-faq .faq-a-mark { background: var(--rule); color: var(--cyan); }
+
+/* ===================== Quick Win ===================== */
+.tpl-quickWin .qw-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px;
+}
+.tpl-quickWin .qw-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  letter-spacing: .22em; color: var(--cyan); font-weight: 800; text-transform: uppercase;
+}
+.tpl-quickWin .qw-time {
+  padding: 6px 14px; background: var(--cyan); color: #000;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  letter-spacing: .14em; font-weight: 800; border-radius: 999px;
+}
+.tpl-quickWin .qw-instruction {
+  font-family: var(--font-heading); font-weight: 800;
+  font-size: 42px; line-height: 1.1; letter-spacing: -0.025em;
+  color: var(--text-strong); margin: 18px 0 24px;
+}
+.tpl-quickWin .qw-steps {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 12px; flex: 1;
+}
+.tpl-quickWin .qw-step {
+  display: grid; grid-template-columns: 44px 1fr; gap: 14px;
+  align-items: start;
+  padding: 14px 18px;
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 12px;
+  font-size: 17px; line-height: 1.4; color: var(--text);
+}
+.tpl-quickWin .qw-step-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--cyan); color: #000;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 900;
+  font-size: 15px; letter-spacing: -0.02em;
+}
+.tpl-quickWin .qw-result {
+  margin-top: 18px; padding: 14px 18px;
+  background: color-mix(in oklab, var(--cyan) 10%, transparent);
+  border-left: 3px solid var(--cyan); border-radius: 8px;
+  font-size: 16px; color: var(--text); line-height: 1.45;
+}
+.tpl-quickWin .qw-result-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  letter-spacing: .2em; color: var(--cyan); font-weight: 800;
+  margin-right: 8px;
+}
