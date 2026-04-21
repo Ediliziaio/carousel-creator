@@ -1736,19 +1736,20 @@ function ChartCompareBarEditor({ d, set, errFor, slideId, overrides }: EditorPro
 
 function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGridData>) {
   const kErr = errFor("kpis");
+  const kpis = d.kpis ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {kErr && <p data-field="kpis" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {kErr}</p>}
       <Label className="text-xs uppercase tracking-wider text-muted-foreground">4 KPI (esattamente)</Label>
-      {d.kpis.map((k, i) => {
+      {kpis.map((k, i) => {
         const update = (patch: Partial<typeof k>) => {
-          const arr = [...d.kpis];
+          const arr = [...kpis];
           arr[i] = { ...k, ...patch };
           set({ ...d, kpis: arr });
         };
@@ -1773,7 +1774,7 @@ function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGr
               </select>
             </div>
             <Input
-              value={k.spark.join(", ")}
+              value={(k.spark ?? []).join(", ")}
               onChange={(e) => update({ spark: e.target.value.split(",").map((n) => Number(n.trim())).filter((n) => !isNaN(n)) })}
               placeholder="Sparkline: 12, 18, 22, 28, 34, 41"
             />
@@ -1786,21 +1787,22 @@ function KpiGridEditor({ d, set, errFor, slideId, overrides }: EditorProps<KpiGr
 
 function FunnelChartEditor({ d, set, errFor, slideId, overrides }: EditorProps<FunnelChartData>) {
   const sErr = errFor("stages");
+  const stages = d.stages ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {sErr && <p data-field="stages" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {sErr}</p>}
       <ArrayField
         label="Stadi (2–5)"
-        items={d.stages}
+        items={stages}
         onChange={(arr) => set({ ...d, stages: arr })}
         maxItems={5}
-        counter={<ItemCounter current={d.stages.length} min={2} max={5} unit="stadi" />}
+        counter={<ItemCounter current={stages.length} min={2} max={5} unit="stadi" />}
         render={(v, on, i) => {
           const lErr = errFor(`stages.${i}.label`);
           const vErr = errFor(`stages.${i}.value`);
