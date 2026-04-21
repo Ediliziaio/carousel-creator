@@ -53,7 +53,7 @@ export function parseContentBundle(input: unknown): ImportResult {
     }
     const template = tpl as TemplateId;
     const data = isPlainObject(raw.data) ? raw.data : {};
-    const base = makeDefaultData(template) as Record<string, unknown>;
+    const base = makeDefaultData(template) as unknown as Record<string, unknown>;
     const merged: Record<string, unknown> = { ...base };
     const warnings: string[] = [];
     for (const [k, v] of Object.entries(data)) {
@@ -68,7 +68,7 @@ export function parseContentBundle(input: unknown): ImportResult {
         merged[k] = v;
       }
     }
-    items.push({ template, data: merged as AnyTemplateData, warnings });
+    items.push({ template, data: merged as unknown as AnyTemplateData, warnings });
   });
 
   return { items, errors };
@@ -120,7 +120,7 @@ export function parseSimpleCsv(csv: string): ImportResult {
     for (const r of g.rows) {
       setByPath(data, r.field, coerceValue(r.value));
     }
-    const base = makeDefaultData(g.template) as Record<string, unknown>;
+    const base = makeDefaultData(g.template) as unknown as Record<string, unknown>;
     const merged: Record<string, unknown> = { ...base };
     const warnings: string[] = [];
     for (const [k, v] of Object.entries(data)) {
@@ -134,7 +134,7 @@ export function parseSimpleCsv(csv: string): ImportResult {
         merged[k] = v;
       }
     }
-    return { template: g.template, data: merged as AnyTemplateData, warnings };
+    return { template: g.template, data: merged as unknown as AnyTemplateData, warnings };
   });
 
   return { items, errors };

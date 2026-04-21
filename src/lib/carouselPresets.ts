@@ -157,8 +157,8 @@ export function getCarouselPreset(id: string): CarouselPreset | undefined {
 
 /** Build slide data by merging defaults with preset overrides (deep one-level for nested objects). */
 export function buildPresetSlideData(template: TemplateId, overrides?: Record<string, unknown>): AnyTemplateData {
-  const base = makeDefaultData(template) as Record<string, unknown>;
-  if (!overrides) return base as AnyTemplateData;
+  const base = makeDefaultData(template) as unknown as Record<string, unknown>;
+  if (!overrides) return base as unknown as AnyTemplateData;
   const out: Record<string, unknown> = { ...base };
   for (const [k, v] of Object.entries(overrides)) {
     if (v && typeof v === "object" && !Array.isArray(v) && base[k] && typeof base[k] === "object" && !Array.isArray(base[k])) {
@@ -167,5 +167,5 @@ export function buildPresetSlideData(template: TemplateId, overrides?: Record<st
       out[k] = v;
     }
   }
-  return out as AnyTemplateData;
+  return out as unknown as AnyTemplateData;
 }
