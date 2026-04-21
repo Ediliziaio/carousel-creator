@@ -34,6 +34,15 @@ function Index() {
   const activeIndex = useMemo(() => slides.findIndex((s) => s.id === activeId), [slides, activeId]);
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
 
+  const [editorTab, setEditorTab] = useState<string>("form");
+
+  // Force-switch to form tab when focus-field event fires
+  useEffect(() => {
+    const handler = () => setEditorTab("form");
+    window.addEventListener("slide:focus-field", handler);
+    return () => window.removeEventListener("slide:focus-field", handler);
+  }, []);
+
   // Inject Google Fonts once on mount
   useEffect(() => {
     if (document.getElementById("carousel-google-fonts")) return;
