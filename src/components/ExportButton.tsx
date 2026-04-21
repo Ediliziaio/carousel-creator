@@ -169,8 +169,9 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
               Campi obbligatori mancanti
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {validationIssues.length} slide{validationIssues.length === 1 ? "" : ""} con campi non compilati.
-              Completa i campi prima di esportare, oppure forza l'export per generare comunque le PNG.
+              {validationIssues.reduce((sum, i) => sum + i.errors.length, 0)} campi da completare
+              {" su "}{validationIssues.length} slide. Completa i campi prima di esportare, oppure forza
+              l'export per generare comunque le PNG.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="max-h-64 space-y-2 overflow-auto rounded-md border border-border bg-muted/30 p-3 text-sm">
