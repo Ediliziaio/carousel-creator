@@ -251,7 +251,7 @@ function Index() {
   );
 }
 
-function ScaledPreview({ children }: { children: React.ReactNode }) {
+function ScaledPreview({ children, w = 1080, h = 1350 }: { children: React.ReactNode; w?: number; h?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
 
@@ -260,23 +260,23 @@ function ScaledPreview({ children }: { children: React.ReactNode }) {
     if (!el) return;
     const compute = () => {
       const rect = el.getBoundingClientRect();
-      const sx = (rect.width - 32) / 1080;
-      const sy = (rect.height - 32) / 1350;
-      setScale(Math.max(0.1, Math.min(sx, sy)));
+      const sx = (rect.width - 32) / w;
+      const sy = (rect.height - 32) / h;
+      setScale(Math.max(0.05, Math.min(sx, sy)));
     };
     compute();
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [w, h]);
 
   return (
     <div ref={containerRef} className="flex h-full w-full items-center justify-center">
-      <div style={{ width: 1080 * scale, height: 1350 * scale, position: "relative" }}>
+      <div style={{ width: w * scale, height: h * scale, position: "relative" }}>
         <div
           style={{
-            width: 1080,
-            height: 1350,
+            width: w,
+            height: h,
             transform: `scale(${scale})`,
             transformOrigin: "top left",
             position: "absolute",
