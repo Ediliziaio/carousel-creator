@@ -25,7 +25,7 @@ import { downloadSinglePng, downloadZipFromNodes } from "@/lib/export";
 import { toast } from "sonner";
 
 interface Props {
-  exportRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
+  exportRefs: React.RefObject<Map<string, HTMLDivElement>>;
   activeSlideId: string | null;
   activeIndex: number;
   brandTitle: string;
