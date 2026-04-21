@@ -1,94 +1,78 @@
 
 
-# Slider inline per dimensione font su ogni campo testo
+# Tastiera per FontSizeSlider + reset robusto + sync su cambio campo
 
-## Obiettivo
+## 1. Navigazione da tastiera con frecce
 
-Aggiungere accanto ad ogni campo testo dell'editor (eyebrow, title, paragrafi, lista, ecc.) un **mini-slider sempre visibile** per regolare al volo la dimensione del font, senza dover aprire il popover "T". Il popover completo (font, peso, colore, allineamento) resta disponibile per le personalizzazioni avanzate.
+Il componente shadcn `Slider` (Radix UI) supporta nativamente le frecce, ma con `step={2}` (oggi) ogni freccia incrementa solo di 2px — utile per drag fine ma lento da tastiera.
 
-## 1. Nuovo componente `FontSizeSlider`
+**Modifiche a `src/components/FontSizeSlider.tsx`:**
+- Mantengo `step={2}` per il drag del mouse (granularità fine)
+- Espongo il salto da tastiera tramite la prop nativa `onKeyDown` sul thumb del Radix Slider, gestita a livello di wrapper:
+  - `ArrowUp` / `ArrowRight`: +2px (default Radix, OK)
+  - `ArrowDown` / `ArrowLeft`: -2px (default)
+  - `Shift + Arrow`: ±10px (salto rapido)
+  - `PageUp` / `PageDown`: ±20px
+  - `Home`: 16px (min), `End`: 240px (max)
+- Aggiungo attributi accessibilità: `aria-label="Dimensione font in pixel"`, `aria-valuetext="${current}px"` sul thumb
+- Aggiungo `tabIndex={0}` esplicito (Radix lo fa già, ma lo confermiamo per sicurezza)
+- Focus ring visibile: aggiungo classe `focus-visible:ring-2 focus-visible:ring-ring` al thumb di `src/components/ui/slider.tsx` (è già presente ma con `ring-1` — passo a `ring-2` per migliore visibilità da tastiera, modifica minima e generalizzata)
 
-Creo `src/components/FontSizeSlider.tsx`:
+**Sincronizzazione con popover:** già garantita — entrambi leggono/scrivono lo stesso `overrides[fieldPath].fontSize` via `setTextOverride`. Ogni keystroke triggera lo stesso flusso del drag, quindi il popover (se aperto) mostra il valore aggiornato in tempo reale.
 
-- Riusa il componente shadcn `Slider` (già nel progetto)
-- Larghezza compatta (~80–100px), altezza 6px, tooltip con valore in px
-- Range: **16px → 240px**, step 2px (stessi limiti di `TextStylePopover`)
-- Default: legge `overrides[fieldPath].fontSize` se presente, altrimenti mostra un placeholder visivo "auto" e parte dal valore di default del template (64px come fallback)
-- Al primo trascinamento, salva il `fontSize` nell'override del campo via `setTextOverride(slideId, fieldPath, { ...current, fontSize: value })`
-- Pulsante reset miniatura (icona `RotateCcw` 12px) accanto, visibile solo quando un override `fontSize` è attivo → chiama una versione "clear single key" coerente con quella già usata in `TextStylePopover`
-- Etichetta numerica `64px` accanto allo slider, tabular-nums, color `text-muted-foreground`
+## 2. Reset robusto della sola chiave `fontSize`
 
-Props:
+L'attuale `onReset` in `FontSizeSlider.tsx` (righe 75-79) fa già la cosa giusta:
 ```ts
-interface FontSizeSliderProps {
-  slideId: string;
-  fieldPath: string;
-  value?: TextStyle;       // override corrente per quel field
-  defaultSize?: number;    // dimensione di default del template (per ripristino visivo)
-}
+const { fontSize: _omit, ...rest } = value;
+setTextOverride(slideId, fieldPath, rest);
 ```
+Ma c'è un edge case: se `rest` è un oggetto vuoto `{}`, lascia un override vuoto nello store invece di rimuovere completamente l'entry per il fieldPath. Questo non rompe nulla ma sporca lo stato e fa risultare `active = !!value && Object.keys(value).length > 0` falso ma con `value` ancora truthy, complicando i check downstream.
 
-## 2. Integrazione nel componente `Field`
+**Modifica a `src/components/FontSizeSlider.tsx`:**
+- Dopo aver rimosso `fontSize`, controllo se `rest` è vuoto (`Object.keys(rest).length === 0`):
+  - Se vuoto → chiamo `clearTextOverride(slideId, fieldPath)` per rimuovere completamente l'entry
+  - Se non vuoto → chiamo `setTextOverride(slideId, fieldPath, rest)` come oggi
+- Importo `clearTextOverride` dal store accanto a `setTextOverride`
 
-In `src/components/SlideEditorForm.tsx`, modifico il componente `Field` (righe 191–227):
+Identico fix preventivo in `src/components/TextStylePopover.tsx` nella funzione `clear(key)` (righe 47-52) — stesso pattern, stesso problema potenziale.
 
-- Sposto la riga "label + bottone T" in modo che diventi: `[LABEL] [slider compatto + valore] [pulsante T]`
-- Su mobile (`<sm`): il slider va a capo sotto la label per non rompere il layout (`flex-wrap`)
-- Slider visibile **solo se** `slideId && fieldPath` (stessa condizione del popover esistente)
+## 3. Sync corretta su cambio template/campo
 
-Layout proposto:
-```
-EYEBROW              ━━○━━━━ 32px  ↺  T
-[ Input ]
-```
+**Problema attuale:** quando l'utente cambia slide o template, la `value` prop del FontSizeSlider passa da `{fontSize: 80}` a `undefined` (nuovo campo senza override). Il componente è stateless e legge `current = value?.fontSize ?? baseDefault`, quindi tecnicamente già aggiorna correttamente. **Verifico** però che:
 
-## 3. Slider anche su campi array (paragrafi, lista, bullet, cells…)
+- Il calcolo di `defaultFor(fieldPath)` venga ri-eseguito ad ogni render (è una funzione pura chiamata inline → OK)
+- Non ci siano `useState` interni con stato stale → confermato: il componente non ha `useState`, è puramente derivato da props + store
+- Il prop `value` viene passato correttamente da `SlideEditorForm` ad ogni cambio slide
 
-I campi dentro `ArrayField` (paragrafi, lista, bullets, cells di grid2x2, items di chart, ecc.) oggi hanno il `TextStylePopover` inline (es. riga 261, 276). Aggiungo `FontSizeSlider` accanto al popover, stesso fieldPath.
+**Modifica a `src/components/FontSizeSlider.tsx`:**
+- Aggiungo `key={`${slideId}:${fieldPath}`}` opzionale tramite documentazione del componente (commento JSDoc) — il consumer in `SlideEditorForm.tsx` dovrebbe già passare key corretta tramite il padre `Field`/`ArrayField`
+- **Verifica in `SlideEditorForm.tsx`:** controllo che il rendering condizionale del `FontSizeSlider` dentro `Field` e dentro gli items degli array usi `slideId` e `fieldPath` correnti (non chiusure stale). Se rilevo problemi, aggiungo `key={fieldPath}` esplicita.
 
-Per non appesantire visivamente le righe di array, su questi item uso una **versione ultra-compatta**: solo lo slider 60px senza valore numerico (il valore appare nel tooltip al passaggio del mouse / focus).
+**Sincronizzazione visiva:** quando un override viene rimosso (reset), `value?.fontSize` diventa `undefined`, e il thumb torna automaticamente a `baseDefault` (es. 88 per `title`) perché `current = value?.fontSize ?? baseDefault`. Lo slider è "controllato" da Radix con `value={[current]}`, quindi si aggiorna nel render successivo. ✓
 
-## 4. Coerenza con `TextStylePopover`
+## 4. Bonus UX: mostra "default" inline
 
-Il popover esistente legge/scrive lo stesso `overrides[fieldPath].fontSize`, quindi:
-- Trascinare lo slider inline aggiorna in tempo reale anche il valore mostrato nel popover (quando aperto)
-- Cambiare il valore dal popover aggiorna lo slider inline
-- Il pulsante "Reset" del popover azzera anche lo slider
-
-Nessuna modifica a `TextStylePopover.tsx`, `templates.ts` o `store.ts` — il modello dati `TextStyle.fontSize` è già supportato end-to-end (rendering, export PNG, history undo/redo).
-
-## 5. Default size sensati per template
-
-Per non far partire tutti gli slider da 64px (che è solo il fallback generico), aggiungo un piccolo helper in `FontSizeSlider`:
-
-```ts
-const FIELD_DEFAULTS: Record<string, number> = {
-  eyebrow: 22, title: 88, subtitle: 44,
-  paragraphs: 32, list: 32, quote: 56,
-  author: 28, value: 180, label: 28,
-  // fallback: 64
-};
-```
-Match esatto sul fieldPath o sul prefisso prima del `.` per gli array (`paragraphs.0` → `paragraphs`).
-
-Questo serve solo per la **posizione di partenza visiva** del thumb quando non c'è ancora un override — il valore reale renderizzato sulla slide non cambia (resta governato dal CSS del template finché l'utente non interagisce).
+Quando lo slider mostra il valore di default (no override), il numero accanto è `baseDefault` ma in colore `text-muted-foreground`. Aggiungo un piccolo indicatore testuale: invece di `64`, mostro `64*` con un asterisco grigio chiaro per indicare "default non personalizzato". Tooltip al passaggio: "Valore default del template — clicca o trascina per personalizzare".
 
 ## File toccati
 
-**Nuovi:**
-- `src/components/FontSizeSlider.tsx` — slider compatto + label valore + reset
-
 **Modificati:**
-- `src/components/SlideEditorForm.tsx` — integrazione `FontSizeSlider` nel componente `Field` e accanto a tutti i `TextStylePopover` inline degli array (split paragraphs/list, grid cells, timeline items, vocab items, qa items, checklist items, gallery captions, chart items labels, feature bullets)
+- `src/components/FontSizeSlider.tsx` — keyboard handler custom (Shift/PageUp/Home/End), aria-label/valuetext, reset condizionale con `clearTextOverride` se rest vuoto, indicatore "*" per default
+- `src/components/TextStylePopover.tsx` — stesso pattern di reset robusto in `clear()`: se rest vuoto → `clearTextOverride`
+- `src/components/ui/slider.tsx` — focus ring da `ring-1` a `ring-2` per migliore visibilità tastiera (modifica safe, generalizzata)
+- `src/components/SlideEditorForm.tsx` — verifica/aggiunta `key={fieldPath}` su `FontSizeSlider` per garantire reset corretto al cambio campo (solo se necessario dopo verifica)
 
 **Non toccati:**
-- `TextStylePopover.tsx` — lavora sullo stesso campo `fontSize`, sincronizzazione automatica
-- `templates.ts`, `store.ts`, `slide-styles.css`, `SlideRenderer.tsx` — modello e rendering già supportano `fontSize` per-field
+- `src/lib/store.ts` — `setTextOverride` e `clearTextOverride` esistono già, nessuna modifica al modello
+- `src/lib/templates.ts` — `TextStyle` già supporta `fontSize`
+- `SlideRenderer.tsx`, `slide-styles.css` — rendering invariato
 
 ## Fuori scope
 
-- **Slider inline anche per peso/spaziatura/colore**: restano nel popover (slider per ognuno renderebbe il form illeggibile)
-- **Slider con doppio handle** per range min/max responsivo per formato (story/landscape): l'override è unico per slide
-- **Drag con keyboard shortcut globale** (es. Cmd+↑ per ingrandire il campo focused): possibile in iterazione successiva
-- **Sincronizzazione stile tra slide diverse** (es. "applica questa size a tutti i titoli"): fuori scope, resta per-slide
+- **Shortcut globali tastiera** (es. Cmd+↑ sul campo focused per ingrandire senza cliccare lo slider): possibile in iterazione successiva con event listener globale
+- **Animazione del thumb** sul cambio valore da tastiera (resta snap istantaneo Radix nativo)
+- **Persistenza dell'ultimo valore impostato** come default per il prossimo campo dello stesso tipo (es. "ho messo title=100, anche la prossima slide title parte da 100"): fuori scope, ogni slide è indipendente
+- **Drag verticale** (oggi è orizzontale Radix nativo)
+- **Numeric input editabile** accanto allo slider per digitare il valore esatto: il popover "T" già lo offre tramite slider largo
 
