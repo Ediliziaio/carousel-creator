@@ -57,7 +57,11 @@ export function TextStylePopover({ slideId, fieldPath, value }: Props) {
     if (!value) return;
     const { [key]: _omit, ...rest } = value;
     void _omit;
-    setTextOverride(slideId, fieldPath, rest);
+    if (Object.keys(rest).length === 0) {
+      clearTextOverride(slideId, fieldPath);
+    } else {
+      setTextOverride(slideId, fieldPath, rest);
+    }
   };
 
   const fontSize = value?.fontSize ?? 64;
