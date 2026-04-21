@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META, FORMAT_DIMENSIONS, type TemplateId, type SlideFormat } from "@/lib/templates";
-import { validateSlide } from "@/lib/validation";
+import { validateSlide, validateAllSlides } from "@/lib/validation";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { NewSlideDialog } from "@/components/NewSlideDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Copy, Trash2, GripVertical } from "lucide-react";
+import { Plus, Copy, Trash2, GripVertical, AlertTriangle } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -68,7 +68,8 @@ function SlideRow({ slideId, index, draggable }: SlideRowProps) {
   const sl = slides[index];
   if (!sl) return null;
   const active = sl.id === activeId;
-  const invalid = !validateSlide(sl, lang, defLang).valid;
+  const validation = validateSlide(sl, lang, defLang);
+  const errorCount = validation.errors.filter((e) => (e.severity ?? "error") === "error").length;
   const fmt = sl.format ?? "portrait";
   const ratio = FORMAT_DIMENSIONS[fmt].ratio;
 
@@ -105,11 +106,13 @@ function SlideRow({ slideId, index, draggable }: SlideRowProps) {
           <MiniPreview index={index} />
           <div className="mt-1 flex items-center justify-between gap-2 px-1">
             <span className="flex items-center gap-1.5 text-xs font-medium">
-              {invalid && (
+              {errorCount > 0 && (
                 <span
-                  className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive"
-                  title="Campi obbligatori mancanti"
-                />
+                  className="inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground"
+                  title={validation.errors.map((e) => `• ${e.message}`).join("\n")}
+                >
+                  {errorCount}
+                </span>
               )}
               {(index + 1).toString().padStart(2, "0")} · {TEMPLATE_META[sl.template].label}
             </span>
@@ -133,11 +136,33 @@ export function SlidesSidebar() {
   const slides = useCarousel((s) => s.slides);
   const addSlide = useCarousel((s) => s.addSlide);
   const reorderSlides = useCarousel((s) => s.reorderSlides);
+  const setActive = useCarousel((s) => s.setActive);
+  const lang = useCarousel((s) => s.activeLang);
+  const defLang = useCarousel((s) => s.brand.defaultLanguage);
+  const strictExport = useCarousel((s) => s.strictExport);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lastFormat, setLastFormat] = useState<SlideFormat>("portrait");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const issues = useMemo(
+    () => validateAllSlides(slides, lang, defLang),
+    [slides, lang, defLang],
+  );
+
+  const goToFirstError = () => {
+    const first = issues[0];
+    if (!first) return;
+    setActive(first.slideId);
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("slide:focus-field", {
+          detail: { slideId: first.slideId, field: first.firstField },
+        }),
+      );
+    }, 60);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -165,6 +190,18 @@ export function SlidesSidebar() {
           <Plus className="mr-1 h-4 w-4" /> Nuova slide
         </Button>
       </div>
+      {strictExport && issues.length > 0 && (
+        <button
+          type="button"
+          onClick={goToFirstError}
+          className="mx-3 mt-3 flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-left text-[11px] text-destructive transition-colors hover:bg-destructive/20"
+        >
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 leading-tight">
+            <strong>{issues.length}</strong> {issues.length === 1 ? "slide con errori" : "slide con errori"} — vai al primo
+          </span>
+        </button>
+      )}
       <div className="flex-1 space-y-3 overflow-auto p-3">
         {mounted ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>

@@ -39,6 +39,7 @@ import {
   FORMAT_DIMENSIONS,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
+import { validateSlide } from "@/lib/validation";
 
 /** Helper: returns inline style object for a given field path on a slide (or undefined). */
 function fieldStyle(slide: Slide, path: string): React.CSSProperties | undefined {
@@ -52,6 +53,8 @@ interface SlideRendererProps {
   total: number;
   /** Optional language override; defaults to brand.defaultLanguage. */
   lang?: string;
+  /** When true, overlays a clickable badge with the count of validation errors. */
+  showValidation?: boolean;
 }
 
 function pad2(n: number) {
@@ -84,14 +87,21 @@ function buildClassName(slide: Slide, brand: BrandSettings): string {
   if (fx.titleEffect && fx.titleEffect !== "none") parts.push(`fx-title-${fx.titleEffect}`);
   if (fx.dividerStyle && fx.dividerStyle !== "line") parts.push(`fx-divider-${fx.dividerStyle}`);
   if (fx.iconAccent) parts.push("fx-icon-accent");
+  parts.push(`mkt-badge-${fx.marketingBadgeStyle ?? "filled"}`);
+  parts.push(`mkt-grad-${fx.marketingGradientIntensity ?? "subtle"}`);
+  parts.push(`mkt-ico-${fx.marketingIconSet ?? "emoji"}`);
   return parts.join(" ");
 }
 
-export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendererProps) {
+export function SlideRenderer({ slide, brand, index, total, lang, showValidation }: SlideRendererProps) {
   const counter = `${pad2(index + 1)} / ${pad2(total)}`;
   const data = getSlideData(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage);
   const fmt = slide.format ?? "portrait";
   const dim = FORMAT_DIMENSIONS[fmt];
+  const validation = showValidation
+    ? validateSlide(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage)
+    : null;
+  const errors = validation?.errors.filter((e) => (e.severity ?? "error") === "error") ?? [];
 
   const radius =
     brand.effects.cornerStyle === "sharp" ? "0px"
@@ -132,6 +142,23 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
         </footer>
       </div>
       {brand.effects.grain && <div className="fx-grain" />}
+      {showValidation && errors.length > 0 && (
+        <button
+          type="button"
+          className="validation-badge"
+          title={errors.map((e) => `• ${e.message}`).join("\n")}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.dispatchEvent(
+              new CustomEvent("slide:focus-field", {
+                detail: { slideId: slide.id, field: errors[0].field },
+              }),
+            );
+          }}
+        >
+          {errors.length} {errors.length === 1 ? "campo mancante" : "campi mancanti"}
+        </button>
+      )}
     </div>
   );
 }

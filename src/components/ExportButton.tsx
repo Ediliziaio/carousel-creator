@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -51,11 +51,18 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
   const brand = useCarousel((s) => s.brand);
   const languages = useCarousel((s) => s.brand.languages);
   const defaultLang = useCarousel((s) => s.brand.defaultLanguage);
+  const strictExport = useCarousel((s) => s.strictExport);
 
   const [exporting, setExporting] = useState<null | Mode>(null);
   const [pendingMode, setPendingMode] = useState<Mode | null>(null);
   const [validationIssues, setValidationIssues] = useState<SlideValidationResult[]>([]);
   const [forceExport, setForceExport] = useState(false);
+
+  const hasErrors = useMemo(
+    () => validateAllSlides(slides, defaultLang, defaultLang).length > 0,
+    [slides, defaultLang],
+  );
+  const blocked = strictExport && hasErrors;
 
   const runExport = async (mode: Mode) => {
     setExporting(mode);
@@ -140,13 +147,17 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="sm" disabled={isBusy || slides.length === 0}>
+          <Button
+            size="sm"
+            disabled={isBusy || slides.length === 0 || blocked}
+            title={blocked ? "Completa i campi obbligatori per esportare" : undefined}
+          >
             {isBusy ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
             ) : (
               <Download className="mr-1 h-4 w-4" />
             )}
-            {isBusy ? "Export..." : "Export"}
+            {isBusy ? "Export..." : blocked ? "Export bloccato" : "Export"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -235,14 +246,16 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
               </div>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={forceExport} onCheckedChange={(c) => setForceExport(!!c)} />
-            <span>Esporta comunque (ignora validazione)</span>
-          </label>
+          {!strictExport && (
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={forceExport} onCheckedChange={(c) => setForceExport(!!c)} />
+              <span>Esporta comunque (ignora validazione)</span>
+            </label>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialog}>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDialog}>
-              {forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
+              {!strictExport && forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

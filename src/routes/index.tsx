@@ -10,12 +10,16 @@ import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
 import { ExportBatchPreviewDialog } from "@/components/ExportBatchPreviewDialog";
+import { CarouselPresetDialog } from "@/components/CarouselPresetDialog";
+import { QuickOfferEditor } from "@/components/QuickOfferEditor";
+import { ContentImportDialog } from "@/components/ContentImportDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy } from "lucide-react";
+import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy, ShieldCheck, ShieldOff, AlertTriangle } from "lucide-react";
 import { FORMAT_DIMENSIONS } from "@/lib/templates";
+import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -43,9 +47,31 @@ function Index() {
   const activeLang = useCarousel((s) => s.activeLang);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
   const duplicateSlide = useCarousel((s) => s.duplicateSlide);
+  const setActive = useCarousel((s) => s.setActive);
+  const strictExport = useCarousel((s) => s.strictExport);
+  const validationOverlay = useCarousel((s) => s.validationOverlay);
+  const setValidationOverlay = useCarousel((s) => s.setValidationOverlay);
 
   const activeIndex = useMemo(() => slides.findIndex((s) => s.id === activeId), [slides, activeId]);
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
+
+  const validationIssues = useMemo(
+    () => validateAllSlides(slides, activeLang, brand.defaultLanguage),
+    [slides, activeLang, brand.defaultLanguage],
+  );
+
+  const goToFirstError = () => {
+    const first = validationIssues[0];
+    if (!first) return;
+    setActive(first.slideId);
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("slide:focus-field", {
+          detail: { slideId: first.slideId, field: first.firstField },
+        }),
+      );
+    }, 60);
+  };
 
   const [editorTab, setEditorTab] = useState<string>("form");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -163,6 +189,18 @@ function Index() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <CarouselPresetDialog />
+          <QuickOfferEditor />
+          <ContentImportDialog />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setValidationOverlay(!validationOverlay)}
+            title={validationOverlay ? "Nascondi indicatori validazione" : "Mostra indicatori validazione"}
+          >
+            {validationOverlay ? <ShieldCheck className="h-4 w-4 text-primary" /> : <ShieldOff className="h-4 w-4" />}
+          </Button>
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
             <Upload className="mr-1 h-4 w-4" /> Import JSON
@@ -203,6 +241,33 @@ function Index() {
         <ExportErrorBanner message={exportError} onDismiss={() => setExportError(null)} />
       )}
 
+      {validationIssues.length > 0 && (
+        <div
+          role="alert"
+          className={`flex items-start gap-3 border-b px-4 py-2 text-sm ${
+            strictExport
+              ? "border-destructive/30 bg-destructive/10 text-destructive"
+              : "border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+          }`}
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">
+            <div className="font-medium">
+              {validationIssues.length} {validationIssues.length === 1 ? "slide ha" : "slide hanno"} campi obbligatori mancanti
+              {strictExport && " — Export disabilitato"}
+            </div>
+            <div className="text-xs opacity-90">
+              {strictExport
+                ? "Completa i campi obbligatori per riabilitare l'esportazione."
+                : "Strict export disattivato: l'esportazione resta possibile."}
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="h-7 shrink-0" onClick={goToFirstError}>
+            Vai al primo errore
+          </Button>
+        </div>
+      )}
+
       <div className="flex min-h-0 flex-1">
         <SlidesSidebar />
 
@@ -212,7 +277,7 @@ function Index() {
               const dim = FORMAT_DIMENSIONS[activeSlide.format ?? "portrait"];
               return (
                 <ScaledPreview key={activeSlide.id + activeLang} w={dim.w} h={dim.h}>
-                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} />
+                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} showValidation={validationOverlay} />
                 </ScaledPreview>
               );
             })()

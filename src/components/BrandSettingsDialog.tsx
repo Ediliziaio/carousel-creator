@@ -18,13 +18,16 @@ import {
   type TitleEffect,
   type DividerStyle,
   type Weight,
+  type MarketingBadgeStyle,
+  type MarketingGradient,
+  type MarketingIconSet,
   DEFAULT_BRAND,
 } from "@/lib/templates";
 import { langLabel, LANG_NAMES } from "@/lib/i18n";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { PresetCard } from "@/components/PresetCard";
 import { themeFromBrand } from "@/lib/presets";
-import { Settings, X, Star, RotateCcw, Save, Trash, Palette } from "lucide-react";
+import { Settings, X, Star, RotateCcw, Save, Trash, Palette, Wand2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const ACCENT_PRESETS = [
@@ -86,6 +89,22 @@ const DIVIDERS: { value: DividerStyle; label: string }[] = [
 
 const WEIGHTS: Weight[] = [400, 500, 600, 700, 800, 900];
 
+const MKT_BADGE: { value: MarketingBadgeStyle; label: string }[] = [
+  { value: "filled", label: "Pieno" },
+  { value: "outline", label: "Contorno" },
+  { value: "neon", label: "Neon" },
+];
+const MKT_GRAD: { value: MarketingGradient; label: string }[] = [
+  { value: "none", label: "Nessuno" },
+  { value: "subtle", label: "Sottile" },
+  { value: "bold", label: "Marcato" },
+];
+const MKT_ICO: { value: MarketingIconSet; label: string }[] = [
+  { value: "emoji", label: "Emoji" },
+  { value: "geometric", label: "Geometrico" },
+  { value: "minimal", label: "Minimale" },
+];
+
 export function BrandSettingsDialog() {
   const [open, setOpen] = useState(false);
   const brand = useCarousel((s) => s.brand);
@@ -99,6 +118,10 @@ export function BrandSettingsDialog() {
   const deleteBrandPreset = useCarousel((s) => s.deleteBrandPreset);
   const renameBrandPreset = useCarousel((s) => s.renameBrandPreset);
   const resetBrandToDefault = useCarousel((s) => s.resetBrandToDefault);
+  const strictExport = useCarousel((s) => s.strictExport);
+  const setStrictExport = useCarousel((s) => s.setStrictExport);
+  const validationOverlay = useCarousel((s) => s.validationOverlay);
+  const setValidationOverlay = useCarousel((s) => s.setValidationOverlay);
 
   const [newLang, setNewLang] = useState("");
   const [presetName, setPresetName] = useState("");
@@ -200,13 +223,14 @@ export function BrandSettingsDialog() {
           <DialogTitle>Impostazioni brand</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="basics" className="flex flex-col">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="basics">Base</TabsTrigger>
             <TabsTrigger value="colors">Colori</TabsTrigger>
             <TabsTrigger value="typo">Tipografia</TabsTrigger>
             <TabsTrigger value="effects">Effetti</TabsTrigger>
             <TabsTrigger value="presets"><Palette className="mr-1 h-3 w-3" />Preset</TabsTrigger>
             <TabsTrigger value="lang">Lingue</TabsTrigger>
+            <TabsTrigger value="advanced">Avanzate</TabsTrigger>
           </TabsList>
           <div className="mt-4 max-h-[60vh] overflow-auto pr-2">
             <TabsContent value="basics" className="m-0 space-y-4">
@@ -341,6 +365,62 @@ export function BrandSettingsDialog() {
                 />
                 <ToggleRow label="Icon accent secondario" desc="Colora marker numerici con accent secondario." checked={b.effects.iconAccent} onChange={(v) => setEffect("iconAccent", v)} />
               </Section>
+
+              <Section title="Stile marketing">
+                <SelectRow
+                  label="Badge marketing"
+                  value={b.effects.marketingBadgeStyle ?? "filled"}
+                  options={MKT_BADGE}
+                  onChange={(v) => setEffect("marketingBadgeStyle", v as MarketingBadgeStyle)}
+                />
+                <SelectRow
+                  label="Intensità gradiente"
+                  value={b.effects.marketingGradientIntensity ?? "subtle"}
+                  options={MKT_GRAD}
+                  onChange={(v) => setEffect("marketingGradientIntensity", v as MarketingGradient)}
+                />
+                <SelectRow
+                  label="Set icone"
+                  value={b.effects.marketingIconSet ?? "emoji"}
+                  options={MKT_ICO}
+                  onChange={(v) => setEffect("marketingIconSet", v as MarketingIconSet)}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setDraft({
+                      effects: {
+                        ...b.effects,
+                        marketingGradientIntensity: b.effects.accentGlow ? "bold" : "subtle",
+                        marketingBadgeStyle: b.effects.accentGlow ? "neon" : "filled",
+                      },
+                    });
+                    toast.success("Stile marketing allineato al brand");
+                  }}
+                >
+                  <Wand2 className="mr-1 h-3 w-3" /> Auto-tune dai colori brand
+                </Button>
+              </Section>
+            </TabsContent>
+
+            <TabsContent value="advanced" className="m-0 space-y-4">
+              <div className="rounded-md border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                <ShieldCheck className="mr-1 inline h-3 w-3" />
+                Controlli avanzati per la validazione e l'esportazione. Salvati automaticamente.
+              </div>
+              <ToggleRow
+                label="Strict export"
+                desc="Blocca l'esportazione PNG/ZIP finché tutte le slide hanno i campi obbligatori compilati."
+                checked={strictExport}
+                onChange={setStrictExport}
+              />
+              <ToggleRow
+                label="Indicatori validazione in preview"
+                desc="Sovrappone un badge rosso sulle slide con campi obbligatori mancanti."
+                checked={validationOverlay}
+                onChange={setValidationOverlay}
+              />
             </TabsContent>
 
             <TabsContent value="presets" className="m-0 space-y-4">
