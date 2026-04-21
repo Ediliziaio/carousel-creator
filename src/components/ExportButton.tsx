@@ -101,9 +101,19 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
       closeDialog();
       void runExport(mode);
     } else {
-      // jump to first invalid
+      // jump to first invalid slide and focus first missing field
       const first = validationIssues[0];
-      if (first) setActive(first.slideId);
+      if (first) {
+        setActive(first.slideId);
+        // dispatch focus event after slide becomes active + tab switches
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("slide:focus-field", {
+              detail: { slideId: first.slideId, field: first.firstField },
+            }),
+          );
+        }, 80);
+      }
       closeDialog();
     }
   };
