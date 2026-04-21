@@ -1,9 +1,10 @@
 import { useCarousel } from "@/lib/store";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { RotateCcw } from "lucide-react";
 import type { TextStyle } from "@/lib/templates";
-import type { KeyboardEvent } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 
 interface FontSizeSliderProps {
   slideId: string;
@@ -12,7 +13,7 @@ interface FontSizeSliderProps {
   value?: TextStyle;
   /** Default visual size when no override is set (placeholder thumb position). */
   defaultSize?: number;
-  /** Compact mode: narrower slider, no numeric label. */
+  /** Compact mode: narrower slider, no numeric input/label. */
   compact?: boolean;
 }
 
@@ -44,22 +45,28 @@ const MIN = 16;
 const MAX = 240;
 const FALLBACK = 64;
 
-function defaultFor(fieldPath: string): number {
-  if (FIELD_DEFAULTS[fieldPath] != null) return FIELD_DEFAULTS[fieldPath];
-  const root = fieldPath.split(".")[0];
-  if (FIELD_DEFAULTS[root] != null) return FIELD_DEFAULTS[root];
-  const tail = fieldPath.split(".").pop() ?? "";
-  if (FIELD_DEFAULTS[tail] != null) return FIELD_DEFAULTS[tail];
-  return FALLBACK;
+/** Extract the field "type" key from a fieldPath (root segment, e.g. "items.0.title" → "title"). */
+function fieldTypeOf(fieldPath: string): string {
+  const parts = fieldPath.split(".");
+  const tail = parts[parts.length - 1];
+  if (FIELD_DEFAULTS[tail] != null) return tail;
+  const root = parts[0];
+  if (FIELD_DEFAULTS[root] != null) return root;
+  return tail || root || fieldPath;
+}
+
+function staticDefaultFor(fieldPath: string): number {
+  const t = fieldTypeOf(fieldPath);
+  return FIELD_DEFAULTS[t] ?? FALLBACK;
 }
 
 const clamp = (n: number) => Math.max(MIN, Math.min(MAX, n));
 
 /**
- * Inline font-size slider. Stateless: derived from `value` prop + store action.
- * Consumers should pass a stable `key={`${slideId}:${fieldPath}`}` if they
- * need to force a fresh mount on field/slide change (usually not necessary,
- * since React reconciles props on re-render).
+ * Inline font-size slider with numeric input, live tooltip, and per-type memory.
+ * Stateless: derived from `value` prop + store. Memory of last value per field
+ * type is read from `lastFontSizeByFieldType` and used as base default when no
+ * override exists on the current field.
  */
 export function FontSizeSlider({
   slideId,
@@ -70,13 +77,19 @@ export function FontSizeSlider({
 }: FontSizeSliderProps) {
   const setTextOverride = useCarousel((s) => s.setTextOverride);
   const clearTextOverride = useCarousel((s) => s.clearTextOverride);
+  const lastByType = useCarousel((s) => s.lastFontSizeByFieldType);
+  const setLastFontSizeForFieldType = useCarousel((s) => s.setLastFontSizeForFieldType);
 
   const overridden = value?.fontSize != null;
-  const baseDefault = defaultSize ?? defaultFor(fieldPath);
+  const typeKey = fieldTypeOf(fieldPath);
+  const remembered = lastByType[typeKey];
+  const baseDefault = defaultSize ?? remembered ?? staticDefaultFor(fieldPath);
   const current = value?.fontSize ?? baseDefault;
 
-  const onChange = (next: number) => {
-    setTextOverride(slideId, fieldPath, { ...(value ?? {}), fontSize: clamp(next) });
+  const commit = (next: number) => {
+    const clamped = clamp(next);
+    setTextOverride(slideId, fieldPath, { ...(value ?? {}), fontSize: clamped });
+    setLastFontSizeForFieldType(typeKey, clamped);
   };
 
   const onReset = () => {
@@ -87,6 +100,27 @@ export function FontSizeSlider({
       clearTextOverride(slideId, fieldPath);
     } else {
       setTextOverride(slideId, fieldPath, rest);
+    }
+  };
+
+  // Click on default value pin: applies the current visual value as an explicit override.
+  const onPinDefault = () => {
+    if (overridden) return;
+    commit(current);
+  };
+
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === "") return; // allow transient empty during editing
+    const n = Number(raw);
+    if (Number.isFinite(n)) commit(n);
+  };
+
+  const onInputBlur = (e: ChangeEvent<HTMLInputElement>) => {
+    const n = Number(e.target.value);
+    if (e.target.value === "" || !Number.isFinite(n)) {
+      // restore visual: handled automatically since value prop drives input
+      e.target.value = String(current);
     }
   };
 
@@ -106,36 +140,48 @@ export function FontSizeSlider({
     if (next != null) {
       e.preventDefault();
       e.stopPropagation();
-      onChange(next);
+      commit(next);
     }
   };
 
+  const inputTitle = overridden
+    ? `${current}px (personalizzato)`
+    : remembered != null
+      ? `${current}px* — ultimo valore usato per "${typeKey}". Modifica per personalizzare.`
+      : `${current}px* — default del template. Modifica per personalizzare.`;
+
   return (
-    <div className={`flex items-center gap-1.5 ${compact ? "" : "min-w-[120px]"}`}>
+    <div className={`flex items-center gap-1.5 ${compact ? "" : "min-w-[140px]"}`}>
       <Slider
         min={MIN}
         max={MAX}
         step={2}
         value={[current]}
-        onValueChange={([v]) => onChange(v)}
+        onValueChange={([v]) => commit(v)}
         onKeyDown={onKeyDown}
+        showTooltip
+        formatTooltip={(v) => `${v}px`}
         aria-label="Dimensione font in pixel"
         aria-valuetext={`${current}px${overridden ? "" : " (default)"}`}
         className={compact ? "w-[60px]" : "w-[80px]"}
         title={`Dimensione font: ${current}px${overridden ? "" : " (default)"} — frecce ±2, Shift+frecce ±10, PageUp/Down ±20, Home/End min/max`}
       />
       {!compact && (
-        <span
-          className={`min-w-[34px] text-right text-[10px] tabular-nums ${overridden ? "text-foreground" : "text-muted-foreground"}`}
-          title={
-            overridden
-              ? `${current}px (personalizzato)`
-              : `${current}px — valore default del template, trascina o usa le frecce per personalizzare`
-          }
-        >
-          {current}
-          {!overridden && <span className="ml-px opacity-60">*</span>}
-        </span>
+        <Input
+          type="number"
+          min={MIN}
+          max={MAX}
+          step={2}
+          value={current}
+          onChange={onInputChange}
+          onBlur={onInputBlur}
+          onClick={overridden ? undefined : onPinDefault}
+          className={`h-6 w-12 px-1 text-[10px] tabular-nums shadow-none ${
+            overridden ? "" : "text-muted-foreground"
+          }`}
+          title={inputTitle}
+          aria-label="Dimensione font in pixel"
+        />
       )}
       {overridden && (
         <Button
@@ -144,7 +190,7 @@ export function FontSizeSlider({
           size="icon"
           className="h-5 w-5 shrink-0"
           onClick={onReset}
-          title="Reset dimensione"
+          title="Reset dimensione font"
         >
           <RotateCcw className="h-3 w-3" />
         </Button>
