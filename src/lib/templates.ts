@@ -1,4 +1,6 @@
 // Template definitions for the carousel layouts
+import type * as React from "react";
+
 export type TemplateId =
   | "split"
   | "grid2x2"
