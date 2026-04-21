@@ -18,6 +18,12 @@ import type {
   ChartLineData,
   FeatureData,
   TestimonialData,
+  MythData,
+  ProcessData,
+  ProsConsData,
+  QuoteBigData,
+  RoadmapData,
+  CtaData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -54,10 +60,15 @@ export const LIMITS = {
   chartDonut: { min: 2, max: 8 },
   chartLine: { min: 3, max: 24 },
   featureBullets: { min: 2, max: 5 },
+  processSteps: { min: 3, max: 6 },
+  prosCons: { min: 2, max: 5 },
+  roadmap: { min: 3, max: 5 },
   quoteMin: 10,
   quoteMax: 280,
   authorMax: 60,
   captionMax: 80,
+  headlineMax: 80,
+  buttonMax: 32,
 } as const;
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
