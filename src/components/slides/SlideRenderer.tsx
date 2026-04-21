@@ -920,3 +920,110 @@ function TipPack({ slide, d }: { slide: Slide; d: TipPackData }) {
     </>
   );
 }
+
+/* ===================== NEW MARKETING TEMPLATES ===================== */
+
+function Urgency({ slide, d }: { slide: Slide; d: UrgencyData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="urg-eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 className="urg-headline" style={fieldStyle(slide, "headline")}><HL text={d.headline} /></h1>
+      <div className="urg-timer" style={fieldStyle(slide, "deadline")}>{d.deadline}</div>
+      {d.unitsLeft && <div className="urg-units" style={fieldStyle(slide, "unitsLeft")}>{d.unitsLeft}</div>}
+      <div className="urg-cta" style={fieldStyle(slide, "ctaLabel")}>{d.ctaLabel}</div>
+    </>
+  );
+}
+
+function BonusStack({ slide, d }: { slide: Slide; d: BonusStackData }) {
+  const cur = d.currency ?? "€";
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <ul className="bs-list">
+        {d.bonuses.map((b, i) => (
+          <li key={i} className="bs-row">
+            <div className="bs-check">+</div>
+            <div className="bs-info">
+              <div className="bs-name" style={fieldStyle(slide, `bonuses.${i}.name`)}>{b.name}</div>
+              {b.description && <div className="bs-desc">{b.description}</div>}
+            </div>
+            <div className="bs-value">{cur}{b.value}</div>
+          </li>
+        ))}
+      </ul>
+      <div className="bs-totals">
+        <div className="bs-total-row">
+          <span className="bs-total-label">VALORE TOTALE</span>
+          <span className="bs-total-old" style={fieldStyle(slide, "totalValue")}>{cur}{d.totalValue}</span>
+        </div>
+        <div className="bs-total-row bs-final">
+          <span className="bs-total-label">OGGI PAGHI SOLO</span>
+          <span className="bs-total-new" style={fieldStyle(slide, "yourPrice")}>{cur}{d.yourPrice}</span>
+        </div>
+      </div>
+      <div className="bs-cta" style={fieldStyle(slide, "ctaLabel")}>{d.ctaLabel}</div>
+    </>
+  );
+}
+
+function Guarantee({ slide, d }: { slide: Slide; d: GuaranteeData }) {
+  return (
+    <>
+      <div className="grt-seal" aria-hidden>{d.seal ?? "🛡️"}</div>
+      {d.badge && <div className="grt-badge">{d.badge}</div>}
+      <h1 className="grt-headline" style={fieldStyle(slide, "headline")}><HL text={d.headline} /></h1>
+      <p className="grt-body" style={fieldStyle(slide, "body")}>{d.body}</p>
+      {d.terms && <div className="grt-terms" style={fieldStyle(slide, "terms")}>{d.terms}</div>}
+    </>
+  );
+}
+
+function Faq({ slide, d }: { slide: Slide; d: FaqData }) {
+  return (
+    <>
+      {d.eyebrow && <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+      <h1 style={fieldStyle(slide, "title")}><HL text={d.title} /></h1>
+      <ul className="faq-list">
+        {d.items.map((it, i) => (
+          <li key={i} className="faq-item">
+            <div className="faq-q">
+              <span className="faq-q-mark">Q</span>
+              <span style={fieldStyle(slide, `items.${i}.q`)}>{it.q}</span>
+            </div>
+            <div className="faq-a">
+              <span className="faq-a-mark">A</span>
+              <span style={fieldStyle(slide, `items.${i}.a`)}>{it.a}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function QuickWin({ slide, d }: { slide: Slide; d: QuickWinData }) {
+  return (
+    <>
+      <div className="qw-head">
+        {d.eyebrow && <div className="qw-eyebrow" style={fieldStyle(slide, "eyebrow")}>{d.eyebrow}</div>}
+        {d.timeBadge && <div className="qw-time" style={fieldStyle(slide, "timeBadge")}>⏱ {d.timeBadge}</div>}
+      </div>
+      <h1 className="qw-instruction" style={fieldStyle(slide, "instruction")}><HL text={d.instruction} /></h1>
+      <ol className="qw-steps">
+        {d.steps.map((s, i) => (
+          <li key={i} className="qw-step">
+            <span className="qw-step-num">{pad2(i + 1)}</span>
+            <span style={fieldStyle(slide, `steps.${i}`)}>{s}</span>
+          </li>
+        ))}
+      </ol>
+      {d.expectedResult && (
+        <div className="qw-result" style={fieldStyle(slide, "expectedResult")}>
+          <span className="qw-result-tag">RISULTATO</span> {d.expectedResult}
+        </div>
+      )}
+    </>
+  );
+}
