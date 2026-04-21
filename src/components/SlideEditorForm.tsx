@@ -1683,36 +1683,39 @@ function ChartAreaEditor({ d, set, errFor, slideId, overrides }: EditorProps<Cha
 
 function ChartCompareBarEditor({ d, set, errFor, slideId, overrides }: EditorProps<ChartCompareBarData>) {
   const rErr = errFor("rows");
+  const seriesA = d.seriesA ?? { label: "" };
+  const seriesB = d.seriesB ?? { label: "" };
+  const rows = d.rows ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
-        <Input value={d.eyebrow} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
+        <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Serie A — label" error={errFor("seriesA.label")}>
-          <Input data-field="seriesA.label" value={d.seriesA.label} onChange={(e) => set({ ...d, seriesA: { ...d.seriesA, label: e.target.value } })} />
+          <Input data-field="seriesA.label" value={seriesA.label} onChange={(e) => set({ ...d, seriesA: { ...seriesA, label: e.target.value } })} />
         </Field>
         <Field label="Serie A — colore (#hex)" error={errFor("seriesA.color")}>
-          <Input value={d.seriesA.color ?? ""} onChange={(e) => set({ ...d, seriesA: { ...d.seriesA, color: e.target.value || undefined } })} placeholder="#00E5FF" />
+          <Input value={seriesA.color ?? ""} onChange={(e) => set({ ...d, seriesA: { ...seriesA, color: e.target.value || undefined } })} placeholder="#00E5FF" />
         </Field>
         <Field label="Serie B — label" error={errFor("seriesB.label")}>
-          <Input data-field="seriesB.label" value={d.seriesB.label} onChange={(e) => set({ ...d, seriesB: { ...d.seriesB, label: e.target.value } })} />
+          <Input data-field="seriesB.label" value={seriesB.label} onChange={(e) => set({ ...d, seriesB: { ...seriesB, label: e.target.value } })} />
         </Field>
         <Field label="Serie B — colore (#hex)" error={errFor("seriesB.color")}>
-          <Input value={d.seriesB.color ?? ""} onChange={(e) => set({ ...d, seriesB: { ...d.seriesB, color: e.target.value || undefined } })} placeholder="#B24BF3" />
+          <Input value={seriesB.color ?? ""} onChange={(e) => set({ ...d, seriesB: { ...seriesB, color: e.target.value || undefined } })} placeholder="#B24BF3" />
         </Field>
       </div>
       <Field label="Unità"><Input value={d.unit ?? ""} onChange={(e) => set({ ...d, unit: e.target.value })} /></Field>
       {rErr && <p data-field="rows" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {rErr}</p>}
       <ArrayField
         label="Righe (2–6)"
-        items={d.rows}
+        items={rows}
         onChange={(arr) => set({ ...d, rows: arr })}
         maxItems={6}
-        counter={<ItemCounter current={d.rows.length} min={2} max={6} unit="righe" />}
+        counter={<ItemCounter current={rows.length} min={2} max={6} unit="righe" />}
         render={(v, on, i) => {
           const lErr = errFor(`rows.${i}.label`);
           return (
