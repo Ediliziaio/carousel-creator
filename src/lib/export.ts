@@ -1,6 +1,7 @@
 import { toPng } from "html-to-image";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import fileSaver from "file-saver";
+const { saveAs } = fileSaver;
 
 async function ensureFonts() {
   if (typeof document === "undefined") return;
