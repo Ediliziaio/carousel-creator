@@ -1,108 +1,94 @@
 
 
-# Lightbox immagini + validazioni avanzate dei campi
+# Slider inline per dimensione font su ogni campo testo
 
-## 1. Lightbox per anteprime immagini (gallery + testimonial + altri)
+## Obiettivo
 
-**Nuovo componente `src/components/ImageLightbox.tsx`:**
-- Wrappa `Dialog` di shadcn → overlay scuro full-screen, immagine centrata `max-h-[90vh] max-w-[90vw]` con `object-contain`
-- Bottone close (X) in alto a destra, ben dimensionato (44×44 touch target) per mobile
-- Chiusura via: click sull'overlay, ESC, swipe-down su mobile (gesture nativa Radix)
-- Optional caption sotto l'immagine
-- Gestione `open/onOpenChange` controllata dal componente padre
+Aggiungere accanto ad ogni campo testo dell'editor (eyebrow, title, paragrafi, lista, ecc.) un **mini-slider sempre visibile** per regolare al volo la dimensione del font, senza dover aprire il popover "T". Il popover completo (font, peso, colore, allineamento) resta disponibile per le personalizzazioni avanzate.
 
-**Modifiche a `src/components/ImageUploadField.tsx`:**
-- Nuova prop opzionale `clickToZoom?: boolean` (default `true`)
-- Quando `value` esiste, l'`<img>` della preview diventa cliccabile (cursor-zoom-in) e apre il lightbox
-- Stato locale `[lightboxOpen, setLightboxOpen]` nel componente
-- Funziona sia per `variant="default"` (preview rettangolare) sia per `variant="avatar"` (preview circolare)
-- I bottoni Sostituisci/Rimuovi restano fuori dall'area cliccabile dello zoom (no conflitti)
+## 1. Nuovo componente `FontSizeSlider`
 
-**Effetto pratico:** ogni anteprima caricata in gallery, imageQuote, feature, testimonial, cover, split, center diventa zoomabile con un click — utilità immediata per verificare la qualità dell'immagine prima dell'export.
+Creo `src/components/FontSizeSlider.tsx`:
 
-## 2. Duplica slide (già esistente)
+- Riusa il componente shadcn `Slider` (già nel progetto)
+- Larghezza compatta (~80–100px), altezza 6px, tooltip con valore in px
+- Range: **16px → 240px**, step 2px (stessi limiti di `TextStylePopover`)
+- Default: legge `overrides[fieldPath].fontSize` se presente, altrimenti mostra un placeholder visivo "auto" e parte dal valore di default del template (64px come fallback)
+- Al primo trascinamento, salva il `fontSize` nell'override del campo via `setTextOverride(slideId, fieldPath, { ...current, fontSize: value })`
+- Pulsante reset miniatura (icona `RotateCcw` 12px) accanto, visibile solo quando un override `fontSize` è attivo → chiama una versione "clear single key" coerente con quella già usata in `TextStylePopover`
+- Etichetta numerica `64px` accanto allo slider, tabular-nums, color `text-muted-foreground`
 
-Il pulsante "Duplica" è **già presente** nell'header di `src/routes/index.tsx` (icona `Copy`), e duplica template + dati + format + textOverrides via `duplicateSlide(activeSlide.id)`. **Nessuna modifica necessaria** — confermo che la funzionalità c'è già e funziona.
-
-Aggiungo solo una piccola UX nicety: dopo `duplicateSlide` mostro un `toast.success("Slide duplicata")` per feedback immediato.
-
-## 3. Validazioni avanzate con messaggi chiari
-
-**Espansione di `src/lib/validation.ts`** — aggiungo regole granulari per i template critici:
-
-### Gallery
-- Title: required (già presente)
-- **Almeno 2 immagini** caricate (oggi: 1) → "Galleria: aggiungi almeno 2 immagini per renderla efficace"
-- **Massimo 6 immagini** → "Galleria: massimo 6 immagini supportate (hai N)"
-- Caption opzionale ma se presente → max 80 caratteri → "Didascalia immagine N: massimo 80 caratteri"
-
-### ChartBar / ChartDonut / ChartLine
-- Title required (già presente)
-- **ChartBar/Donut: minimo 2 voci, massimo 8** → "Grafico: servono almeno 2 voci (hai N)" / "Grafico: massimo 8 voci (hai N)"
-- **ChartLine: minimo 3 punti, massimo 24** → "Trend: servono almeno 3 punti per disegnare una curva"
-- **Ogni `value` deve essere un numero finito ≥ 0** → "Voce N: il valore deve essere un numero positivo"
-- **ChartLine: `xLabels.length === values.length`** → "Etichette X (N) e valori (M) devono avere la stessa lunghezza"
-- **ChartBar/Donut: ogni `label` non vuota** → "Voce N: etichetta obbligatoria"
-- **Donut: somma segmenti > 0** → "Donut: la somma dei segmenti deve essere maggiore di zero"
-- **Color picker** se presente: deve matchare `^#[0-9a-fA-F]{6}$` → "Voce N: colore deve essere hex valido (es. #FF0000)"
-
-### ImageQuote / Testimonial / Feature
-- Quote required (già presente) + **min 10 caratteri, max 280** → "Citazione: min 10, max 280 caratteri (hai N)"
-- Author required + max 60 caratteri
-- **ImageQuote**: imageUrl raccomandato (warning, non error) → "Suggerimento: aggiungi una foto per maggiore impatto" (mostrato in azzurro, non rosso)
-- **Testimonial.rating**: se presente, deve essere intero 1-5 → "Rating: valore tra 1 e 5"
-- **Feature**: bullets required + min 2, max 5 → "Aggiungi almeno 2 bullet point (hai N)"
-- **Bullet.title** required se la bullet esiste
-
-### URL immagini (validazione formato)
-- Per tutti i campi `imageUrl`/`avatarUrl`/`images[].url`: validazione che il valore sia o `data:image/...` (upload locale) o `https?://...` valido → "URL immagine non valido"
-- Caso pratico: previene URL incompleti tipo `htt://...` o stringhe random incollate manualmente nel JSON editor
-
-**Nuovo tipo "warning"** (non blocca export, mostra in azzurro):
+Props:
 ```ts
-export interface FieldError {
-  field: string;
-  message: string;
-  severity?: "error" | "warning"; // nuovo, default "error"
+interface FontSizeSliderProps {
+  slideId: string;
+  fieldPath: string;
+  value?: TextStyle;       // override corrente per quel field
+  defaultSize?: number;    // dimensione di default del template (per ripristino visivo)
 }
 ```
-- `validateAllSlides` continua a filtrare solo errors per il batch validator; warnings sono cosmetici per guidare l'utente.
 
-### UI in `SlideEditorForm.tsx`
-- `Field` component già supporta `error` prop. Estendo con `warning?: string` opzionale → renderizza in azzurro con icona `Info` invece di `AlertCircle` rosso.
-- I limiti min/max items su array (gallery, bullets, chart items) → mostro un counter sotto il label tipo `"3/6 immagini"` (verde se in range, rosso se fuori, grigio se neutro). Helper inline `<ItemCounter current={n} min={2} max={6} />`.
-- Disabilito i bottoni "Aggiungi" in `ArrayField` quando si raggiunge il `max` (passo nuova prop `maxItems` opzionale).
+## 2. Integrazione nel componente `Field`
 
-**Tooltip esplicativi** sui label dei campi numerici dei chart: piccola icona `?` (HelpCircle) accanto al label "Valore" → tooltip "Numero positivo. Es. 42 o 3.5"
+In `src/components/SlideEditorForm.tsx`, modifico il componente `Field` (righe 191–227):
 
-## 4. Sicurezza degli input (allineata a best practice)
+- Sposto la riga "label + bottone T" in modo che diventi: `[LABEL] [slider compatto + valore] [pulsante T]`
+- Su mobile (`<sm`): il slider va a capo sotto la label per non rompere il layout (`flex-wrap`)
+- Slider visibile **solo se** `slideId && fieldPath` (stessa condizione del popover esistente)
 
-Aggiungo un livello leggero di sanitizzazione per gli URL immagine in `validation.ts`:
-- Reject `javascript:`, `vbscript:`, `data:text/html`, `data:application/...` → solo `data:image/(png|jpeg|jpg|webp|gif|svg+xml)` o `https?://` accettati
-- Messaggio: "URL immagine non sicuro: usa solo immagini PNG/JPG/WEBP"
+Layout proposto:
+```
+EYEBROW              ━━○━━━━ 32px  ↺  T
+[ Input ]
+```
 
-Questo previene XSS via JSON import malevolo (l'editor JSON accetta paste arbitrari).
+## 3. Slider anche su campi array (paragrafi, lista, bullet, cells…)
+
+I campi dentro `ArrayField` (paragrafi, lista, bullets, cells di grid2x2, items di chart, ecc.) oggi hanno il `TextStylePopover` inline (es. riga 261, 276). Aggiungo `FontSizeSlider` accanto al popover, stesso fieldPath.
+
+Per non appesantire visivamente le righe di array, su questi item uso una **versione ultra-compatta**: solo lo slider 60px senza valore numerico (il valore appare nel tooltip al passaggio del mouse / focus).
+
+## 4. Coerenza con `TextStylePopover`
+
+Il popover esistente legge/scrive lo stesso `overrides[fieldPath].fontSize`, quindi:
+- Trascinare lo slider inline aggiorna in tempo reale anche il valore mostrato nel popover (quando aperto)
+- Cambiare il valore dal popover aggiorna lo slider inline
+- Il pulsante "Reset" del popover azzera anche lo slider
+
+Nessuna modifica a `TextStylePopover.tsx`, `templates.ts` o `store.ts` — il modello dati `TextStyle.fontSize` è già supportato end-to-end (rendering, export PNG, history undo/redo).
+
+## 5. Default size sensati per template
+
+Per non far partire tutti gli slider da 64px (che è solo il fallback generico), aggiungo un piccolo helper in `FontSizeSlider`:
+
+```ts
+const FIELD_DEFAULTS: Record<string, number> = {
+  eyebrow: 22, title: 88, subtitle: 44,
+  paragraphs: 32, list: 32, quote: 56,
+  author: 28, value: 180, label: 28,
+  // fallback: 64
+};
+```
+Match esatto sul fieldPath o sul prefisso prima del `.` per gli array (`paragraphs.0` → `paragraphs`).
+
+Questo serve solo per la **posizione di partenza visiva** del thumb quando non c'è ancora un override — il valore reale renderizzato sulla slide non cambia (resta governato dal CSS del template finché l'utente non interagisce).
 
 ## File toccati
 
 **Nuovi:**
-- `src/components/ImageLightbox.tsx` — dialog full-screen per zoom immagini
+- `src/components/FontSizeSlider.tsx` — slider compatto + label valore + reset
 
 **Modificati:**
-- `src/components/ImageUploadField.tsx` — img cliccabile + integrazione lightbox (entrambe le varianti)
-- `src/lib/validation.ts` — regole granulari per gallery/chart/feature/testimonial, severity warning, URL sanitization, helper `isValidImageUrl()`
-- `src/components/SlideEditorForm.tsx` — `Field` con prop `warning`, `ArrayField` con `maxItems` per disabilitare add, `ItemCounter` inline per gallery/chart/feature, tooltip su valori numerici chart
-- `src/routes/index.tsx` — toast.success dopo duplicazione
+- `src/components/SlideEditorForm.tsx` — integrazione `FontSizeSlider` nel componente `Field` e accanto a tutti i `TextStylePopover` inline degli array (split paragraphs/list, grid cells, timeline items, vocab items, qa items, checklist items, gallery captions, chart items labels, feature bullets)
 
 **Non toccati:**
-- `templates.ts` — nessuna modifica al modello dati
-- `store.ts` — duplicateSlide già OK
-- `SlideRenderer.tsx` — il rendering non cambia
+- `TextStylePopover.tsx` — lavora sullo stesso campo `fontSize`, sincronizzazione automatica
+- `templates.ts`, `store.ts`, `slide-styles.css`, `SlideRenderer.tsx` — modello e rendering già supportano `fontSize` per-field
 
 ## Fuori scope
-- **Crop / editing immagini** dentro il lightbox (resta solo zoom)
-- **Carousel multi-immagine** nel lightbox (un'immagine alla volta — niente swipe tra le immagini della gallery)
-- **Validazione live durante la digitazione** carattere per carattere (resta debounced 400ms come tutto il resto)
-- **Server-side validation** (l'app è 100% client-side, nessun backend a cui validare)
-- **Auto-fix dei valori** (es. clamp automatico di rating > 5 a 5) — l'errore viene mostrato e l'utente correggge manualmente
+
+- **Slider inline anche per peso/spaziatura/colore**: restano nel popover (slider per ognuno renderebbe il form illeggibile)
+- **Slider con doppio handle** per range min/max responsivo per formato (story/landscape): l'override è unico per slide
+- **Drag con keyboard shortcut globale** (es. Cmd+↑ per ingrandire il campo focused): possibile in iterazione successiva
+- **Sincronizzazione stile tra slide diverse** (es. "applica questa size a tutti i titoli"): fuori scope, resta per-slide
 
