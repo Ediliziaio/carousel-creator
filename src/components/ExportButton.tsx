@@ -195,7 +195,7 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialog}>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDialog}>
-              {forceExport ? "Esporta comunque" : "Vai alla prima slide invalida"}
+              {forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
