@@ -246,14 +246,16 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
               </div>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={forceExport} onCheckedChange={(c) => setForceExport(!!c)} />
-            <span>Esporta comunque (ignora validazione)</span>
-          </label>
+          {!strictExport && (
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={forceExport} onCheckedChange={(c) => setForceExport(!!c)} />
+              <span>Esporta comunque (ignora validazione)</span>
+            </label>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialog}>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDialog}>
-              {forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
+              {!strictExport && forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
