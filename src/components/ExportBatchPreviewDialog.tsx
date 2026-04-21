@@ -65,7 +65,11 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
   };
 
   if (!slide) return null;
-  const scale = 180 / 1080;
+  const fmt = slide.format ?? "portrait";
+  const dim = FORMAT_DIMENSIONS[fmt];
+  const targetW = 180;
+  const scale = targetW / dim.w;
+  const thumbH = Math.round(dim.h * scale);
 
   return (
     <div ref={setNodeRef} style={style} className="relative">
@@ -73,9 +77,9 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
         className={`group relative overflow-hidden rounded-md border-2 transition-colors ${
           selected ? "border-primary" : "border-border opacity-60"
         } ${invalid ? "ring-2 ring-destructive" : ""}`}
-        style={{ width: 180, height: 225 }}
+        style={{ width: targetW, height: thumbH }}
       >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1350 }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: dim.w, height: dim.h }}>
           <SlideRenderer slide={slide} brand={brand} index={index} total={total} lang={lang} />
         </div>
         {!selected && (
@@ -94,7 +98,7 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
           <Checkbox checked={selected} onCheckedChange={onToggle} />
         </div>
         <div className="absolute bottom-1 left-1 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-mono font-bold tracking-wider shadow">
-          {(index + 1).toString().padStart(2, "0")}
+          {(index + 1).toString().padStart(2, "0")} · {dim.ratio}
         </div>
         {invalid && (
           <div className="absolute bottom-1 right-1 rounded bg-destructive p-1 text-destructive-foreground shadow" title="Errori di validazione">
