@@ -1,140 +1,167 @@
 
 
-# Nuovi template "killer" — focus marketing & vendita
+# 5 funzionalità: preset carosello completo, editor offerta, brand auto-style, import JSON, validazione bloccante
 
-Aggiungo **8 nuovi template** ad alta conversione, scelti come farebbe un esperto di marketing/sales sui caroselli Instagram/LinkedIn. Ciascuno copre un meccanismo psicologico specifico (curiosità, urgenza, autorità, prova sociale, obiezioni).
+## 1. Preset carosello completo "Sales Funnel" (8-10 slide pre-fatte)
 
-## Gli 8 nuovi template
+Aggiungo un sistema di **carousel preset**: assemblaggi pronti di slide multi-template che si inseriscono in 1 click con contenuti realistici da modificare.
 
-### 1. `hook` — Hook iniziale shock (categoria `text`)
-La PRIMA slide del carosello: una frase brevissima e provocatoria che ferma lo scroll. Sfondo pieno o gradient, testo gigante centrato (220px+ in portrait), eyebrow piccola opzionale ("LEGGI FINO ALLA FINE"), badge "1/N" e indicatore "swipe →" pulsante in basso.
-- Campi: `eyebrow?`, `hook` (5-90 char), `subhook?`, `swipeLabel?`
-- Uso tipico: "Il 90% sbaglia questo." / "Smetti di fare X."
+### Nuovo file `src/lib/carouselPresets.ts`
+- Tipo `CarouselPreset { id, name, description, icon, slides: { template, format, data }[] }`
+- Esporto `BUILT_IN_CAROUSEL_PRESETS`:
+  - **"Sales Funnel completo"** (10 slide): `hook` → `problemSolution` → `mistakes` → `framework` → `socialProof` → `objection` → `offer` → `cta`
+  - **"Educational pack"** (8 slide): `cover` → `hook` → `tipPack` → `process` → `myth` → `framework` → `quoteBig` → `cta`
+  - **"Lancio prodotto"** (9 slide): `hook` → `center` → `feature` → `socialProof` → `prosCons` → `offer` → `objection` → `cta`
+  - **"Case study"** (8 slide): `cover` → `problemSolution` → `process` → `roadmap` → `socialProof` → `quoteBig` → `cta`
+- Ogni preset usa `makeDefaultData()` come base con override mirati (hook diversi per ogni preset, copy coerente con il funnel)
 
-### 2. `problemSolution` — Problema → Soluzione (categoria `data`)
-Due blocchi verticali ad alto contrasto: in alto "IL PROBLEMA" (sfondo desaturato, icona ⚠) con descrizione del pain, in basso "LA SOLUZIONE" (sfondo accent, icona ✦) con la promessa. Freccia ↓ tra i due.
-- Campi: `eyebrow`, `problem: { label, text }`, `solution: { label, text }`
-- Conversione: classico framework PAS (Problem-Agitate-Solve) compresso in 1 slide
+### Modifiche `src/lib/store.ts`
+- Aggiungo azione `loadCarouselPreset(presetId: string)`: sostituisce `slides` con quelle del preset, mantiene `brand` corrente, applica auto-styling brand (vedi #3)
+- Aggiungo azione `appendCarouselPreset(presetId: string)`: aggiunge le slide del preset alla fine
 
-### 3. `mistakes` — Errori da evitare (categoria `data`)
-Lista numerata di 3-5 errori tipici, ognuno con icona ❌ rossa, titolo errore, breve spiegazione. Title come "I 5 errori che ti costano clienti."
-- Campi: `eyebrow`, `title`, `mistakes: [{ title, why }]` (3-5 items)
-- Hook nativo per "salva questo post per non sbagliare"
+### Nuovo componente `src/components/CarouselPresetDialog.tsx`
+- Dialog accessibile da nuovo pulsante "Caroselli pronti" nell'header (icona `Sparkles`)
+- Grid di card preset con anteprima icone delle slide incluse, nome, descrizione, conteggio slide
+- 2 azioni per preset: "Sostituisci tutto" (warning se ci sono slide non vuote) o "Aggiungi alla fine"
 
-### 4. `framework` — Framework / Acronimo (categoria `data`)
-Acronimo verticale (es. "AIDA", "SCAR") con ogni lettera grande a sx (in card) + nome esteso e descrizione a dx. 3-6 lettere.
-- Campi: `eyebrow`, `title`, `acronym` (string, mostrato come header), `letters: [{ letter, name, desc }]`
-- Posizionamento: contenuti educational/B2B, "salva e usa nel tuo lavoro"
+## 2. Editor rapido CTA / Prezzo / Urgenza (1 schermata, propagazione automatica)
 
-### 5. `socialProof` — Risultati clienti / Numeri (categoria `data`)
-3 metriche orizzontali grandi (es. "+340% MRR" / "12 settimane" / "0 ads spent"), titolo cliente in alto, breve case study sotto, foto/logo opzionale.
-- Campi: `eyebrow`, `clientName`, `tagline`, `metrics: [{ value, unit?, label }]` (3 items fissi), `summary?`, `logoUrl?`
-- Conversione: prova sociale numerica, killer per servizi B2B
+### Nuovo componente `src/components/QuickOfferEditor.tsx`
+- Pulsante in header (icona `Zap` + "Offerta rapida"), abilitato solo se esiste almeno una slide `offer` o `cta`
+- Sheet (laterale) con 4 campi compatti:
+  - **CTA** (testo): propagato a `cta.buttonLabel` + `offer.ctaLabel`
+  - **Prezzo nuovo** + **Prezzo barrato**: propagati a tutti gli `offer.priceNew` / `priceOld`
+  - **Currency**: propagato a `offer.currency`
+  - **Urgenza**: propagato a `offer.urgency` + `offer.badge` (badge derivato da urgency se vuoto)
+- Sezione "Anteprima impatto": lista delle slide che verranno modificate (es. "Slide 7 · Offerta", "Slide 9 · CTA")
+- Toggle per ogni campo: "Sovrascrivi anche se già personalizzato" (default OFF — modifica solo i valori a default)
+- Pulsante "Applica a tutte" → singola azione store
 
-### 6. `offer` — Offerta / Pricing (categoria `ref`)
-Card centrale con: badge "OFFERTA LIMITATA" opzionale, nome prodotto, prezzo grande con prezzo barrato + nuovo prezzo, lista 3-5 inclusi (✓), CTA grande in basso, urgency text micro.
-- Campi: `badge?`, `productName`, `priceOld?`, `priceNew`, `currency?`, `includes: string[]` (3-5), `ctaLabel`, `urgency?`
-- Conversione: slide vendita diretta, perfect-fit con `cta` come slide successiva
+### Modifiche `src/lib/store.ts`
+- Nuova azione `propagateOfferFields(patch: { ctaLabel?; priceNew?; priceOld?; currency?; urgency?; badge? }, opts: { overwriteCustom: boolean })`
+- Itera tutte le slide `offer`/`cta`, applica i campi rispettando `overwriteCustom` (confronta con i default per decidere "personalizzato")
+- Singola entry undo
 
-### 7. `objection` — Obiezione → Risposta (categoria `text`)
-Stile chat / fumetto: bubble grigia "Ma..." con l'obiezione tipica del cliente, sotto bubble accent con la risposta che scioglie il dubbio.
-- Campi: `eyebrow?`, `objection`, `answer`, `signOff?` (es. "P.S. provalo gratis")
-- Uso tipico: serie di 3-5 slide consecutive ognuna con un'obiezione diversa
+## 3. Pannello brand auto-style per nuovi template
 
-### 8. `tipPack` — Pacchetto di consigli salvabili (categoria `data`)
-3-6 mini-card numerate con icona, titolo brevissimo (3-5 parole) e descrizione 1 riga. Layout grid compatto. Title del tipo "5 modi per X in 30 secondi."
-- Campi: `eyebrow`, `title`, `tips: [{ icon?, title, text }]` (3-6), `saveLabel?` (default "SALVA QUESTO POST")
-- Conversione: ottimizzato per save/share, l'algoritmo preferisce questo formato
+### Modifiche `src/lib/templates.ts`
+- Estendo `BrandEffects` con 3 nuove proprietà opzionali:
+  - `marketingBadgeStyle?: "filled" | "outline" | "neon"` (default `"filled"`) — usato dai badge `offer`, `socialProof`
+  - `marketingGradientIntensity?: "none" | "subtle" | "bold"` (default `"subtle"`) — controlla i gradient nei nuovi template (`hook`, `cta`, `offer`)
+  - `marketingIconSet?: "emoji" | "geometric" | "minimal"` (default `"emoji"`) — sostituisce ❌/✓/⚠ con set coerenti
+- Tutti i nuovi template leggono questi valori in `SlideRenderer` via CSS custom props (`--mkt-badge-style`, `--mkt-gradient`, `--mkt-icon`)
 
-## Modifiche tecniche
+### Modifiche `src/components/slides/SlideRenderer.tsx`
+- In `wrapStyle()` calcolo i CSS vars da `brand.effects.marketing*` e li passo al wrapper della slide
+- I componenti `Hook`, `Offer`, `Cta`, `SocialProof`, `Mistakes`, `ProsCons`, `Myth`, `TipPack` leggono questi vars per badge, gradient, iconografia
 
-### `src/lib/templates.ts`
-- Estendo `TemplateId` con: `"hook" | "problemSolution" | "mistakes" | "framework" | "socialProof" | "offer" | "objection" | "tipPack"`
-- 8 nuove interfacce data nell'union `AnyTemplateData`
-- Aggiungo `TEMPLATE_META` (label/desc italiani, marketing-oriented)
-- Estendo `TEMPLATE_ORDER` con i nuovi ID
-- `makeDefaultData()` con contenuti default realistici in italiano (esempi marketing/AI per coerenza con i default attuali)
-- Estendo `getStylableFields()` per esporre i campi testuali principali
+### Modifiche `src/components/slides/slide-styles.css`
+- Aggiungo varianti `.mkt-badge--filled/outline/neon`, `.mkt-grad--subtle/bold`, `.mkt-ico--emoji/geometric/minimal`
+- Le icone "geometric" usano simboli unicode neutri (●○▲▼); "minimal" usa solo punti e linee
 
-### `src/lib/store.ts`
-- Aggiorno `DEFAULT_TEMPLATES_PER_CATEGORY`:
-  - `text`: append `hook`, `objection`
-  - `data`: append `problemSolution`, `mistakes`, `framework`, `socialProof`, `tipPack`
-  - `ref`: append `offer`
-- `mergePickerState` già gestisce l'append per utenti con stato persistito → zero migrazione
+### Modifiche `src/components/BrandSettingsDialog.tsx`
+- Nel tab "Effetti" aggiungo sezione "Stile marketing" con 3 select per i nuovi campi
+- Pulsante "Auto-tune dai colori brand": setta automaticamente `marketingGradientIntensity` (bold se accent saturo, subtle altrimenti) e `marketingBadgeStyle` (neon se `accentGlow=true`, filled altrimenti)
 
-### `src/components/slides/SlideRenderer.tsx`
-- 8 nuovi case nello `switch(slide.template)` di `renderBody()`
-- Ogni componente usa `fieldStyle()` per gli override e `<HL/>` per gli highlights
-- Pattern coerente con i template esistenti (no novità API)
+### Modifiche `src/lib/store.ts`
+- `mergeBrand` mantiene compatibilità: i valori di default popolano automaticamente brand persistiti
 
-### `src/components/slides/slide-styles.css`
-- Nuove classi `.tpl-hook`, `.tpl-problemSolution`, `.tpl-mistakes`, `.tpl-framework`, `.tpl-socialProof`, `.tpl-offer`, `.tpl-objection`, `.tpl-tipPack`
-- Override per i 4 formati (`.fmt-portrait`, `.fmt-square`, `.fmt-story`, `.fmt-landscape`)
-- Tipografia coerente con il sistema esistente; uso CSS vars già definite (`--cyan`, `--text`, `--bg`, ecc.)
-- Effetti speciali piccoli: `tpl-hook` ha pulse sottile sull'indicatore swipe; `tpl-offer` ha border accent + shadow; `tpl-objection` ha bubble con tail SVG
+## 4. Import JSON di contenuti per template
 
-### `src/lib/validation.ts`
-- Nuovi case in `validateSlideData()`:
-  - `hook`: `hook` 5-90 char (required)
-  - `problemSolution`: required `problem.text`, `solution.text`
-  - `mistakes`: `title` required, `mistakes` 3-5 items, ogni item ha `title` required
-  - `framework`: `title` required, `acronym` required, `letters` 3-6, ogni `letter` 1-3 char
-  - `socialProof`: `clientName` required, `metrics` esattamente 3, ogni metric ha `value` e `label`
-  - `offer`: `productName`, `priceNew`, `ctaLabel` required, `includes` 3-5
-  - `objection`: `objection` e `answer` required (max 200 char ognuno)
-  - `tipPack`: `title` required, `tips` 3-6, ogni tip ha `title` required
-- Aggiorno `LIMITS` con le nuove soglie
+### Nuovo file `src/lib/contentImport.ts`
+- Funzione `parseContentBundle(json: unknown): { items: { template: TemplateId, data: AnyTemplateData }[], errors: string[] }`
+- Formato accettato (documentato in dialog):
+  ```json
+  [
+    { "template": "hook", "data": { "hook": "...", "subhook": "..." } },
+    { "template": "offer", "data": { "productName": "...", "priceNew": "..." } }
+  ]
+  ```
+- Validazione schema per template: ogni `data` viene mergiata con `makeDefaultData(template)` per riempire i campi mancanti
+- Zero crash su campi sconosciuti (li ignora con warning)
 
-### `src/components/SlideEditorForm.tsx`
-- 8 nuovi editor: `HookEditor`, `ProblemSolutionEditor`, `MistakesEditor`, `FrameworkEditor`, `SocialProofEditor`, `OfferEditor`, `ObjectionEditor`, `TipPackEditor`
-- Riusano i pattern `Field`, `ArrayField`, `ItemCounter` esistenti
-- `FontSizeSlider` integrato sui campi testuali principali (hook, headline, prezzo, ecc.)
+### Nuovo componente `src/components/ContentImportDialog.tsx`
+- Pulsante in header "Importa contenuti" (icona `FileInput`)
+- Dialog con 3 modalità:
+  1. **Upload file `.json`**: drag & drop o file picker
+  2. **Incolla JSON**: textarea con esempi cliccabili pre-fatti (Sales, Educational, Lancio)
+  3. **CSV semplice** (bonus): formato `template,field,value` riga per riga → trasformato a JSON internamente
+- Anteprima parsing: lista delle slide che verranno create con badge "OK" / "warning" per ognuna
+- 2 azioni: "Sostituisci tutto" / "Aggiungi alla fine"
+- Toast con conteggio slide importate + eventuali warning
 
-## Coerenza visiva e funzionale
+### Modifiche `src/lib/store.ts`
+- Nuova azione `importContentBundle(items: { template, data }[], mode: "replace" | "append")`
+- Genera `Slide[]` con id nuovi, format `portrait` di default
 
-Tutti gli 8 template:
-- Riusano CSS variables esistenti (`--cyan`, `--cyan-2`, `--text`, `--bg`, `--radius`, `--font-heading`, `--font-body`)
-- Rispettano effetti brand attuali (gradient, shadow, border, corner, divider, grain)
-- Supportano gli highlight `==testo==` / `{hl}testo{/hl}` nei campi testuali principali
-- Funzionano con i 4 formati esistenti
-- Si integrano nel `NewSlideDialog` automaticamente via store (zero modifiche al picker)
-- Sono compatibili con multi-lingua (il wrapper `__i18n` è agnostico al template)
-- Esportabili PNG/JPG senza modifiche a `lib/export.ts`
+## 5. Validazione bloccante in preview con indicatori per campo
+
+### Modifiche `src/components/slides/SlideRenderer.tsx`
+- Nuovo prop opzionale `showValidation?: boolean` (default false)
+- Quando true, dopo il render del corpo aggiungo un overlay assoluto:
+  - Per ogni `errors` di `validateSlideData`, sovrappongo un badge rosso piccolo in basso a destra della slide con conteggio errori (es. "3 campi mancanti")
+  - Click sul badge dispatcha `slide:focus-field` sul primo errore
+- Ogni `Field` taggato con attributo `data-field-path={path}` per puntamento futuro
+
+### Modifiche `src/routes/index.tsx`
+- Aggiungo toggle `[validationOverlay, setValidationOverlay] = useState(true)` in header (icona `ShieldCheck`)
+- Passo `showValidation={validationOverlay}` allo `SlideRenderer` del main canvas (NON ai nodi nascosti di export)
+- Banner persistente in cima al main canvas se `validateAllSlides(slides).length > 0`: "X slide hanno campi obbligatori mancanti — Export disabilitato" + link "Vai al primo errore"
+
+### Modifiche `src/components/ExportButton.tsx`
+- Aggiungo stato `strictMode: boolean` (persisted in store, default `true`)
+- Quando `strictMode=true`:
+  - Pulsante Export disabled se `validateAllSlides().length > 0`, tooltip "Completa i campi obbligatori per esportare"
+  - Rimuovo opzione "Esporta comunque" dal dialog di validazione (sostituita da "Vai al primo campo")
+- Quando `strictMode=false` (impostazione avanzata in BrandSettings → tab "Avanzate"):
+  - Comportamento attuale (override possibile)
+- Default per nuovi utenti: strict ON
+
+### Modifiche `src/components/SlidesSidebar.tsx`
+- Già mostra `invalid` come badge — aggiungo conteggio: "3" anziché solo punto rosso, hover mostra elenco errori
+
+### Modifiche `src/lib/store.ts`
+- Persisto `strictExport: boolean` nel partialize (default true)
 
 ## File toccati
 
+**Nuovi:**
+- `src/lib/carouselPresets.ts`
+- `src/lib/contentImport.ts`
+- `src/components/CarouselPresetDialog.tsx`
+- `src/components/QuickOfferEditor.tsx`
+- `src/components/ContentImportDialog.tsx`
+
 **Modificati:**
-- `src/lib/templates.ts` — types, meta, order, default data, stylable fields
-- `src/lib/store.ts` — `DEFAULT_TEMPLATES_PER_CATEGORY` con i nuovi ID
-- `src/lib/validation.ts` — regole per gli 8 nuovi template
-- `src/components/slides/SlideRenderer.tsx` — 8 nuovi componenti di rendering
-- `src/components/slides/slide-styles.css` — classi `.tpl-*` + override per formato
-- `src/components/SlideEditorForm.tsx` — 8 nuovi editor
+- `src/lib/store.ts` — `loadCarouselPreset`, `appendCarouselPreset`, `propagateOfferFields`, `importContentBundle`, `strictExport` persisted, `mergeBrand` con marketing fields
+- `src/lib/templates.ts` — `BrandEffects` esteso (`marketingBadgeStyle`, `marketingGradientIntensity`, `marketingIconSet`), `DEFAULT_EFFECTS` aggiornato
+- `src/components/slides/SlideRenderer.tsx` — CSS vars `--mkt-*`, prop `showValidation` con overlay, `data-field-path` sui campi
+- `src/components/slides/slide-styles.css` — varianti `.mkt-badge-*`, `.mkt-grad-*`, `.mkt-ico-*`, stile overlay validazione
+- `src/components/BrandSettingsDialog.tsx` — sezione "Stile marketing" + toggle "Strict export" in nuovo tab "Avanzate" + pulsante "Auto-tune"
+- `src/components/ExportButton.tsx` — strict mode che disabilita il pulsante
+- `src/components/SlidesSidebar.tsx` — conteggio errori sul badge invalid
+- `src/routes/index.tsx` — pulsanti header (Caroselli pronti, Offerta rapida, Importa contenuti, toggle Validazione), banner di blocco export
 
 **Non toccati:**
-- `NewSlideDialog.tsx`, `SlidesSidebar.tsx` — picker dinamico
-- `FontSizeSlider.tsx`, `TextStylePopover.tsx` — riutilizzati
-- `ExportButton.tsx`, `lib/export.ts` — agnostici al template
+- `src/lib/validation.ts` — già completo, riusato così com'è
+- `src/lib/export.ts` — agnostico
+- `src/components/SlideEditorForm.tsx` — già mostra errori inline
 
-## Logica marketing dietro la scelta
+## Come si integra il flusso utente
 
-I template sono scelti per coprire il **funnel completo di un carosello che vende**:
-1. **Hook** (slide 1) → ferma lo scroll
-2. **Problem/Solution** o **Mistakes** (slide 2-3) → agita il pain
-3. **Framework** o **TipPack** (slide 4-5) → costruisce autorità con valore
-4. **SocialProof** (slide 6-7) → prova che funziona
-5. **Objection** (slide 8) → scioglie i dubbi
-6. **Offer** + `cta` esistente (slide 9-10) → chiude
-
-Ogni utente può comporre carousel ottimizzati per conversion senza dover disegnare layout custom.
+1. Utente apre app vuota → click "Caroselli pronti" → sceglie "Sales Funnel" → 10 slide pronte con contenuti default
+2. Click "Offerta rapida" → in 30 secondi imposta CTA, prezzo, urgenza una volta sola → propagati a tutte le slide
+3. BrandSettings → "Auto-tune" → colori, badge, gradient, icone si allineano al brand
+4. Per refresh contenuti: "Importa contenuti" → incolla JSON → tutto sostituito
+5. Banner rosso in alto se mancano campi → Export bloccato finché tutto OK → indicatore visivo per slide
 
 ## Fuori scope
 
-- **Animazioni** tra slide (resta export statico)
-- **Template video / GIF** (carousel statico per export PNG/JPG)
-- **AI auto-fill** dei contenuti dei nuovi template (utente compila a mano)
-- **Migrazione automatica** di slide esistenti verso i nuovi template
-- **Preset di carosello completo** ("Carosello sales 10 slide pre-fatto"): l'utente assembla manualmente
-- **A/B test integrato** o tracking analitico delle conversioni (fuori scope app editor)
+- Preset carousel **personalizzati salvati dall'utente** (solo built-in in questa iterazione)
+- **Editor visuale** del JSON (l'utente edita testo o file)
+- **AI generation** dei contenuti dei preset (solo template fissi)
+- **Sync cross-device** dei carousel preset
+- **Diff visivo** prima/dopo applicazione "Offerta rapida"
+- **Export bloccato per warning** (solo errori bloccano; warning restano informativi)
+- **Override per-slide** del marketing style (vale a livello brand)
 
