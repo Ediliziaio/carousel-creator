@@ -1530,21 +1530,22 @@ function MediaHeroEditor({ d, set, errFor, slideId, overrides }: EditorProps<Med
 
 function PolaroidStackEditor({ d, set, errFor, slideId, overrides }: EditorProps<PolaroidStackData>) {
   const pErr = errFor("polaroids");
+  const polaroids = d.polaroids ?? [];
   return (
     <div className="space-y-4">
       <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
         <Input value={d.eyebrow ?? ""} onChange={(e) => set({ ...d, eyebrow: e.target.value })} />
       </Field>
       <Field label="Titolo" hint={HL_HINT} error={errFor("title")} slideId={slideId} fieldPath="title" overrides={overrides}>
-        <Textarea data-field="title" rows={2} value={d.title} onChange={(e) => set({ ...d, title: e.target.value })} />
+        <Textarea data-field="title" rows={2} value={d.title ?? ""} onChange={(e) => set({ ...d, title: e.target.value })} />
       </Field>
       {pErr && <p data-field="polaroids" className="flex items-center gap-1 text-[11px] text-destructive"><AlertCircle className="h-3 w-3" /> {pErr}</p>}
       <ArrayField
         label="Polaroid (1–3)"
-        items={d.polaroids}
+        items={polaroids}
         onChange={(arr) => set({ ...d, polaroids: arr })}
         maxItems={3}
-        counter={<ItemCounter current={d.polaroids.length} min={1} max={3} unit="polaroid" />}
+        counter={<ItemCounter current={polaroids.length} min={1} max={3} unit="polaroid" />}
         render={(v, on, i) => (
           <div className="space-y-2 rounded-md border border-border p-2">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Polaroid {i + 1}</Label>
