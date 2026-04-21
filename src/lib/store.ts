@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import {
   type Slide,
   type TemplateId,
+  type SlideFormat,
   type BrandSettings,
   type AnyTemplateData,
   type SlideDataField,
