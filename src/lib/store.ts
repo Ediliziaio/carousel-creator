@@ -76,6 +76,11 @@ interface CarouselState {
   /** User-customised template order within each category. */
   templatesPerCategory: Record<string, TemplateId[]>;
 
+  /** Block export when validation errors are present. */
+  strictExport: boolean;
+  /** Show overlays in preview when validation errors are present. */
+  validationOverlay: boolean;
+
   past: CarouselSnapshot[];
   future: CarouselSnapshot[];
 
@@ -116,6 +121,23 @@ interface CarouselState {
   deleteBrandPreset: (id: string) => void;
   renameBrandPreset: (id: string, name: string) => void;
   resetBrandToDefault: () => void;
+
+  /** Carousel presets */
+  loadCarouselPreset: (presetId: string) => void;
+  appendCarouselPreset: (presetId: string) => void;
+
+  /** Quick offer propagation */
+  propagateOfferFields: (
+    patch: { ctaLabel?: string; priceNew?: string; priceOld?: string; currency?: string; urgency?: string; badge?: string },
+    opts: { overwriteCustom: boolean },
+  ) => { offerCount: number; ctaCount: number };
+
+  /** Content import */
+  importContentBundle: (items: ImportedItem[], mode: "replace" | "append") => void;
+
+  /** Strict export toggle */
+  setStrictExport: (v: boolean) => void;
+  setValidationOverlay: (v: boolean) => void;
 
   undo: () => void;
   redo: () => void;
