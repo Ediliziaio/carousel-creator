@@ -6,11 +6,12 @@ import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { SlideEditorForm } from "@/components/SlideEditorForm";
 import { JsonEditor } from "@/components/JsonEditor";
 import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
+import { ExportButton } from "@/components/ExportButton";
+import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { downloadSinglePng, downloadZipFromNodes } from "@/lib/export";
-import { Download, Package, Upload, FileJson, Loader2 } from "lucide-react";
+import { Upload, FileJson } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -50,38 +51,7 @@ function Index() {
     else exportRefs.current.delete(id);
   };
 
-  const [exporting, setExporting] = useState<null | "single" | "zip">(null);
-
-  const onExportSingle = async () => {
-    if (!activeSlide) return;
-    const node = exportRefs.current.get(activeSlide.id);
-    if (!node) return;
-    setExporting("single");
-    try {
-      const num = (activeIndex + 1).toString().padStart(2, "0");
-      await downloadSinglePng(node, `${slugify(brand.carouselTitle)}-slide-${num}.png`);
-      toast.success("PNG esportata");
-    } catch (e) {
-      toast.error("Errore esportazione: " + (e as Error).message);
-    } finally {
-      setExporting(null);
-    }
-  };
-
-  const onExportZip = async () => {
-    setExporting("zip");
-    try {
-      const nodes = slides
-        .map((s) => exportRefs.current.get(s.id))
-        .filter((n): n is HTMLDivElement => !!n);
-      await downloadZipFromNodes(nodes, slugify(brand.carouselTitle));
-      toast.success(`${nodes.length} PNG esportate in ZIP`);
-    } catch (e) {
-      toast.error("Errore export ZIP: " + (e as Error).message);
-    } finally {
-      setExporting(null);
-    }
-  };
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const onExportJson = () => {
     const json = JSON.stringify({ brand, slides }, null, 2);
