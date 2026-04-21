@@ -63,6 +63,8 @@ function buildClassName(slide: Slide, brand: BrandSettings): string {
 export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendererProps) {
   const counter = `${pad2(index + 1)} / ${pad2(total)}`;
   const data = getSlideData(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage);
+  const fmt = slide.format ?? "portrait";
+  const dim = FORMAT_DIMENSIONS[fmt];
 
   const radius =
     brand.effects.cornerStyle === "sharp" ? "0px"
@@ -79,6 +81,8 @@ export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendere
     ["--w-h" as string]: String(brand.headingWeight),
     ["--w-b" as string]: String(brand.bodyWeight),
     ["--radius" as string]: radius,
+    ["--slide-w" as string]: `${dim.w}px`,
+    ["--slide-h" as string]: `${dim.h}px`,
   };
 
   return (
