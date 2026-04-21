@@ -634,10 +634,12 @@ function ChartLineEditor({ d, set, errFor, slideId, overrides }: { d: ChartLineD
       <div className="space-y-2">
         <Label className="text-xs uppercase tracking-wider text-muted-foreground">Punti dati</Label>
         {d.xLabels.map((lb, i) => (
-          <div key={i} className="flex gap-2">
+          <div key={i} className="flex flex-col gap-2 sm:flex-row">
             <Input className="flex-1" value={lb} onChange={(e) => updatePoint(i, e.target.value, d.values[i] ?? 0)} placeholder="Etichetta X" />
-            <Input className="w-24" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" />
-            <Button type="button" variant="ghost" size="icon" onClick={() => removePoint(i)}><Trash2 className="h-4 w-4" /></Button>
+            <div className="flex gap-2">
+              <Input className="flex-1 sm:w-24 sm:flex-none" type="number" value={d.values[i] ?? 0} onChange={(e) => updatePoint(i, lb, Number(e.target.value) || 0)} placeholder="0" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removePoint(i)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
           </div>
         ))}
         <Button type="button" variant="outline" size="sm" onClick={addPoint}><Plus className="mr-1 h-4 w-4" /> Aggiungi punto</Button>
