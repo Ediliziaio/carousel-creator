@@ -12,14 +12,18 @@ import {
   type QAData,
   type ChecklistData,
   type StatData,
+  type CoverData,
   renderHighlighted,
 } from "@/lib/templates";
+import { getSlideData } from "@/lib/i18n";
 
 interface SlideRendererProps {
   slide: Slide;
   brand: BrandSettings;
-  index: number; // 0-based
+  index: number;
   total: number;
+  /** Optional language override; defaults to brand.defaultLanguage. */
+  lang?: string;
 }
 
 function pad2(n: number) {
@@ -36,43 +40,68 @@ function HL({ text }: { text: string }) {
   );
 }
 
-export function SlideRenderer({ slide, brand, index, total }: SlideRendererProps) {
+function buildClassName(slide: Slide, brand: BrandSettings): string {
+  const fx = brand.effects;
+  const parts = ["slide-frame", `tpl-${slide.template}`];
+  if (fx.bgPattern && fx.bgPattern !== "none") parts.push(`fx-pattern-${fx.bgPattern === "gradient-mesh" ? "mesh" : fx.bgPattern}`);
+  if (fx.accentGlow) parts.push("fx-accent-glow");
+  if (fx.textGradient) parts.push("fx-text-gradient");
+  if (fx.borderStyle && fx.borderStyle !== "none") parts.push(`fx-border-${fx.borderStyle}`);
+  return parts.join(" ");
+}
+
+export function SlideRenderer({ slide, brand, index, total, lang }: SlideRendererProps) {
   const counter = `${pad2(index + 1)} / ${pad2(total)}`;
-  const tplClass = `tpl-${slide.template}`;
+  const data = getSlideData(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage);
+
+  const styleVars: React.CSSProperties = {
+    ["--cyan" as string]: brand.accent,
+    ["--cyan-2" as string]: brand.accentSecondary,
+    ["--text" as string]: brand.textColor,
+    ["--bg" as string]: brand.bgColor,
+    ["--font-heading" as string]: `'${brand.fontHeading}', system-ui, sans-serif`,
+    ["--font-body" as string]: `'${brand.fontBody}', system-ui, sans-serif`,
+    ["--w-h" as string]: String(brand.headingWeight),
+    ["--w-b" as string]: String(brand.bodyWeight),
+  };
+
   return (
-    <div
-      className={`slide-frame ${tplClass}`}
-      style={{ ["--cyan" as string]: brand.accent }}
-    >
+    <div className={buildClassName(slide, brand)} style={styleVars}>
+      <div className="fx-bg" />
       <div className="slide-inner">
         <header className="head-row">
-          <span className="brand">{brand.brand}</span>
+          <span className="brand">
+            {brand.logoDataUrl && <img src={brand.logoDataUrl} alt="" className="brand-logo" />}
+            {brand.brand}
+          </span>
           <span className="count">{counter}</span>
         </header>
 
-        <div className="body">{renderBody(slide)}</div>
+        <div className="body">{renderBody(slide, data)}</div>
 
         <footer className="foot-row">
           <span className="handle-inline">{brand.handle}</span>
           <span>{brand.footerCta}</span>
         </footer>
       </div>
+      {brand.effects.grain && <div className="fx-grain" />}
     </div>
   );
 }
 
-function renderBody(slide: Slide) {
+function renderBody(slide: Slide, data: unknown) {
   switch (slide.template) {
-    case "split":      return <Split d={slide.data as SplitData} />;
-    case "grid2x2":    return <Grid d={slide.data as Grid2x2Data} />;
-    case "bignum":     return <BigNum d={slide.data as BigNumData} />;
-    case "center":     return <Center d={slide.data as CenterData} />;
-    case "timeline":   return <Timeline d={slide.data as TimelineData} />;
-    case "compare":    return <Compare d={slide.data as CompareData} />;
-    case "vocab":      return <Vocab d={slide.data as VocabData} />;
-    case "qa":         return <QA d={slide.data as QAData} />;
-    case "checklist":  return <Checklist d={slide.data as ChecklistData} />;
-    case "stat":       return <Stat d={slide.data as StatData} />;
+    case "split":      return <Split d={data as SplitData} />;
+    case "grid2x2":    return <Grid d={data as Grid2x2Data} />;
+    case "bignum":     return <BigNum d={data as BigNumData} />;
+    case "center":     return <Center d={data as CenterData} />;
+    case "timeline":   return <Timeline d={data as TimelineData} />;
+    case "compare":    return <Compare d={data as CompareData} />;
+    case "vocab":      return <Vocab d={data as VocabData} />;
+    case "qa":         return <QA d={data as QAData} />;
+    case "checklist":  return <Checklist d={data as ChecklistData} />;
+    case "stat":       return <Stat d={data as StatData} />;
+    case "cover":      return <Cover d={data as CoverData} />;
   }
 }
 
@@ -85,13 +114,19 @@ function Split({ d }: { d: SplitData }) {
         <div className="underline" />
       </div>
       <div className="col-right">
-        {d.paragraphs?.map((p, i) => <p key={i} className="right-para">{p}</p>)}
-        {d.list && d.list.length > 0 && (
-          <ul className="right-list">
-            {d.list.map((it, i) => (
-              <li key={i}><b>{it.marker}</b>{it.text}</li>
-            ))}
-          </ul>
+        {d.imageUrl ? (
+          <img src={d.imageUrl} alt="" className="right-image" />
+        ) : (
+          <>
+            {d.paragraphs?.map((p, i) => <p key={i} className="right-para">{p}</p>)}
+            {d.list && d.list.length > 0 && (
+              <ul className="right-list">
+                {d.list.map((it, i) => (
+                  <li key={i}><b>{it.marker}</b>{it.text}</li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </>
@@ -134,6 +169,12 @@ function BigNum({ d }: { d: BigNumData }) {
 function Center({ d }: { d: CenterData }) {
   return (
     <>
+      {d.imageUrl && (
+        <div className="center-bg">
+          <img src={d.imageUrl} alt="" />
+          <div className="veil" />
+        </div>
+      )}
       {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
       <h1><HL text={d.title} /></h1>
       <div className="deco" />
@@ -241,6 +282,22 @@ function Stat({ d }: { d: StatData }) {
       </div>
       {d.sub && <p className="stat-sub">{d.sub}</p>}
       {d.note && <div className="stat-note">{d.note}</div>}
+    </>
+  );
+}
+
+function Cover({ d }: { d: CoverData }) {
+  return (
+    <>
+      <div className={`cover-bg ${d.imageUrl ? "" : "empty"}`}>
+        {d.imageUrl && <img src={d.imageUrl} alt="" />}
+        {d.imageUrl && <div className="veil" />}
+      </div>
+      <div className="cover-content">
+        {d.eyebrow && <div className="eyebrow">{d.eyebrow}</div>}
+        <h1><HL text={d.title} /></h1>
+        {d.sub && <div className="sub">{d.sub}</div>}
+      </div>
     </>
   );
 }
