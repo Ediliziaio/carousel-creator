@@ -153,6 +153,7 @@ export const useCarousel = create<CarouselState>()(
       slideCombos: [],
       templateCategoryOrder: [...DEFAULT_CATEGORY_ORDER],
       templatesPerCategory: { ...DEFAULT_TEMPLATES_PER_CATEGORY },
+      lastFontSizeByFieldType: {},
       past: [],
       future: [],
 
