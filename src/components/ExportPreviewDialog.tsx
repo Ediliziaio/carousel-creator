@@ -6,7 +6,7 @@ import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { validateSlide } from "@/lib/validation";
 import { downloadSinglePng, ensureFontsFor, fontsReadyFor } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
-import { TEMPLATE_META } from "@/lib/templates";
+import { TEMPLATE_META, FORMAT_DIMENSIONS } from "@/lib/templates";
 import { Download, AlertCircle, X, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
