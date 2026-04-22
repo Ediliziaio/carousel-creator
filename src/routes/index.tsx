@@ -15,6 +15,7 @@ import { QuickOfferEditor } from "@/components/QuickOfferEditor";
 import { ContentImportDialog } from "@/components/ContentImportDialog";
 import { HookOfferMicroEditor } from "@/components/HookOfferMicroEditor";
 import { FixIssuesGuide, type FlatIssue } from "@/components/FixIssuesGuide";
+import { UserMenu } from "@/components/UserMenu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -325,6 +326,7 @@ function Index() {
             brandTitle={brand.carouselTitle}
             onError={setExportError}
           />
+          <UserMenu />
         </div>
       </header>
 

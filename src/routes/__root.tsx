@@ -1,7 +1,8 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { useCarousel } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -120,8 +121,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PUBLIC_ROUTES = new Set(["/login", "/signup"]);
+
 function RootComponent() {
-  // Client-side rehydrate of persisted brand + presets (skipHydration is true in store).
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const session = useAuth((s) => s.session);
+  const loading = useAuth((s) => s.loading);
+  const initAuth = useAuth((s) => s.init);
+
+  useEffect(() => initAuth(), [initAuth]);
+
   useEffect(() => {
     let restored = false;
     try {
@@ -137,6 +147,29 @@ function RootComponent() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const isPublic = PUBLIC_ROUTES.has(pathname);
+    if (!session && !isPublic) {
+      void navigate({ to: "/login" });
+    } else if (session && isPublic) {
+      void navigate({ to: "/" });
+    }
+  }, [loading, session, pathname, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+        Caricamento…
+      </div>
+    );
+  }
+
+  const isPublic = PUBLIC_ROUTES.has(pathname);
+  if (!session && !isPublic) {
+    return null;
+  }
 
   return (
     <>
