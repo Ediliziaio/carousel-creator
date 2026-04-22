@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
+import { supabase, isSupabaseConfigured } from "./supabase";
 
 interface AuthState {
   session: Session | null;
@@ -24,6 +24,10 @@ export const useAuth = create<AuthState>((set) => ({
   },
 
   init: () => {
+    if (!isSupabaseConfigured() || typeof window === "undefined") {
+      set({ loading: false });
+      return () => {};
+    }
     void supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, user: data.session?.user ?? null, loading: false });
     });

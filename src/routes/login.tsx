@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +37,13 @@ function LoginPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Entra nel generatore di caroselli.
         </p>
+        {!isSupabaseConfigured() && (
+          <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+            ⚠️ Supabase non configurato. Le credenziali <code>VITE_SUPABASE_URL</code> e{" "}
+            <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> devono essere impostate come{" "}
+            <strong>Build variables</strong> su Cloudflare Workers.
+          </div>
+        )}
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
