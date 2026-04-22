@@ -604,32 +604,47 @@ export const useCarousel = create<CarouselState>()(
         offerPresets: s.offerPresets.filter((p) => !p.builtIn),
       }),
       merge: (persistedState, currentState) => {
-        const ps = persistedState as Partial<{
-          brand: BrandSettings;
-          brandPresets: BrandPreset[];
-          slideCombos: SlideCombo[];
-          templateCategoryOrder: string[];
-          templatesPerCategory: Record<string, TemplateId[]>;
-          lastFontSizeByFieldType: Record<string, number>;
-          strictExport: boolean;
-          validationOverlay: boolean;
-          offerPresets: OfferPreset[];
-        }> | undefined;
-        const customPresets = ps?.brandPresets ?? [];
-        const customOfferPresets = ps?.offerPresets ?? [];
-        const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
-        return {
-          ...currentState,
-          brand: mergeBrand(ps?.brand),
-          brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => !p.builtIn)],
-          slideCombos: ps?.slideCombos ?? [],
-          templateCategoryOrder: picker.templateCategoryOrder,
-          templatesPerCategory: picker.templatesPerCategory,
-          lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
-          strictExport: ps?.strictExport ?? true,
-          validationOverlay: ps?.validationOverlay ?? true,
-          offerPresets: [...BUILT_IN_OFFER_PRESETS, ...customOfferPresets.filter((p) => !p.builtIn)],
-        };
+        try {
+          const ps = persistedState as Partial<{
+            brand: BrandSettings;
+            brandPresets: BrandPreset[];
+            slideCombos: SlideCombo[];
+            templateCategoryOrder: string[];
+            templatesPerCategory: Record<string, TemplateId[]>;
+            lastFontSizeByFieldType: Record<string, number>;
+            strictExport: boolean;
+            validationOverlay: boolean;
+            offerPresets: OfferPreset[];
+          }> | undefined;
+          const customPresets = Array.isArray(ps?.brandPresets) ? ps!.brandPresets : [];
+          const customOfferPresets = Array.isArray(ps?.offerPresets) ? ps!.offerPresets : [];
+          const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
+          // Filter slide combos referencing unknown templates (defensive against schema drift).
+          const knownTemplates = new Set<TemplateId>(
+            Object.values(DEFAULT_TEMPLATES_PER_CATEGORY).flat(),
+          );
+          const safeCombos = (ps?.slideCombos ?? []).filter(
+            (c) => c && knownTemplates.has(c.template),
+          );
+          return {
+            ...currentState,
+            brand: mergeBrand(ps?.brand),
+            brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => p && !p.builtIn)],
+            slideCombos: safeCombos,
+            templateCategoryOrder: picker.templateCategoryOrder,
+            templatesPerCategory: picker.templatesPerCategory,
+            lastFontSizeByFieldType: ps?.lastFontSizeByFieldType ?? {},
+            strictExport: ps?.strictExport ?? true,
+            validationOverlay: ps?.validationOverlay ?? true,
+            offerPresets: [
+              ...BUILT_IN_OFFER_PRESETS,
+              ...customOfferPresets.filter((p) => p && !p.builtIn),
+            ],
+          };
+        } catch (e) {
+          console.warn("[carousel-store] Rehydrate failed, using clean defaults:", e);
+          return currentState;
+        }
       },
     },
   ),

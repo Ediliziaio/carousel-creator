@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCarousel } from "@/lib/store";
 import { SlidesSidebar } from "@/components/SlidesSidebar";
@@ -25,6 +25,51 @@ import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
+function IndexErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
+  const onClearAndReload = () => {
+    try {
+      localStorage.removeItem("carousel-brand-v1");
+    } catch {
+      /* ignore */
+    }
+    if (typeof window !== "undefined") window.location.reload();
+  };
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-2xl font-bold text-foreground">Errore nell'editor</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          La sessione precedente potrebbe essere incompatibile con la versione corrente. Pulisci i dati locali per ripartire da zero.
+        </p>
+        {isDev && error?.message && (
+          <pre className="mt-4 overflow-auto rounded-md bg-muted p-3 text-left text-xs text-muted-foreground">
+            {error.message}
+          </pre>
+        )}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <button
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Riprova
+          </button>
+          <button
+            onClick={onClearAndReload}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Pulisci dati locali e ricarica
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
@@ -34,6 +79,7 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: Index,
+  errorComponent: IndexErrorComponent,
 });
 
 function Index() {
