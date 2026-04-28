@@ -5,8 +5,8 @@ const clientDir = join(process.cwd(), "dist", "client");
 const assetsDir = join(clientDir, "assets");
 
 const files = await readdir(assetsDir);
-const entry = files.find((file) => /^index-[\w-]+\.js$/.test(file));
-const cssFiles = files.filter((file) => /^index-[\w-]+\.css$/.test(file) || /^styles-[\w-]+\.css$/.test(file));
+const entry = files.find((file) => /^app-[\w-]+\.js$/.test(file));
+const cssFiles = files.filter((file) => file.endsWith(".css"));
 
 if (!entry) {
   throw new Error("Could not find the client entry chunk in dist/client/assets.");
@@ -26,7 +26,9 @@ const html = `<!doctype html>
 ${styles}
     <script type="module" src="/assets/${entry}"></script>
   </head>
-  <body></body>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>
 `;
 
