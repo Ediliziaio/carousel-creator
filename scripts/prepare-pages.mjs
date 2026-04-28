@@ -1,4 +1,4 @@
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const clientDir = join(process.cwd(), "dist", "client");
@@ -34,3 +34,4 @@ await mkdir(clientDir, { recursive: true });
 await writeFile(join(clientDir, "index.html"), html);
 await writeFile(join(clientDir, "404.html"), html);
 await writeFile(join(clientDir, "_redirects"), "/* /index.html 200\n");
+await rm(join(clientDir, "wrangler.json"), { force: true });
