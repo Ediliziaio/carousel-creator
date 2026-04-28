@@ -10,7 +10,10 @@ export interface OfferPreset {
   urgency?: string;
 }
 
-export type OfferPresetValues = Pick<OfferPreset, "ctaLabel" | "priceNew" | "priceOld" | "currency" | "urgency">;
+export type OfferPresetValues = Pick<
+  OfferPreset,
+  "ctaLabel" | "priceNew" | "priceOld" | "currency" | "urgency"
+>;
 
 export const BUILT_IN_OFFER_PRESETS: OfferPreset[] = [
   {

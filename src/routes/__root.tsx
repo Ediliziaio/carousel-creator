@@ -1,11 +1,17 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouter, useRouterState, useNavigate } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  useRouter,
+  useRouterState,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { useCarousel } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { toast } from "sonner";
-
-import appCss from "../styles.css?url";
 
 function clearLocalStateAndReload() {
   try {
@@ -24,7 +30,8 @@ function RootErrorComponent({ error, reset }: { error: Error; reset: () => void 
       <div className="max-w-md text-center">
         <h1 className="text-3xl font-bold text-foreground">Si è verificato un errore inatteso</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Qualcosa è andato storto durante il caricamento dell'app. Puoi riprovare oppure pulire i dati locali e ricaricare.
+          Qualcosa è andato storto durante il caricamento dell'app. Puoi riprovare oppure pulire i
+          dati locali e ricaricare.
         </p>
         {isDev && error?.message && (
           <pre className="mt-4 overflow-auto rounded-md bg-muted p-3 text-left text-xs text-muted-foreground">
@@ -82,50 +89,17 @@ function NotFoundComponent() {
 }
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Carousel Generator" },
-      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua, brand persistente ed export PNG 1080×1350." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Carousel Generator" },
-      { property: "og:description", content: "Genera caroselli editoriali multilingua, esporta PNG 1080×1350." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: RootErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 const PUBLIC_ROUTES = new Set(["/login", "/signup"]);
 
 function RootComponent() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const authEnabled = isSupabaseConfigured();
   const session = useAuth((s) => s.session);
   const loading = useAuth((s) => s.loading);
   const initAuth = useAuth((s) => s.init);
@@ -149,6 +123,7 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    if (!authEnabled) return;
     if (loading) return;
     const isPublic = PUBLIC_ROUTES.has(pathname);
     if (!session && !isPublic) {
@@ -156,9 +131,9 @@ function RootComponent() {
     } else if (session && isPublic) {
       void navigate({ to: "/" });
     }
-  }, [loading, session, pathname, navigate]);
+  }, [authEnabled, loading, session, pathname, navigate]);
 
-  if (loading) {
+  if (authEnabled && loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Caricamento…
@@ -167,7 +142,7 @@ function RootComponent() {
   }
 
   const isPublic = PUBLIC_ROUTES.has(pathname);
-  if (!session && !isPublic) {
+  if (authEnabled && !session && !isPublic) {
     return null;
   }
 

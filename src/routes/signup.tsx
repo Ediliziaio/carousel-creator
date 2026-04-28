@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,29 +13,47 @@ export const Route = createFileRoute("/signup")({
 
 function SignupPage() {
   const navigate = useNavigate();
+  const configured = isSupabaseConfigured();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!configured) {
+      toast.error("Supabase non è configurato. Aggiungi le variabili su Cloudflare Pages.");
+      return;
+    }
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error("Inserisci una email valida.");
+      return;
+    }
     if (password.length < 8) {
       toast.error("La password deve avere almeno 8 caratteri.");
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    if (data.session) {
-      toast.success("Account creato");
-      void navigate({ to: "/" });
-    } else {
-      toast.success("Account creato — controlla la mail per confermare.");
-      void navigate({ to: "/login" });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      if (data.session) {
+        toast.success("Account creato");
+        void navigate({ to: "/" });
+      } else {
+        toast.success("Account creato — controlla la mail per confermare.");
+        void navigate({ to: "/login" });
+      }
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -46,6 +64,18 @@ function SignupPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Registrati per salvare i tuoi caroselli.
         </p>
+        {!configured && (
+          <div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+            ⚠️ Supabase non configurato. Le credenziali <code>VITE_SUPABASE_URL</code> e{" "}
+            <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> devono essere impostate come{" "}
+            <strong>Build variables</strong> su Cloudflare Pages.
+          </div>
+        )}
+        {!configured && (
+          <Button className="mt-4 w-full" onClick={() => void navigate({ to: "/" })}>
+            Continua in modalità locale
+          </Button>
+        )}
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
@@ -71,7 +101,7 @@ function SignupPage() {
             />
             <p className="text-xs text-muted-foreground">Almeno 8 caratteri.</p>
           </div>
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" disabled={loading || !configured} className="w-full">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Crea account
           </Button>

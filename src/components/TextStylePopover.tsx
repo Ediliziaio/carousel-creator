@@ -3,15 +3,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
 import { useCarousel } from "@/lib/store";
-import {
-  FONT_OPTIONS,
-  type FontChoice,
-  type TextStyle,
-  type Weight,
-} from "@/lib/templates";
+import { FONT_OPTIONS, type FontChoice, type TextStyle, type Weight } from "@/lib/templates";
 import {
   Type,
   AlignLeft,
@@ -106,7 +107,9 @@ export function TextStylePopover({ slideId, fieldPath, value }: Props) {
               v === "__inherit" ? clear("fontFamily") : set({ fontFamily: v as FontChoice })
             }
           >
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__inherit">Default brand</SelectItem>
               {FONT_OPTIONS.map((f) => (
@@ -142,11 +145,15 @@ export function TextStylePopover({ slideId, fieldPath, value }: Props) {
               v === "__inherit" ? clear("fontWeight") : set({ fontWeight: Number(v) as Weight })
             }
           >
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__inherit">Default</SelectItem>
               {WEIGHTS.map((w) => (
-                <SelectItem key={w} value={String(w)}>{w}</SelectItem>
+                <SelectItem key={w} value={String(w)}>
+                  {w}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -193,7 +200,9 @@ export function TextStylePopover({ slideId, fieldPath, value }: Props) {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Stile</Label>
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Stile
+          </Label>
           <div className="flex gap-1">
             <Toggle
               size="sm"
@@ -223,7 +232,9 @@ export function TextStylePopover({ slideId, fieldPath, value }: Props) {
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Colore</Label>
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Colore
+          </Label>
           <div className="flex flex-wrap items-center gap-1.5">
             {colorSwatches.map((c) => (
               <button

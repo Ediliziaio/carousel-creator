@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -48,7 +54,15 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const FORMAT_ORDER: SlideFormat[] = ["portrait", "square", "story", "landscape"];
 
-function FormatCard({ format, selected, onClick }: { format: SlideFormat; selected: boolean; onClick: () => void }) {
+function FormatCard({
+  format,
+  selected,
+  onClick,
+}: {
+  format: SlideFormat;
+  selected: boolean;
+  onClick: () => void;
+}) {
   const dim = FORMAT_DIMENSIONS[format];
   const max = 64;
   const w = dim.w >= dim.h ? max : Math.round((dim.w / dim.h) * max);
@@ -73,13 +87,20 @@ function FormatCard({ format, selected, onClick }: { format: SlideFormat; select
           <span className="text-sm font-medium">{dim.label}</span>
           {selected && <Check className="h-3.5 w-3.5 text-primary" />}
         </div>
-        <div className="text-[11px] text-muted-foreground">{dim.ratio} · {dim.w}×{dim.h}</div>
+        <div className="text-[11px] text-muted-foreground">
+          {dim.ratio} · {dim.w}×{dim.h}
+        </div>
       </div>
     </button>
   );
 }
 
-function SortableTemplateThumb({ template, format, selected, onClick }: {
+function SortableTemplateThumb({
+  template,
+  format,
+  selected,
+  onClick,
+}: {
   template: TemplateId;
   format: SlideFormat;
   selected: boolean;
@@ -89,7 +110,9 @@ function SortableTemplateThumb({ template, format, selected, onClick }: {
   const dim = FORMAT_DIMENSIONS[format];
   const slide = useMemo(() => makeDefaultSlide(template, format), [template, format]);
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: template });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: template,
+  });
 
   const targetW = 140;
   const scale = targetW / dim.w;
@@ -124,8 +147,21 @@ function SortableTemplateThumb({ template, format, selected, onClick }: {
           className="relative mx-auto overflow-hidden rounded-md bg-black"
           style={{ width: targetW, height: thumbH }}
         >
-          <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: dim.w, height: dim.h }}>
-            <SlideRenderer slide={slide} brand={brand} index={0} total={1} lang={brand.defaultLanguage} />
+          <div
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+              width: dim.w,
+              height: dim.h,
+            }}
+          >
+            <SlideRenderer
+              slide={slide}
+              brand={brand}
+              index={0}
+              total={1}
+              lang={brand.defaultLanguage}
+            />
           </div>
         </div>
         <div className="px-1">
@@ -133,7 +169,9 @@ function SortableTemplateThumb({ template, format, selected, onClick }: {
             {selected && <Check className="h-3 w-3 text-primary" />}
             {TEMPLATE_META[template].label}
           </div>
-          <div className="line-clamp-2 text-[11px] leading-tight text-muted-foreground">{TEMPLATE_META[template].desc}</div>
+          <div className="line-clamp-2 text-[11px] leading-tight text-muted-foreground">
+            {TEMPLATE_META[template].desc}
+          </div>
         </div>
       </button>
     </div>
@@ -141,7 +179,9 @@ function SortableTemplateThumb({ template, format, selected, onClick }: {
 }
 
 function SortableTabTrigger({ id, label }: { id: string; label: string }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -149,7 +189,9 @@ function SortableTabTrigger({ id, label }: { id: string; label: string }) {
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TabsTrigger value={id} className="cursor-grab active:cursor-grabbing">{label}</TabsTrigger>
+      <TabsTrigger value={id} className="cursor-grab active:cursor-grabbing">
+        {label}
+      </TabsTrigger>
     </div>
   );
 }
@@ -162,7 +204,9 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
   const [showComboInput, setShowComboInput] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const slideCombos = useCarousel((s) => s.slideCombos);
   const saveSlideCombo = useCarousel((s) => s.saveSlideCombo);
@@ -191,7 +235,8 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
   };
 
   const handleSaveCombo = () => {
-    const name = comboName.trim() || `${TEMPLATE_META[template].label} · ${FORMAT_DIMENSIONS[format].ratio}`;
+    const name =
+      comboName.trim() || `${TEMPLATE_META[template].label} · ${FORMAT_DIMENSIONS[format].ratio}`;
     saveSlideCombo(name, template, format);
     setComboName("");
     setShowComboInput(false);
@@ -245,7 +290,10 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                     >
                       <button
                         type="button"
-                        onClick={() => { setTemplate(c.template); setFormat(c.format); }}
+                        onClick={() => {
+                          setTemplate(c.template);
+                          setFormat(c.format);
+                        }}
                         className="flex-1 truncate text-left text-xs"
                         title={`Applica: ${TEMPLATE_META[c.template].label} · ${FORMAT_DIMENSIONS[c.format].ratio}`}
                       >
@@ -274,11 +322,16 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                     autoFocus
                     value={comboName}
                     onChange={(e) => setComboName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleSaveCombo(); if (e.key === "Escape") setShowComboInput(false); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveCombo();
+                      if (e.key === "Escape") setShowComboInput(false);
+                    }}
                     placeholder="Nome combo"
                     className="h-7 text-xs"
                   />
-                  <Button type="button" size="sm" className="h-7 px-2" onClick={handleSaveCombo}>OK</Button>
+                  <Button type="button" size="sm" className="h-7 px-2" onClick={handleSaveCombo}>
+                    OK
+                  </Button>
                 </div>
               ) : (
                 <Button
@@ -294,9 +347,16 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
             </div>
 
             <div className="space-y-2 border-t border-border pt-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Formato</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Formato
+              </div>
               {FORMAT_ORDER.map((f) => (
-                <FormatCard key={f} format={f} selected={format === f} onClick={() => setFormat(f)} />
+                <FormatCard
+                  key={f}
+                  format={f}
+                  selected={format === f}
+                  onClick={() => setFormat(f)}
+                />
               ))}
             </div>
           </aside>
@@ -305,11 +365,19 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
             <div className="border-b border-border px-4 pt-3">
               <Tabs value={tab} onValueChange={setTab}>
                 {mounted ? (
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onCategoriesDragEnd}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={onCategoriesDragEnd}
+                  >
                     <SortableContext items={categoryOrder} strategy={horizontalListSortingStrategy}>
                       <TabsList>
                         {categoryOrder.map((cId) => (
-                          <SortableTabTrigger key={cId} id={cId} label={CATEGORY_LABELS[cId] ?? cId} />
+                          <SortableTabTrigger
+                            key={cId}
+                            id={cId}
+                            label={CATEGORY_LABELS[cId] ?? cId}
+                          />
                         ))}
                       </TabsList>
                     </SortableContext>
@@ -317,7 +385,9 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                 ) : (
                   <TabsList>
                     {categoryOrder.map((cId) => (
-                      <TabsTrigger key={cId} value={cId}>{CATEGORY_LABELS[cId] ?? cId}</TabsTrigger>
+                      <TabsTrigger key={cId} value={cId}>
+                        {CATEGORY_LABELS[cId] ?? cId}
+                      </TabsTrigger>
                     ))}
                   </TabsList>
                 )}
@@ -328,8 +398,15 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                 {categoryOrder.map((cId) => (
                   <TabsContent key={cId} value={cId} className="mt-0">
                     {mounted ? (
-                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onTemplatesDragEnd}>
-                        <SortableContext items={cId === tab ? currentTemplates : (templatesPerCategory[cId] ?? [])} strategy={rectSortingStrategy}>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={onTemplatesDragEnd}
+                      >
+                        <SortableContext
+                          items={cId === tab ? currentTemplates : (templatesPerCategory[cId] ?? [])}
+                          strategy={rectSortingStrategy}
+                        >
                           <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
                             {(templatesPerCategory[cId] ?? []).map((t) => (
                               <SortableTemplateThumb
@@ -365,13 +442,22 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
         </div>
 
         <DialogFooter className="border-t border-border bg-muted/10 px-6 py-3">
-          <Button type="button" variant="ghost" size="sm" className="mr-auto text-xs" onClick={resetPickerOrder} title="Ripristina ordine default">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mr-auto text-xs"
+            onClick={resetPickerOrder}
+            title="Ripristina ordine default"
+          >
             <RotateCcw className="mr-1 h-3 w-3" /> Ripristina ordine
           </Button>
           <div className="text-xs text-muted-foreground">
             {FORMAT_DIMENSIONS[format].label} · {TEMPLATE_META[template].label}
           </div>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annulla</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annulla
+          </Button>
           <Button onClick={handleCreate}>
             <Plus className="mr-1 h-4 w-4" /> Crea slide
           </Button>

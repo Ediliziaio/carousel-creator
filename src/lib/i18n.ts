@@ -1,9 +1,4 @@
-import type {
-  Slide,
-  AnyTemplateData,
-  I18nWrapper,
-  SlideDataField,
-} from "./templates";
+import type { Slide, AnyTemplateData, I18nWrapper, SlideDataField } from "./templates";
 
 export const LANG_NAMES: Record<string, string> = {
   it: "Italiano",
@@ -23,18 +18,10 @@ export function isI18n(d: SlideDataField): d is I18nWrapper {
 }
 
 /** Returns the data for the requested language with fallback to defaultLanguage, then any first lang. */
-export function getSlideData(
-  slide: Slide,
-  lang: string,
-  defaultLang: string,
-): AnyTemplateData {
+export function getSlideData(slide: Slide, lang: string, defaultLang: string): AnyTemplateData {
   if (!isI18n(slide.data)) return slide.data as AnyTemplateData;
   const w = slide.data;
-  return (
-    w.byLang[lang] ??
-    w.byLang[defaultLang] ??
-    Object.values(w.byLang)[0]
-  );
+  return w.byLang[lang] ?? w.byLang[defaultLang] ?? Object.values(w.byLang)[0];
 }
 
 /** Sets data for a given language in the slide. Always returns a new SlideDataField. */

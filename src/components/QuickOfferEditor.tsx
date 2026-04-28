@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Zap, Save, Trash2 } from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META } from "@/lib/templates";
@@ -18,7 +24,10 @@ export function QuickOfferEditor() {
   const deleteOfferPreset = useCarousel((s) => s.deleteOfferPreset);
 
   const targets = useMemo(
-    () => slides.map((s, i) => ({ s, i })).filter(({ s }) => s.template === "offer" || s.template === "cta"),
+    () =>
+      slides
+        .map((s, i) => ({ s, i }))
+        .filter(({ s }) => s.template === "offer" || s.template === "cta"),
     [slides],
   );
   const enabled = targets.length > 0;
@@ -82,7 +91,12 @@ export function QuickOfferEditor() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" disabled={!enabled} title={enabled ? "" : "Aggiungi una slide Offerta o CTA"}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!enabled}
+          title={enabled ? "" : "Aggiungi una slide Offerta o CTA"}
+        >
           <Zap className="mr-1 h-4 w-4" /> Offerta rapida
         </Button>
       </SheetTrigger>
@@ -91,11 +105,14 @@ export function QuickOfferEditor() {
           <SheetTitle>Offerta rapida</SheetTitle>
         </SheetHeader>
         <p className="mt-2 text-sm text-muted-foreground">
-          Imposta i campi in un colpo solo: vengono propagati a tutte le slide Offerta e CTA del carosello.
+          Imposta i campi in un colpo solo: vengono propagati a tutte le slide Offerta e CTA del
+          carosello.
         </p>
 
         <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Carica preset</Label>
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Carica preset
+          </Label>
           <Select onValueChange={loadPreset}>
             <SelectTrigger className="mt-2 h-8">
               <SelectValue placeholder="Scegli un preset…" />
@@ -103,7 +120,8 @@ export function QuickOfferEditor() {
             <SelectContent>
               {offerPresets.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name}{p.builtIn ? " ★" : ""}
+                  {p.name}
+                  {p.builtIn ? " ★" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -112,9 +130,18 @@ export function QuickOfferEditor() {
             <div className="mt-2 space-y-1">
               <div className="text-[10px] uppercase text-muted-foreground">I tuoi preset</div>
               {userPresets.map((p) => (
-                <div key={p.id} className="flex items-center justify-between rounded border border-border/50 px-2 py-1 text-xs">
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between rounded border border-border/50 px-2 py-1 text-xs"
+                >
                   <span className="truncate">{p.name}</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeletePreset(p.id, p.name)} title="Elimina preset">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => onDeletePreset(p.id, p.name)}
+                    title="Elimina preset"
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -126,16 +153,28 @@ export function QuickOfferEditor() {
         <div className="mt-4 space-y-3">
           <div className="space-y-1.5">
             <Label>CTA (testo bottone)</Label>
-            <Input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="Es. ACQUISTA ORA →" />
+            <Input
+              value={ctaLabel}
+              onChange={(e) => setCtaLabel(e.target.value)}
+              placeholder="Es. ACQUISTA ORA →"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Prezzo nuovo</Label>
-              <Input value={priceNew} onChange={(e) => setPriceNew(e.target.value)} placeholder="Es. 147" />
+              <Input
+                value={priceNew}
+                onChange={(e) => setPriceNew(e.target.value)}
+                placeholder="Es. 147"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Prezzo barrato</Label>
-              <Input value={priceOld} onChange={(e) => setPriceOld(e.target.value)} placeholder="Es. 297" />
+              <Input
+                value={priceOld}
+                onChange={(e) => setPriceOld(e.target.value)}
+                placeholder="Es. 297"
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -144,13 +183,19 @@ export function QuickOfferEditor() {
           </div>
           <div className="space-y-1.5">
             <Label>Urgenza</Label>
-            <Input value={urgency} onChange={(e) => setUrgency(e.target.value)} placeholder="Es. Solo per i primi 50 — scade in 48h" />
+            <Input
+              value={urgency}
+              onChange={(e) => setUrgency(e.target.value)}
+              placeholder="Es. Solo per i primi 50 — scade in 48h"
+            />
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-border p-3">
             <div className="text-sm">
               <div className="font-medium">Sovrascrivi anche se personalizzato</div>
-              <div className="text-xs text-muted-foreground">Se OFF, modifica solo i valori a default.</div>
+              <div className="text-xs text-muted-foreground">
+                Se OFF, modifica solo i valori a default.
+              </div>
             </div>
             <Switch checked={overwrite} onCheckedChange={setOverwrite} />
           </div>
@@ -167,14 +212,29 @@ export function QuickOfferEditor() {
                   autoFocus
                 />
                 <div className="flex gap-2">
-                  <Button size="sm" className="h-7" onClick={onSavePreset}>Salva</Button>
-                  <Button size="sm" variant="outline" className="h-7" onClick={() => { setSavingPreset(false); setPresetName(""); }}>
+                  <Button size="sm" className="h-7" onClick={onSavePreset}>
+                    Salva
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7"
+                    onClick={() => {
+                      setSavingPreset(false);
+                      setPresetName("");
+                    }}
+                  >
                     Annulla
                   </Button>
                 </div>
               </div>
             ) : (
-              <Button size="sm" variant="outline" className="h-7 w-full" onClick={() => setSavingPreset(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-full"
+                onClick={() => setSavingPreset(true)}
+              >
                 <Save className="mr-1 h-3 w-3" /> Salva valori come preset
               </Button>
             )}
@@ -182,7 +242,9 @@ export function QuickOfferEditor() {
         </div>
 
         <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Slide impattate</div>
+          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Slide impattate
+          </div>
           {targets.length === 0 ? (
             <div className="text-sm text-muted-foreground">Nessuna slide Offerta/CTA</div>
           ) : (
@@ -197,7 +259,9 @@ export function QuickOfferEditor() {
         </div>
 
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Annulla
+          </Button>
           <Button onClick={apply}>Applica a tutte</Button>
         </div>
       </SheetContent>

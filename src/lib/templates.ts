@@ -425,23 +425,29 @@ export const FORMAT_DIMENSIONS: Record<
   SlideFormat,
   { w: number; h: number; label: string; ratio: string; desc: string }
 > = {
-  portrait:  { w: 1080, h: 1350, label: "Post verticale", ratio: "4:5",  desc: "Instagram feed" },
-  square:    { w: 1080, h: 1080, label: "Post quadrato",  ratio: "1:1",  desc: "Feed classico" },
-  story:     { w: 1080, h: 1920, label: "Storia / Reel",  ratio: "9:16", desc: "Stories e Reels" },
-  landscape: { w: 1920, h: 1080, label: "Landscape",      ratio: "16:9", desc: "X / LinkedIn / YouTube" },
+  portrait: { w: 1080, h: 1350, label: "Post verticale", ratio: "4:5", desc: "Instagram feed" },
+  square: { w: 1080, h: 1080, label: "Post quadrato", ratio: "1:1", desc: "Feed classico" },
+  story: { w: 1080, h: 1920, label: "Storia / Reel", ratio: "9:16", desc: "Stories e Reels" },
+  landscape: {
+    w: 1920,
+    h: 1080,
+    label: "Landscape",
+    ratio: "16:9",
+    desc: "X / LinkedIn / YouTube",
+  },
 };
 
 /* ============ Per-field text style overrides (Canva-style) ============ */
 export interface TextStyle {
   fontFamily?: FontChoice;
-  fontSize?: number;        // px @ canvas scale
+  fontSize?: number; // px @ canvas scale
   fontWeight?: Weight;
-  letterSpacing?: number;   // em
+  letterSpacing?: number; // em
   textAlign?: "left" | "center" | "right";
   italic?: boolean;
   uppercase?: boolean;
   underline?: boolean;
-  color?: string;           // hex
+  color?: string; // hex
 }
 
 export interface Slide {
@@ -616,7 +622,10 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   tipPack: { label: "Pacchetto consigli", desc: "Mini-card numerate da salvare" },
   urgency: { label: "Urgenza / Countdown", desc: "Timer XL + scarcity per spinta finale" },
   bonusStack: { label: "Bonus stack", desc: "Lista bonus con valore cumulativo (VSL)" },
-  guarantee: { label: "Garanzia / Risk reversal", desc: "Sigillo garanzia + promessa anti-rischio" },
+  guarantee: {
+    label: "Garanzia / Risk reversal",
+    desc: "Sigillo garanzia + promessa anti-rischio",
+  },
   faq: { label: "FAQ", desc: "Domande & risposte in formato accordion" },
   quickWin: { label: "Quick win", desc: "Azione rapida da fare ora con step" },
   mediaHero: { label: "Media hero", desc: "Foto fullbleed + titolo overlay" },
@@ -630,15 +639,51 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
-  "split", "grid2x2", "bignum", "center", "timeline",
-  "compare", "vocab", "qa", "checklist", "stat", "cover",
-  "gallery", "imageQuote", "chartBar", "chartDonut", "chartLine",
-  "feature", "testimonial",
-  "myth", "process", "prosCons", "quoteBig", "roadmap", "cta",
-  "hook", "problemSolution", "mistakes", "framework", "socialProof", "offer", "objection", "tipPack",
-  "urgency", "bonusStack", "guarantee", "faq", "quickWin",
-  "mediaHero", "polaroidStack", "splitDuo", "magazineCover",
-  "chartArea", "chartCompareBar", "kpiGrid", "funnelChart",
+  "split",
+  "grid2x2",
+  "bignum",
+  "center",
+  "timeline",
+  "compare",
+  "vocab",
+  "qa",
+  "checklist",
+  "stat",
+  "cover",
+  "gallery",
+  "imageQuote",
+  "chartBar",
+  "chartDonut",
+  "chartLine",
+  "feature",
+  "testimonial",
+  "myth",
+  "process",
+  "prosCons",
+  "quoteBig",
+  "roadmap",
+  "cta",
+  "hook",
+  "problemSolution",
+  "mistakes",
+  "framework",
+  "socialProof",
+  "offer",
+  "objection",
+  "tipPack",
+  "urgency",
+  "bonusStack",
+  "guarantee",
+  "faq",
+  "quickWin",
+  "mediaHero",
+  "polaroidStack",
+  "splitDuo",
+  "magazineCover",
+  "chartArea",
+  "chartCompareBar",
+  "kpiGrid",
+  "funnelChart",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -659,7 +704,11 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         eyebrow: "Concetti chiave",
         title: "Quattro pilastri.",
         cells: [
-          { num: "01", title: "Velocità", text: "Esegui in pochi secondi quello che richiedeva ore." },
+          {
+            num: "01",
+            title: "Velocità",
+            text: "Esegui in pochi secondi quello che richiedeva ore.",
+          },
           { num: "02", title: "Costo", text: "Tagli operativi senza perdere qualità." },
           { num: "03", title: "Scala", text: "Lo stesso flusso per 1 o 1000 casi." },
           { num: "04", title: "Controllo", text: "Tracci ogni passaggio e correggi al volo." },
@@ -696,8 +745,16 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
       return {
         eyebrow: "Confronto",
         title: "Prima e dopo l'AI.",
-        before: { tag: "PRIMA", title: "Lavoro manuale", items: ["Ore di copia-incolla", "Errori di battitura", "Output inconsistente"] },
-        after:  { tag: "DOPO",  title: "Flusso AI",      items: ["Minuti, non ore", "Zero refusi", "Output sempre uguale"] },
+        before: {
+          tag: "PRIMA",
+          title: "Lavoro manuale",
+          items: ["Ore di copia-incolla", "Errori di battitura", "Output inconsistente"],
+        },
+        after: {
+          tag: "DOPO",
+          title: "Flusso AI",
+          items: ["Minuti, non ore", "Zero refusi", "Output sempre uguale"],
+        },
       } as CompareData;
     case "vocab":
       return {
@@ -724,8 +781,8 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         title: "Prima di iniziare.",
         meta: "5 PASSI · 10 MIN",
         items: [
-          { done: true,  title: "Account creato", note: "Email + password." },
-          { done: true,  title: "Modello selezionato" },
+          { done: true, title: "Account creato", note: "Email + password." },
+          { done: true, title: "Modello selezionato" },
           { done: false, title: "Primo prompt scritto", note: "Inizia semplice." },
           { done: false, title: "Output salvato" },
           { done: false, title: "Iterazione" },
@@ -819,7 +876,10 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         eyebrow: "Mito vs Realtà",
         title: "Sfatiamo un mito sull'AI.",
         myth: { label: "MITO", text: "L'AI sostituirà tutti i creator entro un anno." },
-        reality: { label: "REALTÀ", text: "L'AI amplifica chi sa usarla. I creator che la integrano crescono 3x più veloci." },
+        reality: {
+          label: "REALTÀ",
+          text: "L'AI amplifica chi sa usarla. I creator che la integrano crescono 3x più veloci.",
+        },
         source: "FONTE — REPORT 2025",
       } as MythData;
     case "process":
@@ -854,10 +914,30 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         eyebrow: "Roadmap 2026",
         title: "Cosa stiamo costruendo.",
         milestones: [
-          { status: "done", period: "Q4 2025", title: "Lancio beta", desc: "Prime 100 persone a bordo." },
-          { status: "progress", period: "Q1 2026", title: "Editor AI", desc: "Generazione contenuti integrata." },
-          { status: "planned", period: "Q2 2026", title: "Mobile app", desc: "iOS + Android nativi." },
-          { status: "planned", period: "Q3 2026", title: "Marketplace", desc: "Template e preset community." },
+          {
+            status: "done",
+            period: "Q4 2025",
+            title: "Lancio beta",
+            desc: "Prime 100 persone a bordo.",
+          },
+          {
+            status: "progress",
+            period: "Q1 2026",
+            title: "Editor AI",
+            desc: "Generazione contenuti integrata.",
+          },
+          {
+            status: "planned",
+            period: "Q2 2026",
+            title: "Mobile app",
+            desc: "iOS + Android nativi.",
+          },
+          {
+            status: "planned",
+            period: "Q3 2026",
+            title: "Marketplace",
+            desc: "Template e preset community.",
+          },
         ],
       } as RoadmapData;
     case "cta":
@@ -878,18 +958,33 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
     case "problemSolution":
       return {
         eyebrow: "Problema → Soluzione",
-        problem: { label: "IL PROBLEMA", text: "Spendi ore a scrivere contenuti che non convertono." },
-        solution: { label: "LA SOLUZIONE", text: "Un framework testato che riduce i tempi del 70% e triplica le conversioni." },
+        problem: {
+          label: "IL PROBLEMA",
+          text: "Spendi ore a scrivere contenuti che non convertono.",
+        },
+        solution: {
+          label: "LA SOLUZIONE",
+          text: "Un framework testato che riduce i tempi del 70% e triplica le conversioni.",
+        },
       } as ProblemSolutionData;
     case "mistakes":
       return {
         eyebrow: "Errori comuni",
         title: "I 4 errori che ti costano clienti.",
         mistakes: [
-          { title: "Vendere subito", why: "Le persone comprano da chi conoscono. Prima dai valore." },
-          { title: "Parlare di te", why: "Il tuo cliente vuole sentire parlare dei suoi problemi, non dei tuoi servizi." },
+          {
+            title: "Vendere subito",
+            why: "Le persone comprano da chi conoscono. Prima dai valore.",
+          },
+          {
+            title: "Parlare di te",
+            why: "Il tuo cliente vuole sentire parlare dei suoi problemi, non dei tuoi servizi.",
+          },
           { title: "Niente CTA chiara", why: "Se non dici cosa fare, nessuno farà nulla." },
-          { title: "Pubblicare a caso", why: "Senza un calendario coerente l'algoritmo ti penalizza." },
+          {
+            title: "Pubblicare a caso",
+            why: "Senza un calendario coerente l'algoritmo ti penalizza.",
+          },
         ],
       } as MistakesData;
     case "framework":
@@ -937,7 +1032,8 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
       return {
         eyebrow: "Obiezione comune",
         objection: "Ma io non ho tempo di postare ogni giorno…",
-        answer: "Non serve postare ogni giorno. 3 caroselli a settimana ben fatti battono 30 post mediocri. Te lo dimostro.",
+        answer:
+          "Non serve postare ogni giorno. 3 caroselli a settimana ben fatti battono 30 post mediocri. Te lo dimostro.",
         signOff: "P.S. Provalo gratis per 14 giorni.",
       } as ObjectionData;
     case "tipPack":
@@ -990,9 +1086,15 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         title: "Le risposte ai dubbi più comuni.",
         items: [
           { q: "Per chi è pensato?", a: "Per chi vuole vendere sui social senza spendere in ads." },
-          { q: "Quanto tempo serve?", a: "Bastano 2 ore a settimana per vedere risultati in 30 giorni." },
+          {
+            q: "Quanto tempo serve?",
+            a: "Bastano 2 ore a settimana per vedere risultati in 30 giorni.",
+          },
           { q: "C'è una garanzia?", a: "Sì: 30 giorni soddisfatti o rimborsati al 100%." },
-          { q: "Funziona anche per servizi?", a: "Sì, è ottimizzato per coach, consulenti e creator." },
+          {
+            q: "Funziona anche per servizi?",
+            a: "Sì, è ottimizzato per coach, consulenti e creator.",
+          },
         ],
       } as FaqData;
     case "quickWin":
@@ -1076,10 +1178,36 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         eyebrow: "DASHBOARD Q4",
         title: "I numeri che contano.",
         kpis: [
-          { label: "Revenue", value: "84.2", unit: "k€", delta: "+24%", trend: "up", spark: [12, 18, 22, 28, 34, 41, 52] },
-          { label: "Nuovi clienti", value: "247", delta: "+12%", trend: "up", spark: [10, 12, 14, 18, 22, 24, 28] },
-          { label: "Churn rate", value: "2.1", unit: "%", delta: "-0.4%", trend: "down", spark: [4, 3.5, 3, 2.8, 2.5, 2.3, 2.1] },
-          { label: "NPS score", value: "72", delta: "+5", trend: "up", spark: [60, 62, 65, 67, 68, 70, 72] },
+          {
+            label: "Revenue",
+            value: "84.2",
+            unit: "k€",
+            delta: "+24%",
+            trend: "up",
+            spark: [12, 18, 22, 28, 34, 41, 52],
+          },
+          {
+            label: "Nuovi clienti",
+            value: "247",
+            delta: "+12%",
+            trend: "up",
+            spark: [10, 12, 14, 18, 22, 24, 28],
+          },
+          {
+            label: "Churn rate",
+            value: "2.1",
+            unit: "%",
+            delta: "-0.4%",
+            trend: "down",
+            spark: [4, 3.5, 3, 2.8, 2.5, 2.3, 2.1],
+          },
+          {
+            label: "NPS score",
+            value: "72",
+            delta: "+5",
+            trend: "up",
+            spark: [60, 62, 65, 67, 68, 70, 72],
+          },
         ],
       } as KpiGridData;
     case "funnelChart":
@@ -1103,7 +1231,10 @@ export function makeDefaultSlide(template: TemplateId, format: SlideFormat = "po
 
 /* ============ Stylable field registry ============ */
 /** List of text fields that can receive a per-field style override, per template. */
-export function getStylableFields(template: TemplateId, data?: AnyTemplateData): { path: string; label: string }[] {
+export function getStylableFields(
+  template: TemplateId,
+  data?: AnyTemplateData,
+): { path: string; label: string }[] {
   switch (template) {
     case "split": {
       const d = data as SplitData | undefined;
@@ -1111,7 +1242,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.paragraphs?.forEach((_, i) => out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }));
+      d?.paragraphs?.forEach((_, i) =>
+        out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }),
+      );
       d?.list?.forEach((_, i) => out.push({ path: `list.${i}.text`, label: `Lista #${i + 1}` }));
       return out;
     }
@@ -1134,7 +1267,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "numberSub", label: "Sottotitolo numero" },
         { path: "title", label: "Titolo" },
       ];
-      d?.paragraphs?.forEach((_, i) => out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }));
+      d?.paragraphs?.forEach((_, i) =>
+        out.push({ path: `paragraphs.${i}`, label: `Paragrafo ${i + 1}` }),
+      );
       return out;
     }
     case "center":
@@ -1168,9 +1303,7 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
       ];
     case "qa": {
       const d = data as QAData | undefined;
-      const out = [
-        { path: "question", label: "Domanda" },
-      ];
+      const out = [{ path: "question", label: "Domanda" }];
       d?.answer?.forEach((_, i) => out.push({ path: `answer.${i}`, label: `Risposta ${i + 1}` }));
       return out;
     }
@@ -1201,7 +1334,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.images?.forEach((_, i) => out.push({ path: `images.${i}.caption`, label: `Didascalia ${i + 1}` }));
+      d?.images?.forEach((_, i) =>
+        out.push({ path: `images.${i}.caption`, label: `Didascalia ${i + 1}` }),
+      );
       return out;
     }
     case "imageQuote":
@@ -1225,7 +1360,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.segments?.forEach((_, i) => out.push({ path: `segments.${i}.label`, label: `Segmento ${i + 1}` }));
+      d?.segments?.forEach((_, i) =>
+        out.push({ path: `segments.${i}.label`, label: `Segmento ${i + 1}` }),
+      );
       return out;
     }
     case "chartLine":
@@ -1239,7 +1376,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.bullets?.forEach((_, i) => out.push({ path: `bullets.${i}.title`, label: `Bullet ${i + 1}` }));
+      d?.bullets?.forEach((_, i) =>
+        out.push({ path: `bullets.${i}.title`, label: `Bullet ${i + 1}` }),
+      );
       return out;
     }
     case "testimonial":
@@ -1261,7 +1400,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.steps?.forEach((_, i) => out.push({ path: `steps.${i}.title`, label: `Step ${i + 1} – titolo` }));
+      d?.steps?.forEach((_, i) =>
+        out.push({ path: `steps.${i}.title`, label: `Step ${i + 1} – titolo` }),
+      );
       return out;
     }
     case "prosCons": {
@@ -1286,7 +1427,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.milestones?.forEach((_, i) => out.push({ path: `milestones.${i}.title`, label: `Milestone ${i + 1}` }));
+      d?.milestones?.forEach((_, i) =>
+        out.push({ path: `milestones.${i}.title`, label: `Milestone ${i + 1}` }),
+      );
       return out;
     }
     case "cta":
@@ -1314,7 +1457,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.mistakes?.forEach((_, i) => out.push({ path: `mistakes.${i}.title`, label: `Errore ${i + 1}` }));
+      d?.mistakes?.forEach((_, i) =>
+        out.push({ path: `mistakes.${i}.title`, label: `Errore ${i + 1}` }),
+      );
       return out;
     }
     case "framework": {
@@ -1324,7 +1469,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "title", label: "Titolo" },
         { path: "acronym", label: "Acronimo" },
       ];
-      d?.letters?.forEach((_, i) => out.push({ path: `letters.${i}.name`, label: `Lettera ${i + 1} – nome` }));
+      d?.letters?.forEach((_, i) =>
+        out.push({ path: `letters.${i}.name`, label: `Lettera ${i + 1} – nome` }),
+      );
       return out;
     }
     case "socialProof": {
@@ -1335,7 +1482,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "tagline", label: "Tagline" },
         { path: "summary", label: "Sintesi" },
       ];
-      d?.metrics?.forEach((_, i) => out.push({ path: `metrics.${i}.value`, label: `Metrica ${i + 1}` }));
+      d?.metrics?.forEach((_, i) =>
+        out.push({ path: `metrics.${i}.value`, label: `Metrica ${i + 1}` }),
+      );
       return out;
     }
     case "offer":
@@ -1377,7 +1526,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "yourPrice", label: "Prezzo finale" },
         { path: "ctaLabel", label: "CTA" },
       ];
-      d?.bonuses?.forEach((_, i) => out.push({ path: `bonuses.${i}.name`, label: `Bonus ${i + 1}` }));
+      d?.bonuses?.forEach((_, i) =>
+        out.push({ path: `bonuses.${i}.name`, label: `Bonus ${i + 1}` }),
+      );
       return out;
     }
     case "guarantee":
@@ -1423,7 +1574,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "eyebrow", label: "Eyebrow" },
         { path: "title", label: "Titolo" },
       ];
-      d?.polaroids?.forEach((_, i) => out.push({ path: `polaroids.${i}.caption`, label: `Polaroid ${i + 1} – caption` }));
+      d?.polaroids?.forEach((_, i) =>
+        out.push({ path: `polaroids.${i}.caption`, label: `Polaroid ${i + 1} – caption` }),
+      );
       return out;
     }
     case "splitDuo":
@@ -1441,7 +1594,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "issueLabel", label: "Numero / Data" },
         { path: "mainHeadline", label: "Headline" },
       ];
-      d?.coverLines?.forEach((_, i) => out.push({ path: `coverLines.${i}.text`, label: `Cover line ${i + 1}` }));
+      d?.coverLines?.forEach((_, i) =>
+        out.push({ path: `coverLines.${i}.text`, label: `Cover line ${i + 1}` }),
+      );
       return out;
     }
     case "chartArea":
@@ -1478,7 +1633,9 @@ export function getStylableFields(template: TemplateId, data?: AnyTemplateData):
         { path: "title", label: "Titolo" },
         { path: "summary", label: "Sintesi" },
       ];
-      d?.stages?.forEach((_, i) => out.push({ path: `stages.${i}.label`, label: `Stadio ${i + 1}` }));
+      d?.stages?.forEach((_, i) =>
+        out.push({ path: `stages.${i}.label`, label: `Stadio ${i + 1}` }),
+      );
       return out;
     }
   }

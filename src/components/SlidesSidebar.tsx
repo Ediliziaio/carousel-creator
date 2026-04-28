@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCarousel } from "@/lib/store";
-import { TEMPLATE_META, FORMAT_DIMENSIONS, type TemplateId, type SlideFormat } from "@/lib/templates";
+import {
+  TEMPLATE_META,
+  FORMAT_DIMENSIONS,
+  type TemplateId,
+  type SlideFormat,
+} from "@/lib/templates";
 import { validateSlide, validateAllSlides } from "@/lib/validation";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { NewSlideDialog } from "@/components/NewSlideDialog";
@@ -40,7 +45,14 @@ function MiniPreview({ index }: { index: number }) {
       className="relative overflow-hidden rounded-md border border-border bg-black"
       style={{ width: THUMB_W, height: h }}
     >
-      <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: dim.w, height: dim.h }}>
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          width: dim.w,
+          height: dim.h,
+        }}
+      >
         <SlideRenderer slide={slide} brand={brand} index={index} total={total} lang={lang} />
       </div>
     </div>
@@ -116,15 +128,30 @@ function SlideRow({ slideId, index, draggable }: SlideRowProps) {
               )}
               {(index + 1).toString().padStart(2, "0")} · {TEMPLATE_META[sl.template].label}
             </span>
-            <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">{ratio}</span>
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground">
+              {ratio}
+            </span>
           </div>
         </button>
       </div>
       <div className="flex justify-end gap-1 pl-6">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateSlide(sl.id)} title="Duplica">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => duplicateSlide(sl.id)}
+          title="Duplica"
+        >
           <Copy className="h-3.5 w-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSlide(sl.id)} disabled={slides.length === 1} title="Elimina">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => removeSlide(sl.id)}
+          disabled={slides.length === 1}
+          title="Elimina"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
@@ -146,10 +173,7 @@ export function SlidesSidebar() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const issues = useMemo(
-    () => validateAllSlides(slides, lang, defLang),
-    [slides, lang, defLang],
-  );
+  const issues = useMemo(() => validateAllSlides(slides, lang, defLang), [slides, lang, defLang]);
 
   const goToFirstError = () => {
     const first = issues[0];
@@ -184,7 +208,7 @@ export function SlidesSidebar() {
   };
 
   return (
-    <aside className="flex h-full w-[252px] shrink-0 flex-col border-r border-border bg-card">
+    <aside className="flex h-[38vh] w-full shrink-0 flex-col border-b border-border bg-card md:h-full md:w-[252px] md:border-b-0 md:border-r">
       <div className="border-b border-border p-3">
         <Button className="w-full" size="sm" onClick={() => setDialogOpen(true)}>
           <Plus className="mr-1 h-4 w-4" /> Nuova slide
@@ -198,7 +222,8 @@ export function SlidesSidebar() {
         >
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           <span className="flex-1 leading-tight">
-            <strong>{issues.length}</strong> {issues.length === 1 ? "slide con errori" : "slide con errori"} — vai al primo
+            <strong>{issues.length}</strong>{" "}
+            {issues.length === 1 ? "slide con errori" : "slide con errori"} — vai al primo
           </span>
         </button>
       )}

@@ -23,7 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, Image as ImageIcon, Package, Loader2, AlertTriangle, Languages } from "lucide-react";
+import {
+  Download,
+  Image as ImageIcon,
+  Package,
+  Loader2,
+  AlertTriangle,
+  Languages,
+} from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { validateAllSlides, type SlideValidationResult } from "@/lib/validation";
 import { downloadSinglePng, downloadZipFromNodes } from "@/lib/export";
@@ -41,10 +48,21 @@ interface Props {
 type Mode = { kind: "single" | "zip"; lang: string };
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "carosello";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "carosello"
+  );
 }
 
-export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitle, onError }: Props) {
+export function ExportButton({
+  exportRefs,
+  activeSlideId,
+  activeIndex,
+  brandTitle,
+  onError,
+}: Props) {
   const slides = useCarousel((s) => s.slides);
   const setActive = useCarousel((s) => s.setActive);
   const setActiveLang = useCarousel((s) => s.setActiveLang);
@@ -78,7 +96,11 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
         const node = exportRefs.current.get(activeSlideId);
         if (!node) throw new Error("Slide attiva non trovata nel DOM di export.");
         const num = (activeIndex + 1).toString().padStart(2, "0");
-        method = await downloadSinglePng(node, `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`, brand);
+        method = await downloadSinglePng(
+          node,
+          `${slugify(brandTitle)}-slide-${num}${langSuffix}.png`,
+          brand,
+        );
         toast.success("PNG esportata");
       } else {
         const nodes = slides
@@ -89,7 +111,9 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
         toast.success(`${nodes.length} PNG esportate in ZIP`);
       }
       if (method === "new-tab") {
-        toast.info("Download bloccato dal browser: file aperto in una nuova tab. Tasto destro → Salva immagine come...");
+        toast.info(
+          "Download bloccato dal browser: file aperto in una nuova tab. Tasto destro → Salva immagine come...",
+        );
       }
     } catch (e) {
       const msg = (e as Error).message || "Errore sconosciuto";
@@ -163,17 +187,25 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
         <DropdownMenuContent align="end" className="w-64">
           {!multilang ? (
             <>
-              <DropdownMenuItem disabled={!activeSlideId} onClick={() => handleClick("single", defaultLang)}>
+              <DropdownMenuItem
+                disabled={!activeSlideId}
+                onClick={() => handleClick("single", defaultLang)}
+              >
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <div className="flex flex-col">
                   <span className="font-medium">PNG — slide corrente</span>
                   <span className="text-xs text-muted-foreground">
-                    {activeSlideId ? `Slide ${(activeIndex + 1).toString().padStart(2, "0")}` : "Nessuna slide attiva"}
+                    {activeSlideId
+                      ? `Slide ${(activeIndex + 1).toString().padStart(2, "0")}`
+                      : "Nessuna slide attiva"}
                   </span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled={slides.length === 0} onClick={() => handleClick("zip", defaultLang)}>
+              <DropdownMenuItem
+                disabled={slides.length === 0}
+                onClick={() => handleClick("zip", defaultLang)}
+              >
                 <Package className="mr-2 h-4 w-4" />
                 <div className="flex flex-col">
                   <span className="font-medium">ZIP — tutte le slide</span>
@@ -193,8 +225,13 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
                     {languages.map((l) => (
-                      <DropdownMenuItem key={l} onClick={() => handleClick("single", l)} disabled={!activeSlideId}>
-                        {langLabel(l)}{l === defaultLang && " ★"}
+                      <DropdownMenuItem
+                        key={l}
+                        onClick={() => handleClick("single", l)}
+                        disabled={!activeSlideId}
+                      >
+                        {langLabel(l)}
+                        {l === defaultLang && " ★"}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuSubContent>
@@ -207,8 +244,13 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
                     {languages.map((l) => (
-                      <DropdownMenuItem key={l} onClick={() => handleClick("zip", l)} disabled={slides.length === 0}>
-                        {langLabel(l)}{l === defaultLang && " ★"}
+                      <DropdownMenuItem
+                        key={l}
+                        onClick={() => handleClick("zip", l)}
+                        disabled={slides.length === 0}
+                      >
+                        {langLabel(l)}
+                        {l === defaultLang && " ★"}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuSubContent>
@@ -224,11 +266,13 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Campi obbligatori mancanti{pendingMode && multilang ? ` — ${langLabel(pendingMode.lang)}` : ""}
+              Campi obbligatori mancanti
+              {pendingMode && multilang ? ` — ${langLabel(pendingMode.lang)}` : ""}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {validationIssues.reduce((sum, i) => sum + i.errors.length, 0)} campi da completare
-              {" su "}{validationIssues.length} slide. Completa i campi prima di esportare, oppure forza
+              {" su "}
+              {validationIssues.length} slide. Completa i campi prima di esportare, oppure forza
               l'export per generare comunque le PNG.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -255,7 +299,9 @@ export function ExportButton({ exportRefs, activeSlideId, activeIndex, brandTitl
           <AlertDialogFooter>
             <AlertDialogCancel onClick={closeDialog}>Annulla</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmDialog}>
-              {!strictExport && forceExport ? "Esporta comunque" : "Vai al primo campo da completare"}
+              {!strictExport && forceExport
+                ? "Esporta comunque"
+                : "Vai al primo campo da completare"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

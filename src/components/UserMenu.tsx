@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCarousel } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { listCarousels, saveCarousel, deleteCarousel, type CarouselRow } from "@/lib/carouselsApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { toast } from "sonner";
 
 export function UserMenu() {
   const navigate = useNavigate();
+  const configured = isSupabaseConfigured();
   const user = useAuth((s) => s.user);
   const signOut = useAuth((s) => s.signOut);
   const brand = useCarousel((s) => s.brand);
@@ -41,13 +43,23 @@ export function UserMenu() {
   const [listLoading, setListLoading] = useState(false);
 
   useEffect(() => {
+    if (!configured) return;
     if (!listOpen) return;
     setListLoading(true);
     listCarousels()
       .then(setItems)
       .catch((e) => toast.error("Impossibile caricare: " + (e as Error).message))
       .finally(() => setListLoading(false));
-  }, [listOpen]);
+  }, [configured, listOpen]);
+
+  if (!configured) {
+    return (
+      <Button variant="outline" size="sm" title="Salvataggio cloud non configurato">
+        <User2 className="mr-1 h-4 w-4" />
+        Modalità locale
+      </Button>
+    );
+  }
 
   async function handleSave() {
     const name = saveName.trim() || brand.carouselTitle || "Carosello senza titolo";
@@ -116,11 +128,13 @@ export function UserMenu() {
             Salva carosello
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setListOpen(true)}>
-            <FolderOpen className="mr-2 h-4 w-4" />
-            I miei caroselli
+            <FolderOpen className="mr-2 h-4 w-4" />I miei caroselli
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+          <DropdownMenuItem
+            onClick={handleSignOut}
+            className="text-destructive focus:text-destructive"
+          >
             <LogOut className="mr-2 h-4 w-4" />
             Esci
           </DropdownMenuItem>
@@ -160,9 +174,7 @@ export function UserMenu() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>I miei caroselli</DialogTitle>
-            <DialogDescription>
-              Clicca un carosello per caricarlo nell'editor.
-            </DialogDescription>
+            <DialogDescription>Clicca un carosello per caricarlo nell'editor.</DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto">
             {listLoading ? (
@@ -177,10 +189,7 @@ export function UserMenu() {
               <ul className="divide-y divide-border">
                 {items.map((row) => (
                   <li key={row.id} className="flex items-center gap-3 py-3">
-                    <button
-                      onClick={() => handleLoad(row)}
-                      className="flex-1 text-left"
-                    >
+                    <button onClick={() => handleLoad(row)} className="flex-1 text-left">
                       <div className="font-medium text-foreground">{row.name}</div>
                       <div className="text-xs text-muted-foreground">
                         Aggiornato {new Date(row.updated_at).toLocaleString()}

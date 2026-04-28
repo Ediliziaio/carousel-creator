@@ -49,7 +49,13 @@ export function FixIssuesGuide({ issues, index, onPrev, onNext, onSkip, onClose 
           </div>
         </div>
 
-        <Button variant="ghost" size="sm" className="h-7" onClick={onSkip} title="Salta questo errore">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7"
+          onClick={onSkip}
+          title="Salta questo errore"
+        >
           <SkipForward className="mr-1 h-3 w-3" /> Salta
         </Button>
 
@@ -64,7 +70,13 @@ export function FixIssuesGuide({ issues, index, onPrev, onNext, onSkip, onClose 
           Succ <ChevronRight className="ml-1 h-3 w-3" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose} title="Chiudi guida">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={onClose}
+          title="Chiudi guida"
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>

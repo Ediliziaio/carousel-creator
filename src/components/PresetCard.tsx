@@ -96,16 +96,33 @@ export function PresetCard({ preset, isCurrent, onApply, onRename, onDelete }: P
       </div>
 
       <div className="flex gap-1">
-        <Button size="sm" variant={isCurrent ? "default" : "secondary"} className="h-7 flex-1 text-xs" onClick={onApply}>
+        <Button
+          size="sm"
+          variant={isCurrent ? "default" : "secondary"}
+          className="h-7 flex-1 text-xs"
+          onClick={onApply}
+        >
           <Check className="mr-1 h-3 w-3" /> {isCurrent ? "Applicato" : "Applica"}
         </Button>
         {onRename && !preset.builtIn && (
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(true)} title="Rinomina">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            onClick={() => setEditing(true)}
+            title="Rinomina"
+          >
             <Pencil className="h-3 w-3" />
           </Button>
         )}
         {onDelete && !preset.builtIn && (
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={onDelete} title="Elimina">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-destructive"
+            onClick={onDelete}
+            title="Elimina"
+          >
             <Trash2 className="h-3 w-3" />
           </Button>
         )}

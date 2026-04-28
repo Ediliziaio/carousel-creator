@@ -37,7 +37,12 @@ const FIELDS: Record<MarketingTpl, { key: string; label: string; placeholder: st
   ],
 };
 
-function extractValues(slide: Slide, lang: string, defaultLang: string, tpl: MarketingTpl): Record<string, string> {
+function extractValues(
+  slide: Slide,
+  lang: string,
+  defaultLang: string,
+  tpl: MarketingTpl,
+): Record<string, string> {
   const data = getSlideData(slide, lang, defaultLang) as unknown as Record<string, unknown>;
   const out: Record<string, string> = {};
   for (const f of FIELDS[tpl]) {
@@ -54,7 +59,11 @@ export function HookOfferMicroEditor() {
   const bulkUpdate = useCarousel((s) => s.bulkUpdateMarketingSlides);
 
   const buckets = useMemo(() => {
-    const out: Record<MarketingTpl, { slide: Slide; index: number }[]> = { hook: [], offer: [], cta: [] };
+    const out: Record<MarketingTpl, { slide: Slide; index: number }[]> = {
+      hook: [],
+      offer: [],
+      cta: [],
+    };
     slides.forEach((s, i) => {
       if (s.template === "hook" || s.template === "offer" || s.template === "cta") {
         out[s.template as MarketingTpl].push({ slide: s, index: i });
@@ -68,9 +77,15 @@ export function HookOfferMicroEditor() {
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<MarketingTpl>("hook");
-  const [drafts, setDrafts] = useState<Record<MarketingTpl, DraftRow[]>>({ hook: [], offer: [], cta: [] });
+  const [drafts, setDrafts] = useState<Record<MarketingTpl, DraftRow[]>>({
+    hook: [],
+    offer: [],
+    cta: [],
+  });
   const [bulkValues, setBulkValues] = useState<Record<MarketingTpl, Record<string, string>>>({
-    hook: {}, offer: {}, cta: {},
+    hook: {},
+    offer: {},
+    cta: {},
   });
 
   // Reset drafts when sheet opens
@@ -88,21 +103,29 @@ export function HookOfferMicroEditor() {
     setDrafts(next);
     setBulkValues({ hook: {}, offer: {}, cta: {} });
     // Pick first non-empty tab
-    const firstNonEmpty = (["hook", "offer", "cta"] as MarketingTpl[]).find((t) => buckets[t].length > 0);
+    const firstNonEmpty = (["hook", "offer", "cta"] as MarketingTpl[]).find(
+      (t) => buckets[t].length > 0,
+    );
     if (firstNonEmpty) setTab(firstNonEmpty);
   }, [open, buckets, activeLang, defaultLang]);
 
   const updateRow = (tpl: MarketingTpl, slideId: string, patch: Partial<DraftRow>) => {
     setDrafts((d) => ({
       ...d,
-      [tpl]: d[tpl].map((r) => (r.slideId === slideId ? { ...r, ...patch, values: { ...r.values, ...(patch.values ?? {}) } } : r)),
+      [tpl]: d[tpl].map((r) =>
+        r.slideId === slideId
+          ? { ...r, ...patch, values: { ...r.values, ...(patch.values ?? {}) } }
+          : r,
+      ),
     }));
   };
 
   const updateRowField = (tpl: MarketingTpl, slideId: string, field: string, value: string) => {
     setDrafts((d) => ({
       ...d,
-      [tpl]: d[tpl].map((r) => (r.slideId === slideId ? { ...r, values: { ...r.values, [field]: value } } : r)),
+      [tpl]: d[tpl].map((r) =>
+        r.slideId === slideId ? { ...r, values: { ...r.values, [field]: value } } : r,
+      ),
     }));
   };
 
@@ -124,7 +147,12 @@ export function HookOfferMicroEditor() {
     (["hook", "offer", "cta"] as MarketingTpl[]).forEach((tpl) => {
       drafts[tpl].forEach((row) => {
         if (!row.selected) return;
-        const original = extractValues(slides.find((s) => s.id === row.slideId)!, activeLang, defaultLang, tpl);
+        const original = extractValues(
+          slides.find((s) => s.id === row.slideId)!,
+          activeLang,
+          defaultLang,
+          tpl,
+        );
         const patch: Record<string, unknown> = {};
         for (const f of FIELDS[tpl]) {
           if (row.values[f.key] !== original[f.key]) {
@@ -150,7 +178,11 @@ export function HookOfferMicroEditor() {
     const rows = drafts[tpl];
     const fields = FIELDS[tpl];
     if (rows.length === 0) {
-      return <div className="py-6 text-center text-sm text-muted-foreground">Nessuna slide {tpl} nel carosello</div>;
+      return (
+        <div className="py-6 text-center text-sm text-muted-foreground">
+          Nessuna slide {tpl} nel carosello
+        </div>
+      );
     }
     return (
       <div className="space-y-4">
@@ -164,11 +196,18 @@ export function HookOfferMicroEditor() {
                 <Label className="w-24 shrink-0 text-xs">{f.label}</Label>
                 <Input
                   value={bulkValues[tpl][f.key] ?? ""}
-                  onChange={(e) => setBulkValues((b) => ({ ...b, [tpl]: { ...b[tpl], [f.key]: e.target.value } }))}
+                  onChange={(e) =>
+                    setBulkValues((b) => ({ ...b, [tpl]: { ...b[tpl], [f.key]: e.target.value } }))
+                  }
                   placeholder={f.placeholder}
                   className="h-8"
                 />
-                <Button size="sm" variant="outline" className="h-8" onClick={() => applyBulk(tpl, f.key)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  onClick={() => applyBulk(tpl, f.key)}
+                >
                   Applica
                 </Button>
               </div>
@@ -226,7 +265,8 @@ export function HookOfferMicroEditor() {
           <SheetTitle>Hook → Offer · Editor coerente</SheetTitle>
         </SheetHeader>
         <p className="mt-2 text-sm text-muted-foreground">
-          Modifica testi di hook, offerta e CTA in modo coerente. Seleziona le slide a cui applicare le modifiche.
+          Modifica testi di hook, offerta e CTA in modo coerente. Seleziona le slide a cui applicare
+          le modifiche.
         </p>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as MarketingTpl)} className="mt-4">
@@ -235,17 +275,24 @@ export function HookOfferMicroEditor() {
             <TabsTrigger value="offer">Offer ({buckets.offer.length})</TabsTrigger>
             <TabsTrigger value="cta">CTA ({buckets.cta.length})</TabsTrigger>
           </TabsList>
-          <TabsContent value="hook" className="mt-4">{renderTab("hook")}</TabsContent>
-          <TabsContent value="offer" className="mt-4">{renderTab("offer")}</TabsContent>
-          <TabsContent value="cta" className="mt-4">{renderTab("cta")}</TabsContent>
+          <TabsContent value="hook" className="mt-4">
+            {renderTab("hook")}
+          </TabsContent>
+          <TabsContent value="offer" className="mt-4">
+            {renderTab("offer")}
+          </TabsContent>
+          <TabsContent value="cta" className="mt-4">
+            {renderTab("cta")}
+          </TabsContent>
         </Tabs>
 
         <div className="mt-6 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>Annulla</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Annulla
+          </Button>
           <Button onClick={save}>Salva modifiche</Button>
         </div>
       </SheetContent>
     </Sheet>
   );
 }
-

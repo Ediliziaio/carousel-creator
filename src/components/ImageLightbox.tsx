@@ -23,9 +23,7 @@ export function ImageLightbox({ open, onOpenChange, src, alt, caption }: Props) 
           alt={alt ?? "Anteprima"}
           className="max-h-[85vh] max-w-full rounded-md object-contain"
         />
-        {caption && (
-          <p className="max-w-2xl text-center text-sm text-white/80">{caption}</p>
-        )}
+        {caption && <p className="max-w-2xl text-center text-sm text-white/80">{caption}</p>}
       </DialogContent>
     </Dialog>
   );

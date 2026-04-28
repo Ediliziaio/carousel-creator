@@ -19,8 +19,25 @@ import { UserMenu } from "@/components/UserMenu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Upload, FileJson, Undo2, Redo2, Eye, LayoutGrid, Copy, ShieldCheck, ShieldOff, AlertTriangle } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  Upload,
+  FileJson,
+  Undo2,
+  Redo2,
+  Eye,
+  LayoutGrid,
+  Copy,
+  ShieldCheck,
+  ShieldOff,
+  AlertTriangle,
+} from "lucide-react";
 import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
@@ -42,7 +59,8 @@ function IndexErrorComponent({ error, reset }: { error: Error; reset: () => void
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-bold text-foreground">Errore nell'editor</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          La sessione precedente potrebbe essere incompatibile con la versione corrente. Pulisci i dati locali per ripartire da zero.
+          La sessione precedente potrebbe essere incompatibile con la versione corrente. Pulisci i
+          dati locali per ripartire da zero.
         </p>
         {isDev && error?.message && (
           <pre className="mt-4 overflow-auto rounded-md bg-muted p-3 text-left text-xs text-muted-foreground">
@@ -76,7 +94,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Carousel Generator — multi-formato PNG" },
-      { name: "description", content: "Crea caroselli Instagram con template editoriali, multilingua e export PNG in 4 formati." },
+      {
+        name: "description",
+        content:
+          "Crea caroselli Instagram con template editoriali, multilingua e export PNG in 4 formati.",
+      },
     ],
   }),
   component: Index,
@@ -180,8 +202,13 @@ function Index() {
       const meta = e.metaKey || e.ctrlKey;
       if (!meta) return;
       const k = e.key.toLowerCase();
-      if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
-      else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        e.preventDefault();
+        redo();
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -197,13 +224,21 @@ function Index() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    const families = new Set(["Figtree:wght@400;500;600;700;800;900", "JetBrains Mono:wght@400;500;700"]);
+    const families = new Set([
+      "Figtree:wght@400;500;600;700;800;900",
+      "JetBrains Mono:wght@400;500;700",
+    ]);
     const w = "wght@400;500;600;700;800;900";
     [brand.fontHeading, brand.fontBody].forEach((f) => {
       if (f === "Figtree" || f === "JetBrains Mono") return;
       families.add(`${f}:${w}`);
     });
-    link.href = "https://fonts.googleapis.com/css2?" + Array.from(families).map((f) => "family=" + f.replace(/ /g, "+")).join("&") + "&display=swap";
+    link.href =
+      "https://fonts.googleapis.com/css2?" +
+      Array.from(families)
+        .map((f) => "family=" + f.replace(/ /g, "+"))
+        .join("&") +
+      "&display=swap";
   }, [brand.fontHeading, brand.fontBody]);
 
   const exportRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -246,8 +281,8 @@ function Index() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background text-foreground">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
+    <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:h-screen">
+      <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2 md:h-14 md:flex-nowrap md:px-4 md:py-0">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-md bg-primary" />
           <span className="font-semibold">Carousel Generator</span>
@@ -255,31 +290,50 @@ function Index() {
         <Input
           value={brand.carouselTitle}
           onChange={(e) => setBrand({ carouselTitle: e.target.value })}
-          className="ml-2 h-8 max-w-xs"
+          className="order-3 h-8 w-full min-w-[220px] md:order-none md:ml-2 md:max-w-xs"
           placeholder="Titolo carosello"
         />
 
-        <div className="ml-2 flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={undo} disabled={past.length === 0} title="Annulla (⌘Z)">
+        <div className="flex items-center gap-1 md:ml-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={undo}
+            disabled={past.length === 0}
+            title="Annulla (⌘Z)"
+          >
             <Undo2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={redo} disabled={future.length === 0} title="Ripeti (⌘⇧Z)">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={redo}
+            disabled={future.length === 0}
+            title="Ripeti (⌘⇧Z)"
+          >
             <Redo2 className="h-4 w-4" />
           </Button>
         </div>
 
         {brand.languages.length > 1 && (
           <Select value={activeLang} onValueChange={setActiveLang}>
-            <SelectTrigger className="h-8 w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {brand.languages.map((l) => (
-                <SelectItem key={l} value={l}>{langLabel(l)}{l === brand.defaultLanguage && " ★"}</SelectItem>
+                <SelectItem key={l} value={l}>
+                  {langLabel(l)}
+                  {l === brand.defaultLanguage && " ★"}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="order-4 -mx-3 flex w-[calc(100%+1.5rem)] items-center gap-2 overflow-x-auto px-3 pb-1 md:order-none md:mx-0 md:ml-auto md:w-auto md:overflow-visible md:px-0 md:pb-0">
           <CarouselPresetDialog />
           <QuickOfferEditor />
           <HookOfferMicroEditor />
@@ -289,9 +343,17 @@ function Index() {
             size="icon"
             className="h-8 w-8"
             onClick={() => setValidationOverlay(!validationOverlay)}
-            title={validationOverlay ? "Nascondi indicatori validazione" : "Mostra indicatori validazione"}
+            title={
+              validationOverlay
+                ? "Nascondi indicatori validazione"
+                : "Mostra indicatori validazione"
+            }
           >
-            {validationOverlay ? <ShieldCheck className="h-4 w-4 text-primary" /> : <ShieldOff className="h-4 w-4" />}
+            {validationOverlay ? (
+              <ShieldCheck className="h-4 w-4 text-primary" />
+            ) : (
+              <ShieldOff className="h-4 w-4" />
+            )}
           </Button>
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
@@ -313,10 +375,20 @@ function Index() {
           >
             <Copy className="mr-1 h-4 w-4" /> Duplica
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)} disabled={!activeSlide}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPreviewOpen(true)}
+            disabled={!activeSlide}
+          >
             <Eye className="mr-1 h-4 w-4" /> Anteprima
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setBatchOpen(true)} disabled={slides.length === 0}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setBatchOpen(true)}
+            disabled={slides.length === 0}
+          >
             <LayoutGrid className="mr-1 h-4 w-4" /> Anteprima ZIP
           </Button>
           <ExportButton
@@ -346,7 +418,8 @@ function Index() {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">
             <div className="font-medium">
-              {validationIssues.length} {validationIssues.length === 1 ? "slide ha" : "slide hanno"} campi obbligatori mancanti
+              {validationIssues.length} {validationIssues.length === 1 ? "slide ha" : "slide hanno"}{" "}
+              campi obbligatori mancanti
               {strictExport && " — Export disabilitato"}
             </div>
             <div className="text-xs opacity-90">
@@ -364,16 +437,23 @@ function Index() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <SlidesSidebar />
 
-        <main className="relative flex flex-1 items-center justify-center overflow-auto bg-[#1a1a1a] p-6">
+        <main className="relative flex min-h-[45vh] flex-1 items-center justify-center overflow-auto bg-[#1a1a1a] p-3 md:min-h-0 md:p-6">
           {activeSlide ? (
             (() => {
               const dim = FORMAT_DIMENSIONS[activeSlide.format ?? "portrait"];
               return (
                 <ScaledPreview key={activeSlide.id + activeLang} w={dim.w} h={dim.h}>
-                  <SlideRenderer slide={activeSlide} brand={brand} index={activeIndex} total={slides.length} lang={activeLang} showValidation={validationOverlay} />
+                  <SlideRenderer
+                    slide={activeSlide}
+                    brand={brand}
+                    index={activeIndex}
+                    total={slides.length}
+                    lang={activeLang}
+                    showValidation={validationOverlay}
+                  />
                 </ScaledPreview>
               );
             })()
@@ -382,7 +462,7 @@ function Index() {
           )}
         </main>
 
-        <aside className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-card">
+        <aside className="flex h-[55vh] w-full shrink-0 flex-col border-t border-border bg-card md:h-full md:w-[380px] md:border-l md:border-t-0">
           {activeSlide ? (
             <Tabs value={editorTab} onValueChange={setEditorTab} className="flex h-full flex-col">
               <div className="border-b border-border p-3">
@@ -406,22 +486,33 @@ function Index() {
         </aside>
       </div>
 
-      <div
-        aria-hidden
-        style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}
-      >
+      <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
         {slides.map((s, i) => {
           const dim = FORMAT_DIMENSIONS[s.format ?? "portrait"];
           return (
             <div key={s.id} ref={setExportRef(s.id)} style={{ width: dim.w, height: dim.h }}>
-              <SlideRenderer slide={s} brand={brand} index={i} total={slides.length} lang={activeLang} />
+              <SlideRenderer
+                slide={s}
+                brand={brand}
+                index={i}
+                total={slides.length}
+                lang={activeLang}
+              />
             </div>
           );
         })}
       </div>
 
-      <ExportPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} brandTitle={brand.carouselTitle} />
-      <ExportBatchPreviewDialog open={batchOpen} onOpenChange={setBatchOpen} brandTitle={brand.carouselTitle} />
+      <ExportPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        brandTitle={brand.carouselTitle}
+      />
+      <ExportBatchPreviewDialog
+        open={batchOpen}
+        onOpenChange={setBatchOpen}
+        brandTitle={brand.carouselTitle}
+      />
 
       {guideOpen && flatIssues.length > 0 && (
         <FixIssuesGuide
@@ -449,7 +540,15 @@ function Index() {
   );
 }
 
-function ScaledPreview({ children, w = 1080, h = 1350 }: { children: React.ReactNode; w?: number; h?: number }) {
+function ScaledPreview({
+  children,
+  w = 1080,
+  h = 1350,
+}: {
+  children: React.ReactNode;
+  w?: number;
+  h?: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
 
@@ -491,5 +590,10 @@ function ScaledPreview({ children, w = 1080, h = 1350 }: { children: React.React
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "carosello";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "carosello"
+  );
 }

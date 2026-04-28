@@ -14,7 +14,7 @@ export type SaveMethod = "file-saver" | "anchor" | "new-tab";
 export async function saveBlob(blob: Blob, filename: string): Promise<SaveMethod> {
   // 1. file-saver via dynamic import
   try {
-    const mod: any = await import("file-saver");
+    const mod = await import("file-saver");
     const saveAs = mod.saveAs ?? mod.default?.saveAs ?? mod.default;
     if (typeof saveAs === "function") {
       saveAs(blob, filename);
@@ -44,7 +44,9 @@ export async function saveBlob(blob: Blob, filename: string): Promise<SaveMethod
   const url = URL.createObjectURL(blob);
   const win = window.open(url, "_blank");
   if (!win) {
-    throw new Error("Impossibile salvare il file: il browser ha bloccato il download. Consenti i popup e riprova.");
+    throw new Error(
+      "Impossibile salvare il file: il browser ha bloccato il download. Consenti i popup e riprova.",
+    );
   }
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return "new-tab";

@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCarousel } from "@/lib/store";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
@@ -17,7 +23,12 @@ interface Props {
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "carosello";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "carosello"
+  );
 }
 
 export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
@@ -133,7 +144,10 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
           <DialogTitle>Anteprima export — Slide {num}</DialogTitle>
         </DialogHeader>
         <div className="grid max-h-[70vh] grid-cols-[1fr_280px]">
-          <div ref={containerRef} className="relative flex items-center justify-center overflow-hidden bg-[#1a1a1a] p-4">
+          <div
+            ref={containerRef}
+            className="relative flex items-center justify-center overflow-hidden bg-[#1a1a1a] p-4"
+          >
             <div style={{ width: dim.w * scale, height: dim.h * scale, position: "relative" }}>
               <div
                 style={{
@@ -147,7 +161,13 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
                   boxShadow: "0 40px 80px rgba(0,0,0,.45)",
                 }}
               >
-                <SlideRenderer slide={slide} brand={brand} index={slideIndex} total={slides.length} lang={lang} />
+                <SlideRenderer
+                  slide={slide}
+                  brand={brand}
+                  index={slideIndex}
+                  total={slides.length}
+                  lang={lang}
+                />
               </div>
             </div>
           </div>
@@ -171,7 +191,9 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
               )}
             </div>
             <div className="rounded-md border border-border p-3">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Validazione</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Validazione
+              </div>
               {validation.valid ? (
                 <div className="mt-1 text-sm text-emerald-500">✓ Tutti i campi sono compilati</div>
               ) : (
@@ -197,14 +219,24 @@ export function ExportPreviewDialog({ open, onOpenChange, brandTitle }: Props) {
             <X className="mr-1 h-4 w-4" /> Annulla
           </Button>
           <Button onClick={onDownload} disabled={busy || !assetsReady}>
-            {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-4 w-4" />
+            )}
             {assetsReady ? "Scarica questa PNG" : "Caricamento font..."}
           </Button>
         </DialogFooter>
         {/* Hidden full-size capture node — what actually gets exported */}
         <div aria-hidden style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }}>
           <div ref={captureRef} style={{ width: dim.w, height: dim.h }}>
-            <SlideRenderer slide={slide} brand={brand} index={slideIndex} total={slides.length} lang={lang} />
+            <SlideRenderer
+              slide={slide}
+              brand={brand}
+              index={slideIndex}
+              total={slides.length}
+              lang={lang}
+            />
           </div>
         </div>
       </DialogContent>

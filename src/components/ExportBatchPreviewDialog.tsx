@@ -1,17 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useCarousel } from "@/lib/store";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { validateSlide } from "@/lib/validation";
-import {
-  downloadZipFromEntries,
-  ensureFontsFor,
-  fontsReadyFor,
-  type ZipEntry,
-} from "@/lib/export";
+import { downloadZipFromEntries, ensureFontsFor, fontsReadyFor, type ZipEntry } from "@/lib/export";
 import { langLabel } from "@/lib/i18n";
 import { FORMAT_DIMENSIONS } from "@/lib/templates";
 import {
@@ -22,15 +29,9 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Download, Loader2, Check, AlertTriangle, X, Package, GripVertical,
-} from "lucide-react";
+import { Download, Loader2, Check, AlertTriangle, X, Package, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -40,7 +41,12 @@ interface Props {
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "carosello";
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "carosello"
+  );
 }
 
 interface ThumbnailProps {
@@ -56,7 +62,9 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
   const slide = useCarousel((s) => s.slides.find((x) => x.id === slideId));
   const brand = useCarousel((s) => s.brand);
   const total = useCarousel((s) => s.slides.length);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: slideId });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: slideId,
+  });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -79,12 +87,17 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
         } ${invalid ? "ring-2 ring-destructive" : ""}`}
         style={{ width: targetW, height: thumbH }}
       >
-        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: dim.w, height: dim.h }}>
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            width: dim.w,
+            height: dim.h,
+          }}
+        >
           <SlideRenderer slide={slide} brand={brand} index={index} total={total} lang={lang} />
         </div>
-        {!selected && (
-          <div className="pointer-events-none absolute inset-0 bg-background/60" />
-        )}
+        {!selected && <div className="pointer-events-none absolute inset-0 bg-background/60" />}
         <button
           type="button"
           {...attributes}
@@ -101,7 +114,10 @@ function Thumbnail({ slideId, index, selected, onToggle, invalid, lang }: Thumbn
           {(index + 1).toString().padStart(2, "0")} · {dim.ratio}
         </div>
         {invalid && (
-          <div className="absolute bottom-1 right-1 rounded bg-destructive p-1 text-destructive-foreground shadow" title="Errori di validazione">
+          <div
+            className="absolute bottom-1 right-1 rounded bg-destructive p-1 text-destructive-foreground shadow"
+            title="Errori di validazione"
+          >
             <AlertTriangle className="h-3 w-3" />
           </div>
         )}
@@ -185,7 +201,9 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
     () =>
       selectedSlides.flatMap((s, i) => {
         const v = validateSlide(s, selectedLangs[0], brand.defaultLanguage);
-        return v.valid ? [] : [{ index: slides.findIndex((x) => x.id === s.id), errors: v.errors.length, id: s.id }];
+        return v.valid
+          ? []
+          : [{ index: slides.findIndex((x) => x.id === s.id), errors: v.errors.length, id: s.id }];
         void i;
       }),
     [selectedSlides, selectedLangs, brand.defaultLanguage, slides],
@@ -215,7 +233,9 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
           const num = (renumber ? i + 1 : originalIdx + 1).toString().padStart(2, "0");
           const filename = `slide-${num}.png`;
           const path =
-            isMulti && (folderPerLang || selectedLangs.length > 1) ? `${lng}/${filename}` : filename;
+            isMulti && (folderPerLang || selectedLangs.length > 1)
+              ? `${lng}/${filename}`
+              : filename;
           entries.push({ path, node });
         }
       }
@@ -253,7 +273,13 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-6 py-3 text-sm">
-          <Button variant="outline" size="sm" onClick={() => setSelectedIds(allSelected ? new Set() : new Set(slides.map((s) => s.id)))}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setSelectedIds(allSelected ? new Set() : new Set(slides.map((s) => s.id)))
+            }
+          >
             {allSelected ? "Deseleziona tutte" : "Seleziona tutte"}
           </Button>
 
@@ -263,7 +289,10 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
               {brand.languages.map((l) => {
                 const checked = selectedLangs.includes(l);
                 return (
-                  <label key={l} className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs">
+                  <label
+                    key={l}
+                    className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs"
+                  >
                     <Checkbox
                       checked={checked}
                       onCheckedChange={(c) =>
@@ -290,10 +319,14 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
                 value={selectedLangs[0] ?? brand.defaultLanguage}
                 onValueChange={(v) => setSelectedLangs([v])}
               >
-                <SelectTrigger className="h-7 w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-7 w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {brand.languages.map((l) => (
-                    <SelectItem key={l} value={l}>{langLabel(l)}</SelectItem>
+                    <SelectItem key={l} value={l}>
+                      {langLabel(l)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -340,7 +373,8 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
           <div className="mr-auto text-xs text-muted-foreground">
             {validationIssues.length > 0 && (
               <span className="flex items-center gap-1 text-destructive">
-                <AlertTriangle className="h-3 w-3" /> {validationIssues.length} slide con campi mancanti
+                <AlertTriangle className="h-3 w-3" /> {validationIssues.length} slide con campi
+                mancanti
               </span>
             )}
             {assetsReady ? (
@@ -353,14 +387,23 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
               </span>
             )}
             {busy && progress.total > 0 && (
-              <span className="ml-2">— {progress.done}/{progress.total}</span>
+              <span className="ml-2">
+                — {progress.done}/{progress.total}
+              </span>
             )}
           </div>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             <X className="mr-1 h-4 w-4" /> Annulla
           </Button>
-          <Button onClick={onDownload} disabled={busy || noneSelected || selectedLangs.length === 0 || !assetsReady}>
-            {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+          <Button
+            onClick={onDownload}
+            disabled={busy || noneSelected || selectedLangs.length === 0 || !assetsReady}
+          >
+            {busy ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-4 w-4" />
+            )}
             Scarica ZIP
           </Button>
         </DialogFooter>
@@ -372,8 +415,18 @@ export function ExportBatchPreviewDialog({ open, onOpenChange, brandTitle }: Pro
               const idx = slides.findIndex((x) => x.id === sl.id);
               const dim = FORMAT_DIMENSIONS[sl.format ?? "portrait"];
               return (
-                <div key={`${lng}-${sl.id}`} ref={setCaptureRef(`${lng}-${sl.id}`)} style={{ width: dim.w, height: dim.h }}>
-                  <SlideRenderer slide={sl} brand={brand} index={idx} total={slides.length} lang={lng} />
+                <div
+                  key={`${lng}-${sl.id}`}
+                  ref={setCaptureRef(`${lng}-${sl.id}`)}
+                  style={{ width: dim.w, height: dim.h }}
+                >
+                  <SlideRenderer
+                    slide={sl}
+                    brand={brand}
+                    index={idx}
+                    total={slides.length}
+                    lang={lng}
+                  />
                 </div>
               );
             }),

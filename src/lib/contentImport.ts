@@ -31,7 +31,9 @@ export function parseContentBundle(input: unknown): ImportResult {
   else if (isPlainObject(input) && Array.isArray((input as { items?: unknown }).items)) {
     arr = (input as { items: unknown[] }).items;
   } else {
-    errors.push("Formato non riconosciuto: serve un array di { template, data } oppure { items: [...] }.");
+    errors.push(
+      "Formato non riconosciuto: serve un array di { template, data } oppure { items: [...] }.",
+    );
     return { items: [], errors };
   }
   const list = arr as unknown[];
@@ -81,7 +83,10 @@ export function parseContentBundle(input: unknown): ImportResult {
  */
 export function parseSimpleCsv(csv: string): ImportResult {
   const errors: string[] = [];
-  const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+  const lines = csv
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("#"));
   if (lines.length === 0) {
     return { items: [], errors: ["CSV vuoto."] };
   }
@@ -148,13 +153,17 @@ function parseCsvLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
     if (inQ) {
-      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-      else if (c === '"') inQ = false;
+      if (c === '"' && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else if (c === '"') inQ = false;
       else cur += c;
     } else {
       if (c === '"') inQ = true;
-      else if (c === ",") { out.push(cur.trim()); cur = ""; }
-      else cur += c;
+      else if (c === ",") {
+        out.push(cur.trim());
+        cur = "";
+      } else cur += c;
     }
   }
   out.push(cur.trim());
@@ -184,9 +193,38 @@ export const SAMPLE_BUNDLES: { name: string; json: string }[] = [
     name: "Sales (3 slide)",
     json: JSON.stringify(
       [
-        { template: "hook", data: { eyebrow: "LEGGI FINO ALLA FINE", hook: "Stai bruciando il tuo budget ads.", subhook: "E nemmeno te ne accorgi." } },
-        { template: "problemSolution", data: { eyebrow: "Il vero problema", problem: { label: "IL PROBLEMA", text: "Spendi 1000€/mese in ads ma non sai cosa converte." }, solution: { label: "LA SOLUZIONE", text: "Un sistema di tracking semplice che ti dice esattamente dove tagliare." } } },
-        { template: "offer", data: { productName: "Audit Ads Gratuito", priceNew: "0", currency: "€", includes: ["Analisi 7 giorni", "Report PDF", "Call 30 min"], ctaLabel: "PRENOTA →" } },
+        {
+          template: "hook",
+          data: {
+            eyebrow: "LEGGI FINO ALLA FINE",
+            hook: "Stai bruciando il tuo budget ads.",
+            subhook: "E nemmeno te ne accorgi.",
+          },
+        },
+        {
+          template: "problemSolution",
+          data: {
+            eyebrow: "Il vero problema",
+            problem: {
+              label: "IL PROBLEMA",
+              text: "Spendi 1000€/mese in ads ma non sai cosa converte.",
+            },
+            solution: {
+              label: "LA SOLUZIONE",
+              text: "Un sistema di tracking semplice che ti dice esattamente dove tagliare.",
+            },
+          },
+        },
+        {
+          template: "offer",
+          data: {
+            productName: "Audit Ads Gratuito",
+            priceNew: "0",
+            currency: "€",
+            includes: ["Analisi 7 giorni", "Report PDF", "Call 30 min"],
+            ctaLabel: "PRENOTA →",
+          },
+        },
       ],
       null,
       2,
@@ -196,18 +234,32 @@ export const SAMPLE_BUNDLES: { name: string; json: string }[] = [
     name: "Educational (2 slide)",
     json: JSON.stringify(
       [
-        { template: "tipPack", data: { eyebrow: "Quick wins", title: "5 hack per LinkedIn.", tips: [
-          { icon: "🪝", title: "Hook breve", text: "Massimo 8 parole." },
-          { icon: "📏", title: "Riga corta", text: "Max 60 caratteri per riga." },
-          { icon: "🧲", title: "PDF sopra", text: "Allega documenti per più reach." },
-          { icon: "💬", title: "Rispondi tutti", text: "Nei primi 30 minuti." },
-        ] } },
-        { template: "framework", data: { title: "Il metodo SCAR.", acronym: "SCAR", letters: [
-          { letter: "S", name: "Situation", desc: "Inquadra il contesto." },
-          { letter: "C", name: "Complication", desc: "Spiega il problema." },
-          { letter: "A", name: "Answer", desc: "Dai la soluzione." },
-          { letter: "R", name: "Result", desc: "Mostra il risultato." },
-        ] } },
+        {
+          template: "tipPack",
+          data: {
+            eyebrow: "Quick wins",
+            title: "5 hack per LinkedIn.",
+            tips: [
+              { icon: "🪝", title: "Hook breve", text: "Massimo 8 parole." },
+              { icon: "📏", title: "Riga corta", text: "Max 60 caratteri per riga." },
+              { icon: "🧲", title: "PDF sopra", text: "Allega documenti per più reach." },
+              { icon: "💬", title: "Rispondi tutti", text: "Nei primi 30 minuti." },
+            ],
+          },
+        },
+        {
+          template: "framework",
+          data: {
+            title: "Il metodo SCAR.",
+            acronym: "SCAR",
+            letters: [
+              { letter: "S", name: "Situation", desc: "Inquadra il contesto." },
+              { letter: "C", name: "Complication", desc: "Spiega il problema." },
+              { letter: "A", name: "Answer", desc: "Dai la soluzione." },
+              { letter: "R", name: "Result", desc: "Mostra il risultato." },
+            ],
+          },
+        },
       ],
       null,
       2,

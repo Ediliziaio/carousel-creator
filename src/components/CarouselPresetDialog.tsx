@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { BUILT_IN_CAROUSEL_PRESETS } from "@/lib/carouselPresets";
@@ -14,7 +20,11 @@ export function CarouselPresetDialog() {
   const slides = useCarousel((s) => s.slides);
 
   const onReplace = (id: string, name: string) => {
-    if (slides.length > 0 && !confirm(`Sostituire tutte le ${slides.length} slide attuali con il preset "${name}"?`)) return;
+    if (
+      slides.length > 0 &&
+      !confirm(`Sostituire tutte le ${slides.length} slide attuali con il preset "${name}"?`)
+    )
+      return;
     loadCarouselPreset(id);
     toast.success(`Preset "${name}" caricato`);
     setOpen(false);
@@ -44,7 +54,9 @@ export function CarouselPresetDialog() {
                 <div className="text-3xl">{p.icon}</div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold">{p.name}</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{p.slides.length} slide</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {p.slides.length} slide
+                  </div>
                 </div>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{p.description}</p>
@@ -56,8 +68,12 @@ export function CarouselPresetDialog() {
                 ))}
               </div>
               <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={() => onReplace(p.id, p.name)}>Sostituisci tutto</Button>
-                <Button size="sm" variant="outline" onClick={() => onAppend(p.id, p.name)}>Aggiungi alla fine</Button>
+                <Button size="sm" onClick={() => onReplace(p.id, p.name)}>
+                  Sostituisci tutto
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => onAppend(p.id, p.name)}>
+                  Aggiungi alla fine
+                </Button>
               </div>
             </div>
           ))}

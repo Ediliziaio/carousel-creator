@@ -115,10 +115,15 @@ export function checkImageUrl(url?: string): string | null {
   return "URL immagine non valido (usa http(s):// o un upload)";
 }
 
-export function validateSlideData(template: Slide["template"], data: AnyTemplateData): SlideValidation {
+export function validateSlideData(
+  template: Slide["template"],
+  data: AnyTemplateData,
+): SlideValidation {
   const errors: FieldError[] = [];
-  const err = (field: string, message: string) => errors.push({ field, message, severity: "error" });
-  const warn = (field: string, message: string) => errors.push({ field, message, severity: "warning" });
+  const err = (field: string, message: string) =>
+    errors.push({ field, message, severity: "error" });
+  const warn = (field: string, message: string) =>
+    errors.push({ field, message, severity: "warning" });
 
   switch (template) {
     case "split": {
@@ -221,16 +226,25 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       const filled = d.images.filter((im) => im.url && im.url.trim());
       if (filled.length < LIMITS.gallery.min) {
-        err("images", `Galleria: aggiungi almeno ${LIMITS.gallery.min} immagini per renderla efficace (hai ${filled.length})`);
+        err(
+          "images",
+          `Galleria: aggiungi almeno ${LIMITS.gallery.min} immagini per renderla efficace (hai ${filled.length})`,
+        );
       }
       if (d.images.length > LIMITS.gallery.max) {
-        err("images", `Galleria: massimo ${LIMITS.gallery.max} immagini supportate (hai ${d.images.length})`);
+        err(
+          "images",
+          `Galleria: massimo ${LIMITS.gallery.max} immagini supportate (hai ${d.images.length})`,
+        );
       }
       d.images.forEach((im, i) => {
         const u = checkImageUrl(im.url);
         if (u) err(`images.${i}.url`, `Immagine ${i + 1}: ${u}`);
         if (im.caption && im.caption.length > LIMITS.captionMax) {
-          err(`images.${i}.caption`, `Didascalia immagine ${i + 1}: massimo ${LIMITS.captionMax} caratteri`);
+          err(
+            `images.${i}.caption`,
+            `Didascalia immagine ${i + 1}: massimo ${LIMITS.captionMax} caratteri`,
+          );
         }
       });
       break;
@@ -240,14 +254,18 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.quote)) {
         err("quote", `Citazione: ${REQUIRED}`);
       } else if (d.quote.length < LIMITS.quoteMin || d.quote.length > LIMITS.quoteMax) {
-        err("quote", `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`);
+        err(
+          "quote",
+          `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`,
+        );
       }
       if (empty(d.author)) err("author", `Autore: ${REQUIRED}`);
       else if (d.author.length > LIMITS.authorMax)
         err("author", `Autore: massimo ${LIMITS.authorMax} caratteri`);
       const u = checkImageUrl(d.imageUrl);
       if (u) err("imageUrl", u);
-      else if (!d.imageUrl) warn("imageUrl", "Suggerimento: aggiungi una foto per maggiore impatto");
+      else if (!d.imageUrl)
+        warn("imageUrl", "Suggerimento: aggiungi una foto per maggiore impatto");
       break;
     }
     case "chartBar": {
@@ -270,17 +288,27 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as ChartDonutData;
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.segments.length < LIMITS.chartDonut.min)
-        err("segments", `Donut: servono almeno ${LIMITS.chartDonut.min} segmenti (hai ${d.segments.length})`);
+        err(
+          "segments",
+          `Donut: servono almeno ${LIMITS.chartDonut.min} segmenti (hai ${d.segments.length})`,
+        );
       if (d.segments.length > LIMITS.chartDonut.max)
-        err("segments", `Donut: massimo ${LIMITS.chartDonut.max} segmenti (hai ${d.segments.length})`);
+        err(
+          "segments",
+          `Donut: massimo ${LIMITS.chartDonut.max} segmenti (hai ${d.segments.length})`,
+        );
       let sum = 0;
       d.segments.forEach((sg, i) => {
-        if (empty(sg.label)) err(`segments.${i}.label`, `Segmento ${i + 1}: etichetta obbligatoria`);
+        if (empty(sg.label))
+          err(`segments.${i}.label`, `Segmento ${i + 1}: etichetta obbligatoria`);
         if (!Number.isFinite(sg.value) || sg.value < 0)
           err(`segments.${i}.value`, `Segmento ${i + 1}: il valore deve essere un numero positivo`);
         else sum += sg.value;
         if (sg.color && !HEX_RE.test(sg.color))
-          err(`segments.${i}.color`, `Segmento ${i + 1}: colore deve essere hex valido (es. #FF0000)`);
+          err(
+            `segments.${i}.color`,
+            `Segmento ${i + 1}: colore deve essere hex valido (es. #FF0000)`,
+          );
       });
       if (sum <= 0 && d.segments.length > 0)
         err("segments", "Donut: la somma dei segmenti deve essere maggiore di zero");
@@ -290,14 +318,19 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as ChartLineData;
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.values.length < LIMITS.chartLine.min)
-        err("values", `Trend: servono almeno ${LIMITS.chartLine.min} punti per disegnare una curva (hai ${d.values.length})`);
+        err(
+          "values",
+          `Trend: servono almeno ${LIMITS.chartLine.min} punti per disegnare una curva (hai ${d.values.length})`,
+        );
       if (d.values.length > LIMITS.chartLine.max)
         err("values", `Trend: massimo ${LIMITS.chartLine.max} punti (hai ${d.values.length})`);
       if (d.xLabels.length !== d.values.length)
-        err("values", `Etichette X (${d.xLabels.length}) e valori (${d.values.length}) devono avere la stessa lunghezza`);
+        err(
+          "values",
+          `Etichette X (${d.xLabels.length}) e valori (${d.values.length}) devono avere la stessa lunghezza`,
+        );
       d.values.forEach((v, i) => {
-        if (!Number.isFinite(v))
-          err(`values.${i}`, `Punto ${i + 1}: valore non numerico`);
+        if (!Number.isFinite(v)) err(`values.${i}`, `Punto ${i + 1}: valore non numerico`);
       });
       break;
     }
@@ -305,9 +338,15 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as FeatureData;
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.bullets.length < LIMITS.featureBullets.min)
-        err("bullets", `Aggiungi almeno ${LIMITS.featureBullets.min} bullet point (hai ${d.bullets.length})`);
+        err(
+          "bullets",
+          `Aggiungi almeno ${LIMITS.featureBullets.min} bullet point (hai ${d.bullets.length})`,
+        );
       if (d.bullets.length > LIMITS.featureBullets.max)
-        err("bullets", `Massimo ${LIMITS.featureBullets.max} bullet point (hai ${d.bullets.length})`);
+        err(
+          "bullets",
+          `Massimo ${LIMITS.featureBullets.max} bullet point (hai ${d.bullets.length})`,
+        );
       d.bullets.forEach((b, i) => {
         if (empty(b.title)) err(`bullets.${i}.title`, `Bullet ${i + 1}: titolo obbligatorio`);
       });
@@ -320,7 +359,10 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.quote)) {
         err("quote", `Citazione: ${REQUIRED}`);
       } else if (d.quote.length < LIMITS.quoteMin || d.quote.length > LIMITS.quoteMax) {
-        err("quote", `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`);
+        err(
+          "quote",
+          `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`,
+        );
       }
       if (empty(d.author)) err("author", `Autore: ${REQUIRED}`);
       else if (d.author.length > LIMITS.authorMax)
@@ -363,15 +405,22 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
         err("cons", `CONTRO: servono almeno ${LIMITS.prosCons.min} voci (hai ${d.cons.length})`);
       if (d.cons.length > LIMITS.prosCons.max)
         err("cons", `CONTRO: massimo ${LIMITS.prosCons.max} voci`);
-      d.pros.forEach((p, i) => { if (empty(p)) err(`pros.${i}`, `PRO ${i + 1}: ${REQUIRED}`); });
-      d.cons.forEach((c, i) => { if (empty(c)) err(`cons.${i}`, `CONTRO ${i + 1}: ${REQUIRED}`); });
+      d.pros.forEach((p, i) => {
+        if (empty(p)) err(`pros.${i}`, `PRO ${i + 1}: ${REQUIRED}`);
+      });
+      d.cons.forEach((c, i) => {
+        if (empty(c)) err(`cons.${i}`, `CONTRO ${i + 1}: ${REQUIRED}`);
+      });
       break;
     }
     case "quoteBig": {
       const d = data as QuoteBigData;
       if (empty(d.quote)) err("quote", `Citazione: ${REQUIRED}`);
       else if (d.quote.length < LIMITS.quoteMin || d.quote.length > LIMITS.quoteMax)
-        err("quote", `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`);
+        err(
+          "quote",
+          `Citazione: min ${LIMITS.quoteMin}, max ${LIMITS.quoteMax} caratteri (hai ${d.quote.length})`,
+        );
       if (empty(d.author)) err("author", `Autore: ${REQUIRED}`);
       else if (d.author.length > LIMITS.authorMax)
         err("author", `Autore: massimo ${LIMITS.authorMax} caratteri`);
@@ -383,12 +432,16 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as RoadmapData;
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.milestones.length < LIMITS.roadmap.min)
-        err("milestones", `Roadmap: servono almeno ${LIMITS.roadmap.min} milestone (hai ${d.milestones.length})`);
+        err(
+          "milestones",
+          `Roadmap: servono almeno ${LIMITS.roadmap.min} milestone (hai ${d.milestones.length})`,
+        );
       if (d.milestones.length > LIMITS.roadmap.max)
         err("milestones", `Roadmap: massimo ${LIMITS.roadmap.max} milestone`);
       d.milestones.forEach((m, i) => {
         if (empty(m.title)) err(`milestones.${i}.title`, `Milestone ${i + 1}: titolo obbligatorio`);
-        if (empty(m.period)) err(`milestones.${i}.period`, `Milestone ${i + 1}: periodo obbligatorio`);
+        if (empty(m.period))
+          err(`milestones.${i}.period`, `Milestone ${i + 1}: periodo obbligatorio`);
       });
       break;
     }
@@ -406,7 +459,10 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as HookData;
       if (empty(d.hook)) err("hook", `Hook: ${REQUIRED}`);
       else if (d.hook.length < LIMITS.hookMin || d.hook.length > LIMITS.hookMax)
-        err("hook", `Hook: tra ${LIMITS.hookMin} e ${LIMITS.hookMax} caratteri (hai ${d.hook.length})`);
+        err(
+          "hook",
+          `Hook: tra ${LIMITS.hookMin} e ${LIMITS.hookMax} caratteri (hai ${d.hook.length})`,
+        );
       break;
     }
     case "problemSolution": {
@@ -419,7 +475,10 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       const d = data as MistakesData;
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.mistakes.length < LIMITS.mistakes.min)
-        err("mistakes", `Errori: servono almeno ${LIMITS.mistakes.min} voci (hai ${d.mistakes.length})`);
+        err(
+          "mistakes",
+          `Errori: servono almeno ${LIMITS.mistakes.min} voci (hai ${d.mistakes.length})`,
+        );
       if (d.mistakes.length > LIMITS.mistakes.max)
         err("mistakes", `Errori: massimo ${LIMITS.mistakes.max}`);
       d.mistakes.forEach((m, i) => {
@@ -432,7 +491,10 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (empty(d.acronym)) err("acronym", `Acronimo: ${REQUIRED}`);
       if (d.letters.length < LIMITS.frameworkLetters.min)
-        err("letters", `Lettere: servono almeno ${LIMITS.frameworkLetters.min} (hai ${d.letters.length})`);
+        err(
+          "letters",
+          `Lettere: servono almeno ${LIMITS.frameworkLetters.min} (hai ${d.letters.length})`,
+        );
       if (d.letters.length > LIMITS.frameworkLetters.max)
         err("letters", `Lettere: massimo ${LIMITS.frameworkLetters.max}`);
       d.letters.forEach((l, i) => {
@@ -465,10 +527,15 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       else if (d.ctaLabel.length > LIMITS.buttonMax)
         err("ctaLabel", `CTA: massimo ${LIMITS.buttonMax} caratteri`);
       if (d.includes.length < LIMITS.offerIncludes.min)
-        err("includes", `Inclusi: servono almeno ${LIMITS.offerIncludes.min} voci (hai ${d.includes.length})`);
+        err(
+          "includes",
+          `Inclusi: servono almeno ${LIMITS.offerIncludes.min} voci (hai ${d.includes.length})`,
+        );
       if (d.includes.length > LIMITS.offerIncludes.max)
         err("includes", `Inclusi: massimo ${LIMITS.offerIncludes.max}`);
-      d.includes.forEach((it, i) => { if (empty(it)) err(`includes.${i}`, `Incluso ${i + 1}: ${REQUIRED}`); });
+      d.includes.forEach((it, i) => {
+        if (empty(it)) err(`includes.${i}`, `Incluso ${i + 1}: ${REQUIRED}`);
+      });
       break;
     }
     case "objection": {
@@ -486,8 +553,7 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       if (d.tips.length < LIMITS.tips.min)
         err("tips", `Tip: servono almeno ${LIMITS.tips.min} voci (hai ${d.tips.length})`);
-      if (d.tips.length > LIMITS.tips.max)
-        err("tips", `Tip: massimo ${LIMITS.tips.max}`);
+      if (d.tips.length > LIMITS.tips.max) err("tips", `Tip: massimo ${LIMITS.tips.max}`);
       d.tips.forEach((t, i) => {
         if (empty(t.title)) err(`tips.${i}.title`, `Tip ${i + 1}: titolo obbligatorio`);
       });
@@ -560,7 +626,8 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
       const u = checkImageUrl(d.imageUrl);
       if (u) err("imageUrl", u);
-      else if (!d.imageUrl) warn("imageUrl", "Suggerimento: aggiungi una foto fullbleed per maggiore impatto");
+      else if (!d.imageUrl)
+        warn("imageUrl", "Suggerimento: aggiungi una foto fullbleed per maggiore impatto");
       break;
     }
     case "polaroidStack": {
@@ -569,7 +636,8 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (!d.polaroids || d.polaroids.length < 1) {
         err("polaroids", "Polaroid: aggiungi almeno 1 immagine");
       } else {
-        if (d.polaroids.length > 3) err("polaroids", `Polaroid: massimo 3 (hai ${d.polaroids.length})`);
+        if (d.polaroids.length > 3)
+          err("polaroids", `Polaroid: massimo 3 (hai ${d.polaroids.length})`);
         const filled = d.polaroids.filter((p) => p.url && p.url.trim()).length;
         if (filled < 1) warn("polaroids", "Suggerimento: carica almeno un'immagine");
         d.polaroids.forEach((p, i) => {
@@ -612,7 +680,10 @@ export function validateSlideData(template: Slide["template"], data: AnyTemplate
       if (d.values && d.values.length > 24)
         err("values", `Massimo 24 punti (hai ${d.values.length})`);
       if (d.xLabels && d.values && d.xLabels.length !== d.values.length)
-        err("values", `Etichette X (${d.xLabels.length}) e valori (${d.values.length}) devono coincidere`);
+        err(
+          "values",
+          `Etichette X (${d.xLabels.length}) e valori (${d.values.length}) devono coincidere`,
+        );
       d.values?.forEach((v, i) => {
         if (!Number.isFinite(v)) err(`values.${i}`, `Punto ${i + 1}: valore non numerico`);
       });
@@ -703,7 +774,12 @@ export function validateAllSlides(
     .filter((r) => r.errors.length > 0);
 }
 
-export function getFieldError(slide: Slide, field: string, lang?: string, defaultLang?: string): string | undefined {
+export function getFieldError(
+  slide: Slide,
+  field: string,
+  lang?: string,
+  defaultLang?: string,
+): string | undefined {
   const all = validateSlide(slide, lang, defaultLang).errors;
   return all.find((e) => e.field === field && (e.severity ?? "error") === "error")?.message;
 }

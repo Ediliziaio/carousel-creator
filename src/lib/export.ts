@@ -5,14 +5,14 @@ import type { BrandSettings, FontChoice } from "./templates";
 
 // Whitelist of Google-hosted fonts we know we can fetch safely.
 const GOOGLE_FONTS: Record<FontChoice, string> = {
-  "Figtree": "Figtree",
-  "Inter": "Inter",
+  Figtree: "Figtree",
+  Inter: "Inter",
   "Space Grotesk": "Space+Grotesk",
   "Playfair Display": "Playfair+Display",
   "JetBrains Mono": "JetBrains+Mono",
-  "Poppins": "Poppins",
+  Poppins: "Poppins",
   "DM Sans": "DM+Sans",
-  "Manrope": "Manrope",
+  Manrope: "Manrope",
 };
 
 const ALL_WEIGHTS = [400, 500, 600, 700, 800, 900];
@@ -77,9 +77,7 @@ export function fontsReadyFor(brand: BrandSettings): boolean {
   if (typeof document === "undefined") return true;
   const docFonts = (document as Document & { fonts?: FontFaceSet }).fonts;
   if (!docFonts) return true;
-  const families = [brand.fontHeading, brand.fontBody].filter(
-    (f) => GOOGLE_FONTS[f as FontChoice],
-  );
+  const families = [brand.fontHeading, brand.fontBody].filter((f) => GOOGLE_FONTS[f as FontChoice]);
   if (families.length === 0) return true;
   return families.every((f) => {
     try {

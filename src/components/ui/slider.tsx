@@ -2,12 +2,7 @@ import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 
 import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SliderExtraProps {
   /** When true, shows a tooltip above the thumb during hover/drag/focus. */
@@ -51,7 +46,11 @@ const Slider = React.forwardRef<
         <TooltipProvider delayDuration={0}>
           <Tooltip open={open}>
             <TooltipTrigger asChild>{thumb}</TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} className="px-2 py-1 text-[10px] tabular-nums">
+            <TooltipContent
+              side="top"
+              sideOffset={8}
+              className="px-2 py-1 text-[10px] tabular-nums"
+            >
               {tooltipText}
             </TooltipContent>
           </Tooltip>

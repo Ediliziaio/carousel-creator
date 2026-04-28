@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useCarousel } from "@/lib/store";
@@ -27,7 +37,17 @@ import { langLabel, LANG_NAMES } from "@/lib/i18n";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { PresetCard } from "@/components/PresetCard";
 import { themeFromBrand } from "@/lib/presets";
-import { Settings, X, Star, RotateCcw, Save, Trash, Palette, Wand2, ShieldCheck } from "lucide-react";
+import {
+  Settings,
+  X,
+  Star,
+  RotateCcw,
+  Save,
+  Trash,
+  Palette,
+  Wand2,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const ACCENT_PRESETS = [
@@ -171,18 +191,19 @@ export function BrandSettingsDialog() {
   const setEffect = <K extends keyof typeof b.effects>(k: K, v: (typeof b.effects)[K]) =>
     setDraft({ effects: { ...b.effects, [k]: v } });
 
-  const reset = () => setDraft({
-    accent: DEFAULT_BRAND.accent,
-    accentSecondary: DEFAULT_BRAND.accentSecondary,
-    textColor: DEFAULT_BRAND.textColor,
-    bgColor: DEFAULT_BRAND.bgColor,
-    fontHeading: DEFAULT_BRAND.fontHeading,
-    fontBody: DEFAULT_BRAND.fontBody,
-    headingWeight: DEFAULT_BRAND.headingWeight,
-    bodyWeight: DEFAULT_BRAND.bodyWeight,
-    logoDataUrl: undefined,
-    effects: { ...DEFAULT_BRAND.effects },
-  });
+  const reset = () =>
+    setDraft({
+      accent: DEFAULT_BRAND.accent,
+      accentSecondary: DEFAULT_BRAND.accentSecondary,
+      textColor: DEFAULT_BRAND.textColor,
+      bgColor: DEFAULT_BRAND.bgColor,
+      fontHeading: DEFAULT_BRAND.fontHeading,
+      fontBody: DEFAULT_BRAND.fontBody,
+      headingWeight: DEFAULT_BRAND.headingWeight,
+      bodyWeight: DEFAULT_BRAND.bodyWeight,
+      logoDataUrl: undefined,
+      effects: { ...DEFAULT_BRAND.effects },
+    });
 
   const onSavePreset = () => {
     const name = presetName.trim();
@@ -196,7 +217,12 @@ export function BrandSettingsDialog() {
   };
 
   const onClearStorage = () => {
-    if (!confirm("Cancellare il brand salvato in locale e tornare ai valori di default? I preset custom resteranno.")) return;
+    if (
+      !confirm(
+        "Cancellare il brand salvato in locale e tornare ai valori di default? I preset custom resteranno.",
+      )
+    )
+      return;
     try {
       localStorage.removeItem("carousel-brand-v1");
     } catch {
@@ -228,7 +254,10 @@ export function BrandSettingsDialog() {
             <TabsTrigger value="colors">Colori</TabsTrigger>
             <TabsTrigger value="typo">Tipografia</TabsTrigger>
             <TabsTrigger value="effects">Effetti</TabsTrigger>
-            <TabsTrigger value="presets"><Palette className="mr-1 h-3 w-3" />Preset</TabsTrigger>
+            <TabsTrigger value="presets">
+              <Palette className="mr-1 h-3 w-3" />
+              Preset
+            </TabsTrigger>
             <TabsTrigger value="lang">Lingue</TabsTrigger>
             <TabsTrigger value="advanced">Avanzate</TabsTrigger>
           </TabsList>
@@ -244,7 +273,10 @@ export function BrandSettingsDialog() {
               </div>
               <div className="space-y-1.5">
                 <Label>Footer destro (CTA)</Label>
-                <Input value={b.footerCta} onChange={(e) => setDraft({ footerCta: e.target.value })} />
+                <Input
+                  value={b.footerCta}
+                  onChange={(e) => setDraft({ footerCta: e.target.value })}
+                />
               </div>
               <ImageUploadField
                 label="Logo aziendale (opzionale)"
@@ -255,7 +287,8 @@ export function BrandSettingsDialog() {
               />
               <div className="rounded-md border border-dashed border-border p-3">
                 <div className="text-xs text-muted-foreground mb-2">
-                  Le impostazioni del brand vengono salvate automaticamente nel browser e ripristinate al prossimo accesso.
+                  Le impostazioni del brand vengono salvate automaticamente nel browser e
+                  ripristinate al prossimo accesso.
                 </div>
                 <Button variant="outline" size="sm" onClick={onClearStorage}>
                   <Trash className="mr-1 h-3 w-3" /> Cancella brand salvato
@@ -264,10 +297,28 @@ export function BrandSettingsDialog() {
             </TabsContent>
 
             <TabsContent value="colors" className="m-0 space-y-4">
-              <ColorRow label="Colore accent" value={b.accent} onChange={(v) => setDraft({ accent: v })} presets={ACCENT_PRESETS} />
-              <ColorRow label="Colore accent secondario" value={b.accentSecondary} onChange={(v) => setDraft({ accentSecondary: v })} presets={ACCENT_PRESETS} />
-              <ColorRow label="Colore testo" value={b.textColor} onChange={(v) => setDraft({ textColor: v })} />
-              <ColorRow label="Colore sfondo" value={b.bgColor} onChange={(v) => setDraft({ bgColor: v })} />
+              <ColorRow
+                label="Colore accent"
+                value={b.accent}
+                onChange={(v) => setDraft({ accent: v })}
+                presets={ACCENT_PRESETS}
+              />
+              <ColorRow
+                label="Colore accent secondario"
+                value={b.accentSecondary}
+                onChange={(v) => setDraft({ accentSecondary: v })}
+                presets={ACCENT_PRESETS}
+              />
+              <ColorRow
+                label="Colore testo"
+                value={b.textColor}
+                onChange={(v) => setDraft({ textColor: v })}
+              />
+              <ColorRow
+                label="Colore sfondo"
+                value={b.bgColor}
+                onChange={(v) => setDraft({ bgColor: v })}
+              />
               <Button variant="outline" size="sm" onClick={reset}>
                 <RotateCcw className="mr-1 h-3 w-3" /> Reset valori grafici al default
               </Button>
@@ -277,19 +328,37 @@ export function BrandSettingsDialog() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Font titoli</Label>
-                  <Select value={b.fontHeading} onValueChange={(v) => setDraft({ fontHeading: v as typeof b.fontHeading })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={b.fontHeading}
+                    onValueChange={(v) => setDraft({ fontHeading: v as typeof b.fontHeading })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {FONT_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FONT_OPTIONS.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Font body</Label>
-                  <Select value={b.fontBody} onValueChange={(v) => setDraft({ fontBody: v as typeof b.fontBody })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={b.fontBody}
+                    onValueChange={(v) => setDraft({ fontBody: v as typeof b.fontBody })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {FONT_OPTIONS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                      {FONT_OPTIONS.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -297,19 +366,37 @@ export function BrandSettingsDialog() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Peso titoli</Label>
-                  <Select value={String(b.headingWeight)} onValueChange={(v) => setDraft({ headingWeight: Number(v) as Weight })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={String(b.headingWeight)}
+                    onValueChange={(v) => setDraft({ headingWeight: Number(v) as Weight })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {WEIGHTS.map((w) => <SelectItem key={w} value={String(w)}>{w}</SelectItem>)}
+                      {WEIGHTS.map((w) => (
+                        <SelectItem key={w} value={String(w)}>
+                          {w}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Peso body</Label>
-                  <Select value={String(b.bodyWeight)} onValueChange={(v) => setDraft({ bodyWeight: Number(v) as Weight })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={String(b.bodyWeight)}
+                    onValueChange={(v) => setDraft({ bodyWeight: Number(v) as Weight })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {WEIGHTS.map((w) => <SelectItem key={w} value={String(w)}>{w}</SelectItem>)}
+                      {WEIGHTS.map((w) => (
+                        <SelectItem key={w} value={String(w)}>
+                          {w}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -324,8 +411,18 @@ export function BrandSettingsDialog() {
                   options={BG_PATTERNS}
                   onChange={(v) => setEffect("bgPattern", v as BgPattern)}
                 />
-                <ToggleRow label="Glow accent" desc="Alone luminoso su numeri grandi e accent." checked={b.effects.accentGlow} onChange={(v) => setEffect("accentGlow", v)} />
-                <ToggleRow label="Effetto film grain" desc="Sottile rumore tipo pellicola." checked={b.effects.grain} onChange={(v) => setEffect("grain", v)} />
+                <ToggleRow
+                  label="Glow accent"
+                  desc="Alone luminoso su numeri grandi e accent."
+                  checked={b.effects.accentGlow}
+                  onChange={(v) => setEffect("accentGlow", v)}
+                />
+                <ToggleRow
+                  label="Effetto film grain"
+                  desc="Sottile rumore tipo pellicola."
+                  checked={b.effects.grain}
+                  onChange={(v) => setEffect("grain", v)}
+                />
               </Section>
 
               <Section title="Forme & ombre">
@@ -350,7 +447,12 @@ export function BrandSettingsDialog() {
               </Section>
 
               <Section title="Titoli & decori">
-                <ToggleRow label="Titoli a gradiente" desc="Riempie i titoli con accent → accent secondario." checked={b.effects.textGradient} onChange={(v) => setEffect("textGradient", v)} />
+                <ToggleRow
+                  label="Titoli a gradiente"
+                  desc="Riempie i titoli con accent → accent secondario."
+                  checked={b.effects.textGradient}
+                  onChange={(v) => setEffect("textGradient", v)}
+                />
                 <SelectRow
                   label="Effetto titoli"
                   value={b.effects.titleEffect}
@@ -363,7 +465,12 @@ export function BrandSettingsDialog() {
                   options={DIVIDERS}
                   onChange={(v) => setEffect("dividerStyle", v as DividerStyle)}
                 />
-                <ToggleRow label="Icon accent secondario" desc="Colora marker numerici con accent secondario." checked={b.effects.iconAccent} onChange={(v) => setEffect("iconAccent", v)} />
+                <ToggleRow
+                  label="Icon accent secondario"
+                  desc="Colora marker numerici con accent secondario."
+                  checked={b.effects.iconAccent}
+                  onChange={(v) => setEffect("iconAccent", v)}
+                />
               </Section>
 
               <Section title="Stile marketing">
@@ -458,12 +565,16 @@ export function BrandSettingsDialog() {
                       toast.success(`Preset "${p.name}" applicato`);
                     }}
                     onRename={p.builtIn ? undefined : (name) => renameBrandPreset(p.id, name)}
-                    onDelete={p.builtIn ? undefined : () => {
-                      if (confirm(`Eliminare il preset "${p.name}"?`)) {
-                        deleteBrandPreset(p.id);
-                        toast.success("Preset eliminato");
-                      }
-                    }}
+                    onDelete={
+                      p.builtIn
+                        ? undefined
+                        : () => {
+                            if (confirm(`Eliminare il preset "${p.name}"?`)) {
+                              deleteBrandPreset(p.id);
+                              toast.success("Preset eliminato");
+                            }
+                          }
+                    }
                   />
                 ))}
               </div>
@@ -471,17 +582,34 @@ export function BrandSettingsDialog() {
 
             <TabsContent value="lang" className="m-0 space-y-4">
               <p className="text-xs text-muted-foreground">
-                Aggiungi le lingue del carosello. Modifica i contenuti per ogni lingua dal pannello Form.
+                Aggiungi le lingue del carosello. Modifica i contenuti per ogni lingua dal pannello
+                Form.
               </p>
               <div className="flex flex-wrap gap-2">
                 {brand.languages.map((l) => (
-                  <div key={l} className={`flex items-center gap-2 rounded-md border px-2 py-1 text-sm ${l === brand.defaultLanguage ? "border-primary" : "border-border"}`}>
-                    <button type="button" title="Imposta come predefinita" onClick={() => setDefaultLanguage(l)} className="text-muted-foreground hover:text-foreground">
-                      <Star className={`h-3.5 w-3.5 ${l === brand.defaultLanguage ? "fill-primary text-primary" : ""}`} />
+                  <div
+                    key={l}
+                    className={`flex items-center gap-2 rounded-md border px-2 py-1 text-sm ${l === brand.defaultLanguage ? "border-primary" : "border-border"}`}
+                  >
+                    <button
+                      type="button"
+                      title="Imposta come predefinita"
+                      onClick={() => setDefaultLanguage(l)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 ${l === brand.defaultLanguage ? "fill-primary text-primary" : ""}`}
+                      />
                     </button>
-                    <span>{langLabel(l)} <span className="text-xs text-muted-foreground">({l})</span></span>
+                    <span>
+                      {langLabel(l)} <span className="text-xs text-muted-foreground">({l})</span>
+                    </span>
                     {brand.languages.length > 1 && (
-                      <button type="button" onClick={() => removeLanguage(l)} className="text-muted-foreground hover:text-destructive">
+                      <button
+                        type="button"
+                        onClick={() => removeLanguage(l)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -509,16 +637,18 @@ export function BrandSettingsDialog() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1">
-                {Object.keys(LANG_NAMES).filter((c) => !brand.languages.includes(c)).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => addLanguage(c)}
-                    className="rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
-                  >
-                    + {langLabel(c)}
-                  </button>
-                ))}
+                {Object.keys(LANG_NAMES)
+                  .filter((c) => !brand.languages.includes(c))
+                  .map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => addLanguage(c)}
+                      className="rounded-full border border-border px-2 py-0.5 text-xs hover:bg-muted"
+                    >
+                      + {langLabel(c)}
+                    </button>
+                  ))}
               </div>
             </TabsContent>
           </div>
@@ -531,22 +661,38 @@ export function BrandSettingsDialog() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-md border border-border p-3">
-      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</div>
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </div>
       <div className="space-y-3">{children}</div>
     </div>
   );
 }
 
 function SelectRow<T extends string>({
-  label, value, options, onChange,
-}: { label: string; value: T; options: { value: T; label: string }[]; onChange: (v: T) => void }) {
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <Select value={value} onValueChange={(v) => onChange(v as T)}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
-          {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
@@ -554,7 +700,10 @@ function SelectRow<T extends string>({
 }
 
 function ColorRow({
-  label, value, onChange, presets,
+  label,
+  value,
+  onChange,
+  presets,
 }: {
   label: string;
   value: string;
@@ -565,7 +714,12 @@ function ColorRow({
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <div className="flex items-center gap-2">
-        <Input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-9 w-16 cursor-pointer p-1" />
+        <Input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-16 cursor-pointer p-1"
+        />
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="font-mono" />
       </div>
       {presets && (
@@ -588,8 +742,16 @@ function ColorRow({
 }
 
 function ToggleRow({
-  label, desc, checked, onChange,
-}: { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void }) {
+  label,
+  desc,
+  checked,
+  onChange,
+}: {
+  label: string;
+  desc?: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-md border border-border p-3">
       <div className="space-y-0.5">

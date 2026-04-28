@@ -115,12 +115,17 @@ export function ImageUploadField({
 
   return (
     <div className="space-y-1.5">
-      {label && <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>}
+      {label && (
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+      )}
       {value ? (
         renderPreview()
       ) : (
         <div
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
           onDragLeave={() => setDrag(false)}
           onDrop={onDrop}
           onClick={openPicker}
@@ -128,7 +133,8 @@ export function ImageUploadField({
         >
           <Upload className="h-5 w-5 text-muted-foreground" />
           <div className="text-xs text-muted-foreground">
-            Trascina qui un'immagine o <span className="font-medium text-foreground">clicca per scegliere</span>
+            Trascina qui un'immagine o{" "}
+            <span className="font-medium text-foreground">clicca per scegliere</span>
           </div>
           <div className="text-[10px] text-muted-foreground">PNG / JPG / WEBP — max {maxMB}MB</div>
         </div>

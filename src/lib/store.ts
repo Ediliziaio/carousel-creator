@@ -35,10 +35,53 @@ import {
 
 const DEFAULT_CATEGORY_ORDER = ["text", "data", "media", "ref"];
 const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
-  text:  ["cover", "center", "split", "bignum", "myth", "quoteBig", "hook", "objection", "urgency", "guarantee", "quickWin"],
-  data:  ["grid2x2", "timeline", "checklist", "stat", "compare", "chartBar", "chartDonut", "chartLine", "chartArea", "chartCompareBar", "kpiGrid", "funnelChart", "process", "prosCons", "roadmap", "problemSolution", "mistakes", "framework", "socialProof", "tipPack", "faq"],
-  media: ["gallery", "imageQuote", "feature", "testimonial", "mediaHero", "polaroidStack", "splitDuo", "magazineCover"],
-  ref:   ["vocab", "qa", "cta", "offer", "bonusStack"],
+  text: [
+    "cover",
+    "center",
+    "split",
+    "bignum",
+    "myth",
+    "quoteBig",
+    "hook",
+    "objection",
+    "urgency",
+    "guarantee",
+    "quickWin",
+  ],
+  data: [
+    "grid2x2",
+    "timeline",
+    "checklist",
+    "stat",
+    "compare",
+    "chartBar",
+    "chartDonut",
+    "chartLine",
+    "chartArea",
+    "chartCompareBar",
+    "kpiGrid",
+    "funnelChart",
+    "process",
+    "prosCons",
+    "roadmap",
+    "problemSolution",
+    "mistakes",
+    "framework",
+    "socialProof",
+    "tipPack",
+    "faq",
+  ],
+  media: [
+    "gallery",
+    "imageQuote",
+    "feature",
+    "testimonial",
+    "mediaHero",
+    "polaroidStack",
+    "splitDuo",
+    "magazineCover",
+  ],
+  ref: ["vocab", "qa", "cta", "offer", "bonusStack"],
 };
 
 /** Merge persisted picker state with defaults so newly-added templates/categories appear. */
@@ -132,7 +175,14 @@ interface CarouselState {
 
   /** Quick offer propagation */
   propagateOfferFields: (
-    patch: { ctaLabel?: string; priceNew?: string; priceOld?: string; currency?: string; urgency?: string; badge?: string },
+    patch: {
+      ctaLabel?: string;
+      priceNew?: string;
+      priceOld?: string;
+      currency?: string;
+      urgency?: string;
+      badge?: string;
+    },
     opts: { overwriteCustom: boolean },
   ) => { offerCount: number; ctaCount: number };
 
@@ -144,7 +194,9 @@ interface CarouselState {
   setValidationOverlay: (v: boolean) => void;
 
   /** Bulk update marketing slides (hook/offer/cta) — single undo entry */
-  bulkUpdateMarketingSlides: (updates: { slideId: string; patch: Record<string, unknown> }[]) => void;
+  bulkUpdateMarketingSlides: (
+    updates: { slideId: string; patch: Record<string, unknown> }[],
+  ) => void;
 
   /** Offer presets (Quick Offer reusable values) */
   offerPresets: OfferPreset[];
@@ -199,8 +251,7 @@ export const useCarousel = create<CarouselState>()(
       past: [],
       future: [],
 
-      setBrand: (b) =>
-        set((s) => withHistory(s, { brand: { ...s.brand, ...b } })),
+      setBrand: (b) => set((s) => withHistory(s, { brand: { ...s.brand, ...b } })),
 
       addLanguage: (code) =>
         set((s) => {
@@ -249,8 +300,7 @@ export const useCarousel = create<CarouselState>()(
       removeSlide: (id) =>
         set((s) => {
           const slides = s.slides.filter((sl) => sl.id !== id);
-          const activeId =
-            s.activeId === id ? (slides[0]?.id ?? null) : s.activeId;
+          const activeId = s.activeId === id ? (slides[0]?.id ?? null) : s.activeId;
           return withHistory(s, { slides, activeId });
         }),
 
@@ -302,7 +352,7 @@ export const useCarousel = create<CarouselState>()(
             brand: mergeBrand(json.brand),
             slides: migrated,
             activeId: migrated[0]?.id ?? null,
-            activeLang: (json.brand?.defaultLanguage ?? "it"),
+            activeLang: json.brand?.defaultLanguage ?? "it",
           });
         }),
 
@@ -345,7 +395,13 @@ export const useCarousel = create<CarouselState>()(
         set((s) => ({
           slideCombos: [
             ...s.slideCombos,
-            { id: crypto.randomUUID(), name: name.trim() || "Senza nome", template, format, createdAt: Date.now() },
+            {
+              id: crypto.randomUUID(),
+              name: name.trim() || "Senza nome",
+              template,
+              format,
+              createdAt: Date.now(),
+            },
           ],
         })),
 
@@ -390,8 +446,7 @@ export const useCarousel = create<CarouselState>()(
           ),
         })),
 
-      resetBrandToDefault: () =>
-        set((s) => withHistory(s, { brand: DEFAULT_BRAND })),
+      resetBrandToDefault: () => set((s) => withHistory(s, { brand: DEFAULT_BRAND })),
 
       /* Carousel presets */
       loadCarouselPreset: (presetId) =>
@@ -436,7 +491,14 @@ export const useCarousel = create<CarouselState>()(
 
         const applyOfferPatch = (current: Record<string, unknown>): Record<string, unknown> => {
           const next: Record<string, unknown> = { ...current };
-          const fields: (keyof typeof patch)[] = ["ctaLabel", "priceNew", "priceOld", "currency", "urgency", "badge"];
+          const fields: (keyof typeof patch)[] = [
+            "ctaLabel",
+            "priceNew",
+            "priceOld",
+            "currency",
+            "urgency",
+            "badge",
+          ];
           for (const f of fields) {
             const v = patch[f];
             if (v === undefined) continue;
@@ -447,7 +509,11 @@ export const useCarousel = create<CarouselState>()(
             }
           }
           // Derive badge from urgency when badge missing.
-          if (!patch.badge && patch.urgency && (!current.badge || current.badge === offerDefaults.badge)) {
+          if (
+            !patch.badge &&
+            patch.urgency &&
+            (!current.badge || current.badge === offerDefaults.badge)
+          ) {
             next.badge = patch.urgency;
           }
           return next;
@@ -466,11 +532,15 @@ export const useCarousel = create<CarouselState>()(
         const transformData = (template: TemplateId, data: AnyTemplateData): AnyTemplateData => {
           if (template === "offer") {
             offerCount++;
-            return applyOfferPatch(data as unknown as Record<string, unknown>) as unknown as AnyTemplateData;
+            return applyOfferPatch(
+              data as unknown as Record<string, unknown>,
+            ) as unknown as AnyTemplateData;
           }
           if (template === "cta") {
             ctaCount++;
-            return applyCtaPatch(data as unknown as Record<string, unknown>) as unknown as AnyTemplateData;
+            return applyCtaPatch(
+              data as unknown as Record<string, unknown>,
+            ) as unknown as AnyTemplateData;
           }
           return data;
         };
@@ -552,7 +622,6 @@ export const useCarousel = create<CarouselState>()(
           ),
         })),
 
-
       undo: () =>
         set((s) => {
           const last = s.past[s.past.length - 1];
@@ -605,17 +674,19 @@ export const useCarousel = create<CarouselState>()(
       }),
       merge: (persistedState, currentState) => {
         try {
-          const ps = persistedState as Partial<{
-            brand: BrandSettings;
-            brandPresets: BrandPreset[];
-            slideCombos: SlideCombo[];
-            templateCategoryOrder: string[];
-            templatesPerCategory: Record<string, TemplateId[]>;
-            lastFontSizeByFieldType: Record<string, number>;
-            strictExport: boolean;
-            validationOverlay: boolean;
-            offerPresets: OfferPreset[];
-          }> | undefined;
+          const ps = persistedState as
+            | Partial<{
+                brand: BrandSettings;
+                brandPresets: BrandPreset[];
+                slideCombos: SlideCombo[];
+                templateCategoryOrder: string[];
+                templatesPerCategory: Record<string, TemplateId[]>;
+                lastFontSizeByFieldType: Record<string, number>;
+                strictExport: boolean;
+                validationOverlay: boolean;
+                offerPresets: OfferPreset[];
+              }>
+            | undefined;
           const customPresets = Array.isArray(ps?.brandPresets) ? ps!.brandPresets : [];
           const customOfferPresets = Array.isArray(ps?.offerPresets) ? ps!.offerPresets : [];
           const picker = mergePickerState(ps?.templateCategoryOrder, ps?.templatesPerCategory);
