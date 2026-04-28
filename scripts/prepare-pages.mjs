@@ -33,6 +33,11 @@ ${styles}
 await mkdir(clientDir, { recursive: true });
 await writeFile(join(clientDir, "index.html"), html);
 await writeFile(join(clientDir, "404.html"), html);
-await writeFile(join(clientDir, "_redirects"), "/login /index.html 200\n/signup /index.html 200\n");
+await mkdir(join(clientDir, "login"), { recursive: true });
+await mkdir(join(clientDir, "signup"), { recursive: true });
+await writeFile(join(clientDir, "login.html"), html);
+await writeFile(join(clientDir, "signup.html"), html);
+await writeFile(join(clientDir, "login", "index.html"), html);
+await writeFile(join(clientDir, "signup", "index.html"), html);
 await rm(join(clientDir, "wrangler.json"), { force: true });
 await rm(join(process.cwd(), ".wrangler", "deploy", "config.json"), { force: true });
