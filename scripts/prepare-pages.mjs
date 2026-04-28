@@ -41,5 +41,9 @@ await writeFile(join(clientDir, "login.html"), html);
 await writeFile(join(clientDir, "signup.html"), html);
 await writeFile(join(clientDir, "login", "index.html"), html);
 await writeFile(join(clientDir, "signup", "index.html"), html);
+await writeFile(
+  join(clientDir, "_headers"),
+  "/*\n  Cache-Control: public, max-age=0, must-revalidate\n",
+);
 await rm(join(clientDir, "wrangler.json"), { force: true });
 await rm(join(process.cwd(), ".wrangler", "deploy", "config.json"), { force: true });
