@@ -56,7 +56,14 @@ import {
 import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
-import { getContent, saveContent, type ContentType } from "@/lib/contentsApi";
+import {
+  getContent,
+  saveContent,
+  STATUS_META,
+  STATUS_ORDER,
+  type ContentType,
+  type ContentStatus,
+} from "@/lib/contentsApi";
 import { getProject, updateProject } from "@/lib/projectsApi";
 import { captureThumbnail } from "@/lib/export";
 
@@ -69,7 +76,7 @@ interface ContentDataShape {
   brand?: BrandSettings;
   slides?: Slide[];
   activeLang?: string;
-  status?: "draft" | "published";
+  status?: ContentStatus | "draft";
   publishedAt?: string;
 }
 
@@ -149,7 +156,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   const [contentName, setContentName] = useState("");
   const [contentType, setContentType] = useState<ContentType>("carousel");
   const [projectName, setProjectName] = useState("");
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [status, setStatus] = useState<ContentStatus>("in_progress");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
   // Snapshot del payload all'ultimo save / hydrate. dirty è computed = current !== snapshot.
@@ -183,8 +190,12 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         setContentName(content.name);
         setContentType(content.type);
         setProjectName(proj.name);
-        setStatus(data.status === "published" ? "published" : "draft");
-        const initialStatus = data.status === "published" ? "published" : "draft";
+        const rawStatus = data.status;
+        const initialStatus: ContentStatus =
+          rawStatus && rawStatus in STATUS_META && rawStatus !== "draft"
+            ? (rawStatus as ContentStatus)
+            : "in_progress";
+        setStatus(initialStatus);
         setSavedSnapshot(
           JSON.stringify({ brand: brandFromProject, slides: slidesData, status: initialStatus }),
         );
@@ -497,19 +508,22 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
             )}
             {dirty ? "Salva*" : "Salvato"}
           </Button>
-          <Button
-            variant={status === "published" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setStatus(status === "published" ? "draft" : "published")}
-            title={
-              status === "published"
-                ? "Pubblicato (clicca per tornare bozza)"
-                : "Bozza (clicca per marcare come pubblicato)"
-            }
-            className={status === "published" ? "bg-green-600 hover:bg-green-700" : ""}
-          >
-            {status === "published" ? "✓ Pubblicato" : "○ Bozza"}
-          </Button>
+          <Select value={status} onValueChange={(v) => setStatus(v as ContentStatus)}>
+            <SelectTrigger
+              className={`h-8 w-[170px] gap-1 text-xs font-medium border ${STATUS_META[status].bg}`}
+              title="Stato workflow"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_ORDER.map((s) => (
+                <SelectItem key={s} value={s}>
+                  <span className="mr-2">{STATUS_META[s].emoji}</span>
+                  {STATUS_META[s].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <CarouselPresetDialog />
           <QuickOfferEditor />
           <HookOfferMicroEditor />
