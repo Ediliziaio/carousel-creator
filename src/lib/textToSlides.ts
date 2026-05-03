@@ -184,6 +184,20 @@ function sectionToSlide(sec: Section, ctx: ContextFlags): ImportedItem | null {
     );
   }
 
+  // Poll: heading o body con "?" e 2-4 linee bullet che terminano con percentuale (es. "Sì 62%").
+  const poll = extractPoll(bodyLines, heading);
+  if (poll) {
+    return makeSlide(
+      "poll",
+      {
+        eyebrow: "SONDAGGIO",
+        question: poll.question,
+        options: poll.options,
+      },
+      warnings,
+    );
+  }
+
   // FAQ: alternanza domanda → risposta (Q: / A: o ? finale).
   const faqItems = extractFaqItems(bodyLines);
   if (faqItems.length >= 2) {
@@ -352,6 +366,41 @@ function extractProblemSolution(
   return null;
 }
 
+function extractPoll(
+  lines: string[],
+  heading: string,
+): {
+  question: string;
+  options: { label: string; percentage?: number; leading?: boolean }[];
+} | null {
+  // Domanda: heading se finisce con "?" o prima riga del body con "?".
+  let question = "";
+  if (heading.endsWith("?")) question = heading;
+  else {
+    const firstQ = lines.find((l) => l.trim().endsWith("?"));
+    if (firstQ) question = firstQ.trim();
+  }
+  if (!question) return null;
+
+  // Opzioni: linee bullet con percentuale tipo "- Sì 62%" o "1. No 38%".
+  const options: { label: string; percentage?: number; leading?: boolean }[] = [];
+  for (const raw of lines) {
+    const l = raw.trim();
+    const m = /^(?:[-*•]|\d+[.)])\s+(.+?)\s+(\d+(?:[.,]\d+)?)\s*%\s*$/.exec(l);
+    if (m) {
+      options.push({ label: m[1].trim(), percentage: parseFloat(m[2].replace(",", ".")) });
+    }
+  }
+  if (options.length < 2) return null;
+
+  // Marca come leading l'opzione con la percentuale più alta.
+  const maxPct = Math.max(...options.map((o) => o.percentage ?? 0));
+  options.forEach((o) => {
+    if ((o.percentage ?? 0) === maxPct && maxPct > 0) o.leading = true;
+  });
+  return { question, options: options.slice(0, 4) };
+}
+
 function extractFaqItems(lines: string[]): { q: string; a: string }[] {
   const items: { q: string; a: string }[] = [];
   let pendingQ: string | null = null;
@@ -478,13 +527,20 @@ Il parser sceglie il template in base alla forma del body. Usa attivamente quest
    Posso disdire? Sì, in qualsiasi momento.
    C'è una prova gratuita? 14 giorni, nessuna carta richiesta.
 
-8) CTA (slide finale)
+8) POLL / SONDAGGIO (engagement)
+   → heading o prima riga del body finisce con "?", seguito da 2-4 opzioni
+     bullet con percentuale a fine riga
+   ## Cosa scegli per ristrutturare?
+   - Pavimento parquet  62%
+   - Pavimento gres     38%
+
+9) CTA (slide finale)
    → titolo "CTA" o "Conclusione" o "Iscriviti" o "Contattaci"
    ## CTA
    Salva questo post per quando ti servirà.
 
-9) CENTER (default — titolo + body)
-   → qualsiasi sezione che non rientra nei pattern sopra
+10) CENTER (default — titolo + body)
+    → qualsiasi sezione che non rientra nei pattern sopra
 
 # REGOLE DI SCRITTURA
 

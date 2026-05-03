@@ -114,7 +114,7 @@ function SortableTemplateThumb({
     id: template,
   });
 
-  const targetW = 140;
+  const targetW = 180;
   const scale = targetW / dim.w;
   const thumbH = Math.round(dim.h * scale);
 
@@ -407,7 +407,7 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                           items={cId === tab ? currentTemplates : (templatesPerCategory[cId] ?? [])}
                           strategy={rectSortingStrategy}
                         >
-                          <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
                             {(templatesPerCategory[cId] ?? []).map((t) => (
                               <SortableTemplateThumb
                                 key={t}
@@ -421,7 +421,7 @@ export function NewSlideDialog({ open, onOpenChange, defaultFormat = "portrait",
                         </SortableContext>
                       </DndContext>
                     ) : (
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
                         {(templatesPerCategory[cId] ?? []).map((t) => (
                           <button
                             key={t}

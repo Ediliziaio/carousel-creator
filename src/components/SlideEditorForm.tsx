@@ -48,6 +48,8 @@ import type {
   ChartCompareBarData,
   KpiGridData,
   FunnelChartData,
+  PollData,
+  PricingTableData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -531,6 +533,20 @@ export function SlideEditorForm({ slide }: Props) {
         <FunnelChartEditor
           d={draft as FunnelChartData}
           set={set as (d: FunnelChartData) => void}
+          {...editorProps}
+        />
+      );
+      break;
+    case "poll":
+      body = (
+        <PollEditor d={draft as PollData} set={set as (d: PollData) => void} {...editorProps} />
+      );
+      break;
+    case "pricingTable":
+      body = (
+        <PricingTableEditor
+          d={draft as PricingTableData}
+          set={set as (d: PricingTableData) => void}
           {...editorProps}
         />
       );
@@ -4448,6 +4464,219 @@ function FunnelChartEditor({ d, set, errFor, slideId, overrides }: EditorProps<F
           rows={2}
           value={d.summary ?? ""}
           onChange={(e) => set({ ...d, summary: e.target.value })}
+        />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Poll ---------------- */
+function PollEditor({ d, set, errFor, slideId, overrides }: EditorProps<PollData>) {
+  const setOption = (i: number, patch: Partial<PollData["options"][number]>) => {
+    const opts = d.options.slice();
+    opts[i] = { ...opts[i], ...patch };
+    // Auto: se imposti `leading` su una, le altre lo perdono.
+    if (patch.leading) {
+      opts.forEach((o, j) => {
+        if (j !== i) o.leading = false;
+      });
+    }
+    set({ ...d, options: opts });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input
+          value={d.eyebrow ?? ""}
+          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+          placeholder="SONDAGGIO"
+        />
+      </Field>
+      <Field
+        label="Domanda"
+        error={errFor("question")}
+        slideId={slideId}
+        fieldPath="question"
+        overrides={overrides}
+      >
+        <Textarea
+          rows={2}
+          value={d.question ?? ""}
+          onChange={(e) => set({ ...d, question: e.target.value })}
+          placeholder="Cosa preferisci?"
+        />
+      </Field>
+      <ArrayField<PollData["options"][number]>
+        label="Opzioni (2-4)"
+        items={d.options}
+        onChange={(opts) => set({ ...d, options: opts })}
+        maxItems={4}
+        empty={{ label: "Nuova opzione", percentage: 0 }}
+        render={(opt, _change, i) => (
+          <div className="flex flex-col gap-2 rounded-md border border-border p-2">
+            <Input
+              value={opt.label}
+              onChange={(e) => setOption(i, { label: e.target.value })}
+              placeholder={`Opzione ${i + 1}`}
+            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={opt.percentage ?? 0}
+                onChange={(e) =>
+                  setOption(i, { percentage: Math.max(0, Math.min(100, Number(e.target.value))) })
+                }
+                className="w-20"
+                placeholder="%"
+              />
+              <Label className="flex cursor-pointer items-center gap-1 text-xs">
+                <input
+                  type="checkbox"
+                  checked={!!opt.leading}
+                  onChange={(e) => setOption(i, { leading: e.target.checked })}
+                />
+                Vincente
+              </Label>
+            </div>
+          </div>
+        )}
+      />
+      <Field label="Totale voti (opzionale)">
+        <Input
+          value={d.totalVotes ?? ""}
+          onChange={(e) => set({ ...d, totalVotes: e.target.value })}
+          placeholder="1.247 voti"
+        />
+      </Field>
+      <Field label="Fonte (opzionale)">
+        <Input
+          value={d.source ?? ""}
+          onChange={(e) => set({ ...d, source: e.target.value })}
+          placeholder="Instagram poll, gen 2026"
+        />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Pricing Table ---------------- */
+function PricingTableEditor({
+  d,
+  set,
+  errFor,
+  slideId,
+  overrides,
+}: EditorProps<PricingTableData>) {
+  const setPlan = (i: number, patch: Partial<PricingTableData["plans"][number]>) => {
+    const plans = d.plans.slice();
+    plans[i] = { ...plans[i], ...patch };
+    if (patch.highlighted) {
+      // Solo un piano evidenziato alla volta.
+      plans.forEach((p, j) => {
+        if (j !== i) p.highlighted = false;
+      });
+    }
+    set({ ...d, plans });
+  };
+
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow (opzionale)" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input
+          value={d.eyebrow ?? ""}
+          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+          placeholder="PIANI E PREZZI"
+        />
+      </Field>
+      <Field
+        label="Titolo"
+        error={errFor("title")}
+        slideId={slideId}
+        fieldPath="title"
+        overrides={overrides}
+      >
+        <Textarea
+          rows={2}
+          value={d.title ?? ""}
+          onChange={(e) => set({ ...d, title: e.target.value })}
+          placeholder="Scegli il piano più adatto a te."
+        />
+      </Field>
+      <ArrayField<PricingTableData["plans"][number]>
+        label="Piani (2-3)"
+        items={d.plans}
+        onChange={(plans) => set({ ...d, plans })}
+        maxItems={3}
+        empty={{
+          name: "Nuovo piano",
+          price: "0€",
+          priceCaption: "/mese",
+          features: ["Caratteristica 1"],
+          ctaLabel: "Inizia",
+        }}
+        render={(plan, _change, i) => (
+          <div className="flex flex-col gap-2 rounded-md border border-border p-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={plan.name}
+                onChange={(e) => setPlan(i, { name: e.target.value })}
+                placeholder={`Piano ${i + 1}`}
+              />
+              <Input
+                value={plan.badge ?? ""}
+                onChange={(e) => setPlan(i, { badge: e.target.value })}
+                placeholder="POPOLARE (opzionale)"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={plan.price}
+                onChange={(e) => setPlan(i, { price: e.target.value })}
+                placeholder="29€"
+              />
+              <Input
+                value={plan.priceCaption ?? ""}
+                onChange={(e) => setPlan(i, { priceCaption: e.target.value })}
+                placeholder="/mese"
+              />
+            </div>
+            <Textarea
+              rows={3}
+              value={(plan.features ?? []).join("\n")}
+              onChange={(e) =>
+                setPlan(i, {
+                  features: e.target.value
+                    .split("\n")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                })
+              }
+              placeholder="Una feature per riga"
+            />
+            <Input
+              value={plan.ctaLabel ?? ""}
+              onChange={(e) => setPlan(i, { ctaLabel: e.target.value })}
+              placeholder="Inizia gratis"
+            />
+            <Label className="flex cursor-pointer items-center gap-1 text-xs">
+              <input
+                type="checkbox"
+                checked={!!plan.highlighted}
+                onChange={(e) => setPlan(i, { highlighted: e.target.checked })}
+              />
+              Piano in evidenza (max 1)
+            </Label>
+          </div>
+        )}
+      />
+      <Field label="Fonte / disclaimer (opzionale)">
+        <Input
+          value={d.source ?? ""}
+          onChange={(e) => set({ ...d, source: e.target.value })}
+          placeholder="IVA esclusa. Prezzi validi fino al…"
         />
       </Field>
     </div>

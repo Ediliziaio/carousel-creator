@@ -45,6 +45,8 @@ import type {
   ChartCompareBarData,
   KpiGridData,
   FunnelChartData,
+  PollData,
+  PricingTableData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -740,6 +742,36 @@ export function validateSlideData(
         d.stages.forEach((s, i) => {
           if (empty(s.label)) err(`stages.${i}.label`, `Stadio ${i + 1}: etichetta obbligatoria`);
           if (empty(s.value)) err(`stages.${i}.value`, `Stadio ${i + 1}: valore obbligatorio`);
+        });
+      }
+      break;
+    }
+    case "poll": {
+      const d = data as PollData;
+      if (empty(d.question)) err("question", `Domanda: ${REQUIRED}`);
+      if (!d.options || d.options.length < 2) {
+        err("options", `Opzioni: servono almeno 2 (hai ${d.options?.length ?? 0})`);
+      } else {
+        if (d.options.length > 4) err("options", `Opzioni: massimo 4 (hai ${d.options.length})`);
+        d.options.forEach((o, i) => {
+          if (empty(o.label))
+            err(`options.${i}.label`, `Opzione ${i + 1}: etichetta obbligatoria`);
+        });
+      }
+      break;
+    }
+    case "pricingTable": {
+      const d = data as PricingTableData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.plans || d.plans.length < 2) {
+        err("plans", `Piani: servono almeno 2 (hai ${d.plans?.length ?? 0})`);
+      } else {
+        if (d.plans.length > 3) err("plans", `Piani: massimo 3 (hai ${d.plans.length})`);
+        d.plans.forEach((p, i) => {
+          if (empty(p.name)) err(`plans.${i}.name`, `Piano ${i + 1}: nome obbligatorio`);
+          if (empty(p.price)) err(`plans.${i}.price`, `Piano ${i + 1}: prezzo obbligatorio`);
+          if (!p.features || p.features.length === 0)
+            err(`plans.${i}.features`, `Piano ${i + 1}: almeno 1 feature obbligatoria`);
         });
       }
       break;

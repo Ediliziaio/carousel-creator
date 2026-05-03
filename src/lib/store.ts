@@ -70,6 +70,8 @@ const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
     "socialProof",
     "tipPack",
     "faq",
+    "poll",
+    "pricingTable",
   ],
   media: [
     "gallery",

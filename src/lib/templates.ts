@@ -46,7 +46,9 @@ export type TemplateId =
   | "chartArea"
   | "chartCompareBar"
   | "kpiGrid"
-  | "funnelChart";
+  | "funnelChart"
+  | "poll"
+  | "pricingTable";
 
 export interface SplitData {
   eyebrow: string;
@@ -278,6 +280,29 @@ export interface FaqData {
   title: string;
   items: { q: string; a: string }[];
 }
+/** Sondaggio / Poll — 2-4 opzioni con barra di percentuale opzionale. */
+export interface PollData {
+  eyebrow?: string;
+  question: string;
+  options: { label: string; percentage?: number; leading?: boolean }[];
+  totalVotes?: string;
+  source?: string;
+}
+/** Pricing comparison — 2-3 piani affiancati con feature list e CTA. */
+export interface PricingTableData {
+  eyebrow?: string;
+  title: string;
+  plans: {
+    name: string;
+    price: string;
+    priceCaption?: string;
+    badge?: string;
+    highlighted?: boolean;
+    features: string[];
+    ctaLabel?: string;
+  }[];
+  source?: string;
+}
 export interface QuickWinData {
   eyebrow?: string;
   instruction: string;
@@ -408,7 +433,9 @@ export type AnyTemplateData =
   | ChartAreaData
   | ChartCompareBarData
   | KpiGridData
-  | FunnelChartData;
+  | FunnelChartData
+  | PollData
+  | PricingTableData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -636,6 +663,8 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   chartCompareBar: { label: "Barre confronto", desc: "Barre raggruppate noi vs loro" },
   kpiGrid: { label: "Dashboard KPI", desc: "4 KPI con sparkline e delta" },
   funnelChart: { label: "Funnel conversione", desc: "Trapezi a step decrescenti" },
+  poll: { label: "Sondaggio", desc: "Domanda + 2-4 opzioni con barre %" },
+  pricingTable: { label: "Confronto prezzi", desc: "2-3 piani affiancati con CTA" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -684,6 +713,8 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "chartCompareBar",
   "kpiGrid",
   "funnelChart",
+  "poll",
+  "pricingTable",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -1222,6 +1253,57 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         ],
         summary: "Conversione totale 0,84% — sopra benchmark settore.",
       } as FunnelChartData;
+    case "poll":
+      return {
+        eyebrow: "SONDAGGIO",
+        question: "Cosa preferisci?",
+        options: [
+          { label: "Opzione A", percentage: 62, leading: true },
+          { label: "Opzione B", percentage: 38 },
+        ],
+        totalVotes: "1.247 voti",
+        source: "Instagram poll",
+      } as PollData;
+    case "pricingTable":
+      return {
+        eyebrow: "PIANI E PREZZI",
+        title: "Scegli il piano più adatto a te.",
+        plans: [
+          {
+            name: "Base",
+            price: "29€",
+            priceCaption: "/mese",
+            features: ["Funzionalità essenziali", "1 utente", "Supporto via email"],
+            ctaLabel: "Inizia gratis",
+          },
+          {
+            name: "Pro",
+            price: "79€",
+            priceCaption: "/mese",
+            badge: "POPOLARE",
+            highlighted: true,
+            features: [
+              "Tutto del piano Base",
+              "Fino a 5 utenti",
+              "Analitiche avanzate",
+              "Supporto prioritario",
+            ],
+            ctaLabel: "Prova 14 giorni",
+          },
+          {
+            name: "Premium",
+            price: "199€",
+            priceCaption: "/mese",
+            features: [
+              "Tutto del piano Pro",
+              "Utenti illimitati",
+              "API + integrazioni",
+              "Account manager dedicato",
+            ],
+            ctaLabel: "Contattaci",
+          },
+        ],
+      } as PricingTableData;
   }
 }
 
@@ -1636,6 +1718,29 @@ export function getStylableFields(
       d?.stages?.forEach((_, i) =>
         out.push({ path: `stages.${i}.label`, label: `Stadio ${i + 1}` }),
       );
+      return out;
+    }
+    case "poll": {
+      const d = data as PollData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "question", label: "Domanda" },
+      ];
+      d?.options?.forEach((_, i) =>
+        out.push({ path: `options.${i}.label`, label: `Opzione ${i + 1}` }),
+      );
+      return out;
+    }
+    case "pricingTable": {
+      const d = data as PricingTableData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.plans?.forEach((_, i) => {
+        out.push({ path: `plans.${i}.name`, label: `Piano ${i + 1} – nome` });
+        out.push({ path: `plans.${i}.price`, label: `Piano ${i + 1} – prezzo` });
+      });
       return out;
     }
   }

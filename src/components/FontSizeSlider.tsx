@@ -167,21 +167,31 @@ export function FontSizeSlider({
         title={`Dimensione font: ${current}px${overridden ? "" : " (default)"} — frecce ±2, Shift+frecce ±10, PageUp/Down ±20, Home/End min/max`}
       />
       {!compact && (
-        <Input
-          type="number"
-          min={MIN}
-          max={MAX}
-          step={2}
-          value={current}
-          onChange={onInputChange}
-          onBlur={onInputBlur}
-          onClick={overridden ? undefined : onPinDefault}
-          className={`h-6 w-12 px-1 text-[10px] tabular-nums shadow-none ${
-            overridden ? "" : "text-muted-foreground"
-          }`}
-          title={inputTitle}
-          aria-label="Dimensione font in pixel"
-        />
+        <div className="relative">
+          <Input
+            type="number"
+            min={MIN}
+            max={MAX}
+            step={2}
+            value={current}
+            onChange={onInputChange}
+            onBlur={onInputBlur}
+            onClick={overridden ? undefined : onPinDefault}
+            className={`h-7 w-14 px-1 pr-3 text-[11px] tabular-nums shadow-none ${
+              overridden
+                ? "border-primary/40 bg-primary/5 font-medium"
+                : "text-muted-foreground"
+            }`}
+            title={inputTitle}
+            aria-label="Dimensione font in pixel"
+          />
+          {/* Dot indicator: pieno = override custom, vuoto = default */}
+          <span
+            className={`pointer-events-none absolute right-1.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full ${
+              overridden ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+          />
+        </div>
       )}
       {overridden && (
         <Button

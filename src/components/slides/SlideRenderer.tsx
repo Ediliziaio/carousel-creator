@@ -48,6 +48,8 @@ import {
   type ChartCompareBarData,
   type KpiGridData,
   type FunnelChartData,
+  type PollData,
+  type PricingTableData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -322,6 +324,10 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
       return <KpiGrid slide={slide} d={data as KpiGridData} brand={brand} />;
     case "funnelChart":
       return <FunnelChart slide={slide} d={data as FunnelChartData} brand={brand} />;
+    case "poll":
+      return <Poll slide={slide} d={data as PollData} />;
+    case "pricingTable":
+      return <PricingTable slide={slide} d={data as PricingTableData} />;
   }
 }
 
@@ -2047,6 +2053,97 @@ function FunnelChart({
           {d.summary}
         </div>
       )}
+    </>
+  );
+}
+
+function Poll({ slide, d }: { slide: Slide; d: PollData }) {
+  return (
+    <>
+      {d.eyebrow && (
+        <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>
+          {d.eyebrow}
+        </div>
+      )}
+      <h1 className="poll-question" style={fieldStyle(slide, "question")}>
+        <HL text={d.question} />
+      </h1>
+      <div className="poll-options">
+        {d.options.map((opt, i) => {
+          const pct = Math.max(0, Math.min(100, opt.percentage ?? 0));
+          return (
+            <div
+              key={i}
+              className={`poll-option ${opt.leading ? "is-leading" : ""}`}
+            >
+              <div className="poll-option-fill" style={{ width: `${pct}%` }} />
+              <div className="poll-option-row">
+                <span
+                  className="poll-option-label"
+                  style={fieldStyle(slide, `options.${i}.label`)}
+                >
+                  {opt.label}
+                </span>
+                {opt.percentage != null && (
+                  <span className="poll-option-pct">{opt.percentage}%</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {(d.totalVotes || d.source) && (
+        <div className="poll-meta">
+          {d.totalVotes && <span>{d.totalVotes}</span>}
+          {d.totalVotes && d.source && <span> · </span>}
+          {d.source && <span>{d.source}</span>}
+        </div>
+      )}
+    </>
+  );
+}
+
+
+function PricingTable({ slide, d }: { slide: Slide; d: PricingTableData }) {
+  return (
+    <>
+      {d.eyebrow && (
+        <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>
+          {d.eyebrow}
+        </div>
+      )}
+      <h1 className="pricing-title" style={fieldStyle(slide, "title")}>
+        <HL text={d.title} />
+      </h1>
+      <div className={`pricing-grid pricing-cols-${d.plans.length}`}>
+        {d.plans.map((p, i) => (
+          <div
+            key={i}
+            className={`pricing-card ${p.highlighted ? "is-highlight" : ""}`}
+          >
+            {p.badge && <div className="pricing-badge">{p.badge}</div>}
+            <div className="pricing-name" style={fieldStyle(slide, `plans.${i}.name`)}>
+              {p.name}
+            </div>
+            <div className="pricing-price-row">
+              <span className="pricing-price" style={fieldStyle(slide, `plans.${i}.price`)}>
+                {p.price}
+              </span>
+              {p.priceCaption && <span className="pricing-caption">{p.priceCaption}</span>}
+            </div>
+            <ul className="pricing-features">
+              {p.features.map((f, j) => (
+                <li key={j}>
+                  <span className="pricing-check">✓</span>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            {p.ctaLabel && <div className="pricing-cta">{p.ctaLabel}</div>}
+          </div>
+        ))}
+      </div>
+      {d.source && <div className="pricing-source">{d.source}</div>}
     </>
   );
 }
