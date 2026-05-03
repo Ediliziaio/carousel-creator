@@ -84,6 +84,48 @@ export function getContentPublishedAt(row: ContentRow): string | null {
 }
 
 /**
+ * Crea N duplicati del contenuto sorgente con date a +7 giorni l'uno dall'altro
+ * a partire da `firstDate`. Usato per ricorrenze settimanali ("ogni lunedì
+ * per 4 settimane"). Tutti vengono creati in stato 'scheduled'.
+ */
+export async function repeatContentWeekly(
+  sourceId: string,
+  firstDateIso: string,
+  weeks: number,
+): Promise<ContentRow[]> {
+  if (weeks < 1 || weeks > 24) throw new Error("Ricorrenze: 1-24 settimane");
+  const src = await getContent(sourceId);
+  if (!src) throw new Error("Contenuto sorgente non trovato");
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  if (!userId) throw new Error("Devi essere loggato.");
+
+  const baseData =
+    src.data && typeof src.data === "object"
+      ? ({ ...src.data } as Record<string, unknown>)
+      : ({} as Record<string, unknown>);
+
+  const rows = [];
+  const start = new Date(firstDateIso);
+  for (let i = 0; i < weeks; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i * 7);
+    const data = { ...baseData, status: "scheduled", scheduledAt: d.toISOString() };
+    rows.push({
+      project_id: src.project_id,
+      user_id: userId,
+      type: src.type,
+      name: `${src.name} — settimana ${i + 1}`,
+      data,
+      thumbnail: src.thumbnail,
+    });
+  }
+  const { data, error } = await supabase.from("contents").insert(rows).select();
+  if (error) throw error;
+  return (data ?? []) as ContentRow[];
+}
+
+/**
  * Aggiorna la data di pubblicazione programmata di un contenuto. Setta anche
  * automaticamente lo status a 'scheduled' se non già 'published', così la
  * card si sposta nella colonna giusta.

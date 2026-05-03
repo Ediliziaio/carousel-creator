@@ -61,6 +61,7 @@ import {
   updateContentSchedule,
   bulkCreateBacklog,
   bulkCreateFromBriefs,
+  repeatContentWeekly,
   getContentStatus,
   getContentScheduledAt,
   formatScheduleLabel,
@@ -482,6 +483,7 @@ function ProjectDashboard() {
                 projectId={projectId}
                 onStatusChange={onStatusChange}
                 onScheduleChange={onScheduleChange}
+                onAfterRepeat={() => void load()}
                 onDuplicate={onDuplicate}
                 onDelete={(c) => setPendingDelete(c)}
               />
@@ -496,6 +498,7 @@ function ProjectDashboard() {
                 items={filtered}
                 projectId={projectId}
                 onScheduleChange={onScheduleChange}
+                onAfterRepeat={() => void load()}
                 onDuplicate={onDuplicate}
                 onDelete={(c) => setPendingDelete(c)}
               />
@@ -591,6 +594,7 @@ function KanbanBoard({
   projectId,
   onStatusChange,
   onScheduleChange,
+  onAfterRepeat,
   onDuplicate,
   onDelete,
 }: {
@@ -598,6 +602,7 @@ function KanbanBoard({
   projectId: string;
   onStatusChange: (id: string, status: ContentStatus) => void;
   onScheduleChange: (id: string, scheduledAt: string | null) => void;
+  onAfterRepeat: () => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
 }) {
@@ -655,6 +660,7 @@ function KanbanBoard({
                     onDelete={onDelete}
                     onStatusChange={onStatusChange}
                     onScheduleChange={onScheduleChange}
+                    onAfterRepeat={onAfterRepeat}
                   />
                 ))
               )}
@@ -673,6 +679,7 @@ function KanbanCard({
   onDelete,
   onStatusChange,
   onScheduleChange,
+  onAfterRepeat,
 }: {
   content: ContentRow;
   projectId: string;
@@ -680,6 +687,7 @@ function KanbanCard({
   onDelete: (c: ContentRow) => void;
   onStatusChange: (id: string, status: ContentStatus) => void;
   onScheduleChange: (id: string, scheduledAt: string | null) => void;
+  onAfterRepeat: () => void;
 }) {
   const status = getContentStatus(content);
   const typeMeta = TYPE_META[content.type];
@@ -751,6 +759,7 @@ function KanbanCard({
           contentId={content.id}
           scheduledIso={scheduledIso}
           onChange={onScheduleChange}
+          onAfterRepeat={onAfterRepeat}
           compact
         />
       </div>
@@ -787,17 +796,40 @@ function SchedulePopover({
   contentId,
   scheduledIso,
   onChange,
+  onAfterRepeat,
   compact,
 }: {
   contentId: string;
   scheduledIso: string | null;
   onChange: (id: string, iso: string | null) => void;
+  onAfterRepeat?: () => void;
   compact?: boolean;
 }) {
-  const dateInput = scheduledIso
-    ? new Date(scheduledIso).toISOString().split("T")[0]
-    : "";
+  const [tempDate, setTempDate] = useState<string>(
+    scheduledIso ? new Date(scheduledIso).toISOString().split("T")[0] : "",
+  );
+  const [weeks, setWeeks] = useState(4);
+  const [repeating, setRepeating] = useState(false);
   const label = scheduledIso ? formatScheduleLabel(scheduledIso) : "";
+
+  async function onRepeat() {
+    if (!tempDate) {
+      toast.error("Imposta prima una data di partenza");
+      return;
+    }
+    setRepeating(true);
+    try {
+      const iso = new Date(tempDate + "T09:00:00").toISOString();
+      await repeatContentWeekly(contentId, iso, weeks);
+      toast.success(`${weeks} copie create con cadenza settimanale`);
+      onAfterRepeat?.();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRepeating(false);
+    }
+  }
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -815,13 +847,14 @@ function SchedulePopover({
           {scheduledIso && <span className="font-medium">{label}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-3" align="end" onClick={(e) => e.stopPropagation()}>
+      <PopoverContent className="w-[280px] p-3" align="end" onClick={(e) => e.stopPropagation()}>
         <div className="mb-2 text-xs font-semibold">Data di pubblicazione</div>
         <Input
           type="date"
-          defaultValue={dateInput}
+          value={tempDate}
           onChange={(e) => {
             const v = e.target.value;
+            setTempDate(v);
             if (v) {
               const iso = new Date(v + "T09:00:00").toISOString();
               onChange(contentId, iso);
@@ -832,8 +865,7 @@ function SchedulePopover({
           className="h-9 text-sm"
         />
         <p className="mt-2 text-[10px] text-muted-foreground">
-          Quando setti una data, il contenuto si sposta automaticamente in{" "}
-          <strong>📅 Da pubblicare</strong>.
+          Setta data → si sposta automaticamente in <strong>📅 Da pubblicare</strong>.
         </p>
         {scheduledIso && (
           <Button
@@ -845,6 +877,35 @@ function SchedulePopover({
             Rimuovi data
           </Button>
         )}
+
+        {/* Sezione ricorrenze */}
+        <div className="mt-3 border-t border-border pt-3">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            🔁 Ripeti settimanale
+          </div>
+          <p className="mb-2 text-[10px] text-muted-foreground">
+            Crea N duplicati a +7 giorni l'uno dall'altro.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min={1}
+              max={24}
+              value={weeks}
+              onChange={(e) => setWeeks(Math.max(1, Math.min(24, Number(e.target.value) || 1)))}
+              className="h-7 w-14 text-center text-xs"
+            />
+            <span className="text-[10px] text-muted-foreground">settimane</span>
+            <Button
+              size="sm"
+              onClick={onRepeat}
+              disabled={!tempDate || repeating}
+              className="ml-auto h-7 text-xs"
+            >
+              {repeating ? <Loader2 className="h-3 w-3 animate-spin" /> : `Crea ${weeks}`}
+            </Button>
+          </div>
+        </div>
       </PopoverContent>
     </Popover>
   );
@@ -855,12 +916,14 @@ function GridView({
   items,
   projectId,
   onScheduleChange,
+  onAfterRepeat,
   onDuplicate,
   onDelete,
 }: {
   items: ContentRow[];
   projectId: string;
   onScheduleChange: (id: string, scheduledAt: string | null) => void;
+  onAfterRepeat: () => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
 }) {
@@ -932,6 +995,7 @@ function GridView({
                 contentId={c.id}
                 scheduledIso={scheduledIso}
                 onChange={onScheduleChange}
+                onAfterRepeat={onAfterRepeat}
               />
               <button
                 onClick={(e) => {
@@ -964,6 +1028,8 @@ function GridView({
 }
 
 /* ===================== CalendarView ===================== */
+type CalendarMode = "month" | "week";
+
 function CalendarView({
   items,
   projectId,
@@ -973,10 +1039,18 @@ function CalendarView({
   projectId: string;
   onScheduleChange: (id: string, scheduledAt: string | null) => void;
 }) {
+  const [mode, setMode] = useState<CalendarMode>(() => {
+    if (typeof window === "undefined") return "month";
+    return (localStorage.getItem("calendar-mode") as CalendarMode) || "month";
+  });
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("calendar-mode", mode);
+  }, [mode]);
 
   // Costruisci le settimane del mese visibile (lun → dom).
   const weeks = useMemo(() => buildMonthGrid(cursor), [cursor]);
@@ -1009,93 +1083,197 @@ function CalendarView({
     onScheduleChange(id, iso);
   };
 
-  const monthLabel = cursor.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
   const today = new Date().toISOString().slice(0, 10);
+  const weekDays = useMemo(() => buildWeekFromCursor(cursor), [cursor]);
+  const headerLabel =
+    mode === "month"
+      ? cursor.toLocaleDateString("it-IT", { month: "long", year: "numeric" })
+      : `${weekDays[0].date.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })} → ${weekDays[6].date.toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })}`;
+
+  const navigatePrev = () => {
+    if (mode === "month") {
+      setCursor((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1));
+    } else {
+      setCursor((c) => new Date(c.getFullYear(), c.getMonth(), c.getDate() - 7));
+    }
+  };
+  const navigateNext = () => {
+    if (mode === "month") {
+      setCursor((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1));
+    } else {
+      setCursor((c) => new Date(c.getFullYear(), c.getMonth(), c.getDate() + 7));
+    }
+  };
+  const goToday = () => setCursor(new Date());
+
+  function exportCSV() {
+    const rows = items
+      .filter((c) => getContentScheduledAt(c))
+      .map((c) => ({
+        name: c.name,
+        type: c.type,
+        status: STATUS_META[getContentStatus(c)].label,
+        scheduledAt: getContentScheduledAt(c) ?? "",
+      }))
+      .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    if (rows.length === 0) {
+      toast.error("Nessun contenuto programmato da esportare");
+      return;
+    }
+    const header = "Nome,Tipo,Stato,Data programmata";
+    const csv = [
+      header,
+      ...rows.map((r) =>
+        [r.name, r.type, r.status, r.scheduledAt]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `calendario-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Esportato CSV con ${rows.length} contenuti`);
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_240px]">
       <div>
-        {/* Header navigazione mese */}
-        <div className="mb-3 flex items-center justify-between">
+        {/* Header navigazione + mode toggle */}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
+            <button type="button" onClick={navigatePrev} className="rounded-md border border-border p-1.5 text-xs hover:bg-muted">◀</button>
+            <button type="button" onClick={goToday} className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">Oggi</button>
+            <button type="button" onClick={navigateNext} className="rounded-md border border-border p-1.5 text-xs hover:bg-muted">▶</button>
+            <div className="ml-2 flex items-center gap-0.5 rounded-md border border-border p-0.5">
+              <button
+                onClick={() => setMode("month")}
+                className={`rounded px-2 py-1 text-xs transition ${
+                  mode === "month" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                Mese
+              </button>
+              <button
+                onClick={() => setMode("week")}
+                className={`rounded px-2 py-1 text-xs transition ${
+                  mode === "week" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                Settimana
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-base font-semibold capitalize">{headerLabel}</div>
             <button
               type="button"
-              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1))}
-              className="rounded-md border border-border p-1.5 text-xs hover:bg-muted"
-              title="Mese precedente"
+              onClick={exportCSV}
+              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+              title="Scarica un CSV con i contenuti programmati"
             >
-              ◀
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const d = new Date();
-                setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
-              }}
-              className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted"
-            >
-              Oggi
-            </button>
-            <button
-              type="button"
-              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1))}
-              className="rounded-md border border-border p-1.5 text-xs hover:bg-muted"
-              title="Mese successivo"
-            >
-              ▶
+              ⬇ CSV
             </button>
           </div>
-          <div className="text-base font-semibold capitalize">{monthLabel}</div>
         </div>
 
         {/* Header giorni settimana */}
         <div className="grid grid-cols-7 gap-1 border-b border-border pb-2">
-          {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((d) => (
-            <div key={d} className="text-center text-[10px] font-semibold uppercase text-muted-foreground">
-              {d}
+          {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((d, i) => (
+            <div
+              key={d}
+              className="flex items-center justify-center gap-1 text-[10px] font-semibold uppercase text-muted-foreground"
+            >
+              <span>{d}</span>
+              {mode === "week" && (
+                <span className="text-foreground">{weekDays[i].date.getDate()}</span>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Griglia giorni */}
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {weeks.flat().map((day) => {
-            const isoDay = day.iso;
-            const isCurrentMonth = day.date.getMonth() === cursor.getMonth();
-            const isToday = isoDay === today;
-            const list = byDay.get(isoDay) ?? [];
-            return (
-              <div
-                key={isoDay}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => onDropOnDay(e, isoDay)}
-                className={`min-h-[110px] rounded-md border p-1.5 transition ${
-                  isToday
-                    ? "border-primary bg-primary/5"
-                    : isCurrentMonth
-                      ? "border-border bg-card hover:bg-muted/30"
-                      : "border-border/50 bg-muted/20 text-muted-foreground/50"
-                }`}
-              >
+        {mode === "month" ? (
+          /* Griglia mese 7×6 */
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {weeks.flat().map((day) => {
+              const isoDay = day.iso;
+              const isCurrentMonth = day.date.getMonth() === cursor.getMonth();
+              const isToday = isoDay === today;
+              const list = byDay.get(isoDay) ?? [];
+              return (
                 <div
-                  className={`mb-1 text-[11px] font-medium ${
-                    isToday ? "text-primary" : isCurrentMonth ? "" : "text-muted-foreground/50"
+                  key={isoDay}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => onDropOnDay(e, isoDay)}
+                  className={`min-h-[110px] rounded-md border p-1.5 transition ${
+                    isToday
+                      ? "border-primary bg-primary/5"
+                      : isCurrentMonth
+                        ? "border-border bg-card hover:bg-muted/30"
+                        : "border-border/50 bg-muted/20 text-muted-foreground/50"
                   }`}
                 >
-                  {day.date.getDate()}
+                  <div
+                    className={`mb-1 text-[11px] font-medium ${
+                      isToday ? "text-primary" : isCurrentMonth ? "" : "text-muted-foreground/50"
+                    }`}
+                  >
+                    {day.date.getDate()}
+                  </div>
+                  <div className="space-y-1">
+                    {list.slice(0, 3).map((c) => (
+                      <CalendarItem key={c.id} content={c} projectId={projectId} />
+                    ))}
+                    {list.length > 3 && (
+                      <div className="text-[9px] text-muted-foreground">+{list.length - 3} altri</div>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {list.slice(0, 3).map((c) => (
-                    <CalendarItem key={c.id} content={c} projectId={projectId} />
-                  ))}
-                  {list.length > 3 && (
-                    <div className="text-[9px] text-muted-foreground">+{list.length - 3} altri</div>
-                  )}
+              );
+            })}
+          </div>
+        ) : (
+          /* Vista settimanale: 7 colonne, ognuna lista verticale di tutti i contenuti */
+          <div className="mt-1 grid grid-cols-7 gap-1">
+            {weekDays.map((day) => {
+              const isoDay = day.iso;
+              const isToday = isoDay === today;
+              const list = byDay.get(isoDay) ?? [];
+              return (
+                <div
+                  key={isoDay}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => onDropOnDay(e, isoDay)}
+                  className={`min-h-[420px] rounded-md border p-2 transition ${
+                    isToday ? "border-primary bg-primary/5" : "border-border bg-card"
+                  }`}
+                >
+                  <div
+                    className={`mb-2 text-center text-xs font-semibold ${
+                      isToday ? "text-primary" : "text-foreground"
+                    }`}
+                  >
+                    {day.date.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit" })}
+                  </div>
+                  <div className="space-y-1.5">
+                    {list.length === 0 ? (
+                      <div className="rounded-md border border-dashed border-border/40 py-6 text-center text-[10px] text-muted-foreground">
+                        Trascina qui
+                      </div>
+                    ) : (
+                      list.map((c) => (
+                        <CalendarItem key={c.id} content={c} projectId={projectId} />
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Sidebar contenuti senza data */}
@@ -1151,6 +1329,22 @@ interface CalendarDay {
   date: Date;
   iso: string;
 }
+
+/** Costruisce la settimana (Lun→Dom) che contiene la data passata. */
+function buildWeekFromCursor(d: Date): CalendarDay[] {
+  const dayOfWeek = (d.getDay() + 6) % 7; // Lun=0..Dom=6
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dayOfWeek);
+  const out: CalendarDay[] = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+    out.push({
+      date,
+      iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+    });
+  }
+  return out;
+}
+
 function buildMonthGrid(monthStart: Date): CalendarDay[][] {
   const year = monthStart.getFullYear();
   const month = monthStart.getMonth();
