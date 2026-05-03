@@ -50,6 +50,9 @@ import {
   type FunnelChartData,
   type PollData,
   type PricingTableData,
+  type TeamMemberData,
+  type StepsGalleryData,
+  type StatsPackData,
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
@@ -328,6 +331,12 @@ function renderBody(slide: Slide, data: unknown, brand: BrandSettings) {
       return <Poll slide={slide} d={data as PollData} />;
     case "pricingTable":
       return <PricingTable slide={slide} d={data as PricingTableData} />;
+    case "teamMember":
+      return <TeamMember slide={slide} d={data as TeamMemberData} />;
+    case "stepsGallery":
+      return <StepsGallery slide={slide} d={data as StepsGalleryData} />;
+    case "statsPack":
+      return <StatsPack slide={slide} d={data as StatsPackData} />;
   }
 }
 
@@ -2144,6 +2153,104 @@ function PricingTable({ slide, d }: { slide: Slide; d: PricingTableData }) {
         ))}
       </div>
       {d.source && <div className="pricing-source">{d.source}</div>}
+    </>
+  );
+}
+
+function TeamMember({ slide, d }: { slide: Slide; d: TeamMemberData }) {
+  return (
+    <>
+      {d.eyebrow && (
+        <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>
+          {d.eyebrow}
+        </div>
+      )}
+      <div className="team-card">
+        <div className={`team-photo ${d.imageUrl ? "" : "empty"}`}>
+          {d.imageUrl && <img src={d.imageUrl} alt={d.name} />}
+        </div>
+        <div className="team-info">
+          <h1 className="team-name" style={fieldStyle(slide, "name")}>
+            {d.name}
+          </h1>
+          <div className="team-role" style={fieldStyle(slide, "role")}>
+            {d.role}
+          </div>
+          {d.bio && (
+            <p className="team-bio" style={fieldStyle(slide, "bio")}>
+              {d.bio}
+            </p>
+          )}
+          {d.highlights && d.highlights.length > 0 && (
+            <ul className="team-highlights">
+              {d.highlights.map((h, i) => (
+                <li key={i}>{h}</li>
+              ))}
+            </ul>
+          )}
+          {d.handle && <div className="team-handle">{d.handle}</div>}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StepsGallery({ slide, d }: { slide: Slide; d: StepsGalleryData }) {
+  return (
+    <>
+      {d.eyebrow && (
+        <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>
+          {d.eyebrow}
+        </div>
+      )}
+      <h1 className="steps-title" style={fieldStyle(slide, "title")}>
+        <HL text={d.title} />
+      </h1>
+      <div className={`steps-grid steps-cols-${Math.min(d.steps.length, 4)}`}>
+        {d.steps.map((s, i) => (
+          <div key={i} className="step-card">
+            <div className={`step-photo ${s.imageUrl ? "" : "empty"}`}>
+              {s.imageUrl && <img src={s.imageUrl} alt={s.title} />}
+              {s.number && <div className="step-number">{s.number}</div>}
+            </div>
+            <div className="step-title" style={fieldStyle(slide, `steps.${i}.title`)}>
+              {s.title}
+            </div>
+            {s.desc && <div className="step-desc">{s.desc}</div>}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function StatsPack({ slide, d }: { slide: Slide; d: StatsPackData }) {
+  return (
+    <>
+      {d.eyebrow && (
+        <div className="eyebrow" style={fieldStyle(slide, "eyebrow")}>
+          {d.eyebrow}
+        </div>
+      )}
+      <h1 className="stats-title" style={fieldStyle(slide, "title")}>
+        <HL text={d.title} />
+      </h1>
+      <div className={`stats-grid stats-cols-${Math.min(d.stats.length, 4)}`}>
+        {d.stats.map((s, i) => (
+          <div key={i} className="stat-card">
+            <div className="stat-value" style={fieldStyle(slide, `stats.${i}.value`)}>
+              <span className="stat-num">{s.value}</span>
+              {s.unit && <span className="stat-unit">{s.unit}</span>}
+              {s.trend === "up" && <span className="stat-trend up">↑</span>}
+              {s.trend === "down" && <span className="stat-trend down">↓</span>}
+            </div>
+            <div className="stat-label" style={fieldStyle(slide, `stats.${i}.label`)}>
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </div>
+      {d.source && <div className="stats-source">{d.source}</div>}
     </>
   );
 }

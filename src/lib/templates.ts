@@ -48,7 +48,10 @@ export type TemplateId =
   | "kpiGrid"
   | "funnelChart"
   | "poll"
-  | "pricingTable";
+  | "pricingTable"
+  | "teamMember"
+  | "stepsGallery"
+  | "statsPack";
 
 export interface SplitData {
   eyebrow: string;
@@ -288,6 +291,29 @@ export interface PollData {
   totalVotes?: string;
   source?: string;
 }
+/** Team / Founder profile — foto + nome + ruolo + bio breve + handle social. */
+export interface TeamMemberData {
+  eyebrow?: string;
+  imageUrl?: string;
+  name: string;
+  role: string;
+  bio?: string;
+  handle?: string;
+  highlights?: string[];
+}
+/** Steps gallery — process tutorial con immagine per ogni step (3-5 step). */
+export interface StepsGalleryData {
+  eyebrow?: string;
+  title: string;
+  steps: { number?: string; imageUrl?: string; title: string; desc?: string }[];
+}
+/** Stats pack — 3-4 numeri "wow" insieme con label e contesto. */
+export interface StatsPackData {
+  eyebrow?: string;
+  title: string;
+  stats: { value: string; unit?: string; label: string; trend?: "up" | "down" | "flat" }[];
+  source?: string;
+}
 /** Pricing comparison — 2-3 piani affiancati con feature list e CTA. */
 export interface PricingTableData {
   eyebrow?: string;
@@ -435,7 +461,10 @@ export type AnyTemplateData =
   | KpiGridData
   | FunnelChartData
   | PollData
-  | PricingTableData;
+  | PricingTableData
+  | TeamMemberData
+  | StepsGalleryData
+  | StatsPackData;
 
 /** Per-language data wrapper. When `__i18n` is true, byLang holds entries. */
 export interface I18nWrapper<T = AnyTemplateData> {
@@ -665,6 +694,9 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; desc: string }> 
   funnelChart: { label: "Funnel conversione", desc: "Trapezi a step decrescenti" },
   poll: { label: "Sondaggio", desc: "Domanda + 2-4 opzioni con barre %" },
   pricingTable: { label: "Confronto prezzi", desc: "2-3 piani affiancati con CTA" },
+  teamMember: { label: "Team / Founder", desc: "Foto + nome + ruolo + bio breve" },
+  stepsGallery: { label: "Step con foto", desc: "Tutorial visivo 3-5 step con immagini" },
+  statsPack: { label: "Pacchetto numeri", desc: "3-4 numeri wow insieme con label" },
 };
 
 export const TEMPLATE_ORDER: TemplateId[] = [
@@ -715,6 +747,9 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "funnelChart",
   "poll",
   "pricingTable",
+  "teamMember",
+  "stepsGallery",
+  "statsPack",
 ];
 
 export function makeDefaultData(template: TemplateId): AnyTemplateData {
@@ -1264,6 +1299,38 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         totalVotes: "1.247 voti",
         source: "Instagram poll",
       } as PollData;
+    case "teamMember":
+      return {
+        eyebrow: "IL TEAM",
+        name: "Mario Rossi",
+        role: "Founder & CEO",
+        bio: "15 anni di esperienza nel settore. Specializzato in strategia digitale e crescita organica.",
+        handle: "@mariorossi",
+        highlights: ["10+ anni esperienza", "200+ progetti", "Top voice 2024"],
+      } as TeamMemberData;
+    case "stepsGallery":
+      return {
+        eyebrow: "TUTORIAL",
+        title: "Come fare in 4 passi.",
+        steps: [
+          { number: "01", title: "Analisi", desc: "Studia il problema con dati alla mano." },
+          { number: "02", title: "Strategia", desc: "Definisci obiettivi misurabili." },
+          { number: "03", title: "Esecuzione", desc: "Implementa con cicli rapidi." },
+          { number: "04", title: "Misura", desc: "Verifica i risultati e itera." },
+        ],
+      } as StepsGalleryData;
+    case "statsPack":
+      return {
+        eyebrow: "I NUMERI",
+        title: "Risultati che parlano.",
+        stats: [
+          { value: "+250", unit: "%", label: "Engagement", trend: "up" },
+          { value: "12", unit: "K", label: "Lead generati", trend: "up" },
+          { value: "84", unit: "%", label: "Retention", trend: "up" },
+          { value: "3.2", unit: "x", label: "ROI", trend: "up" },
+        ],
+        source: "Dato medio clienti 2025",
+      } as StatsPackData;
     case "pricingTable":
       return {
         eyebrow: "PIANI E PREZZI",
@@ -1740,6 +1807,36 @@ export function getStylableFields(
       d?.plans?.forEach((_, i) => {
         out.push({ path: `plans.${i}.name`, label: `Piano ${i + 1} – nome` });
         out.push({ path: `plans.${i}.price`, label: `Piano ${i + 1} – prezzo` });
+      });
+      return out;
+    }
+    case "teamMember":
+      return [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "name", label: "Nome" },
+        { path: "role", label: "Ruolo" },
+        { path: "bio", label: "Bio" },
+      ];
+    case "stepsGallery": {
+      const d = data as StepsGalleryData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.steps?.forEach((_, i) =>
+        out.push({ path: `steps.${i}.title`, label: `Step ${i + 1} – titolo` }),
+      );
+      return out;
+    }
+    case "statsPack": {
+      const d = data as StatsPackData | undefined;
+      const out = [
+        { path: "eyebrow", label: "Eyebrow" },
+        { path: "title", label: "Titolo" },
+      ];
+      d?.stats?.forEach((_, i) => {
+        out.push({ path: `stats.${i}.value`, label: `Stat ${i + 1} – valore` });
+        out.push({ path: `stats.${i}.label`, label: `Stat ${i + 1} – etichetta` });
       });
       return out;
     }

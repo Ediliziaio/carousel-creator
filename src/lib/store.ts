@@ -72,6 +72,7 @@ const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
     "faq",
     "poll",
     "pricingTable",
+    "statsPack",
   ],
   media: [
     "gallery",
@@ -82,6 +83,8 @@ const DEFAULT_TEMPLATES_PER_CATEGORY: Record<string, TemplateId[]> = {
     "polaroidStack",
     "splitDuo",
     "magazineCover",
+    "teamMember",
+    "stepsGallery",
   ],
   ref: ["vocab", "qa", "cta", "offer", "bonusStack"],
 };

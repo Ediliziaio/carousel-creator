@@ -50,6 +50,9 @@ import type {
   FunnelChartData,
   PollData,
   PricingTableData,
+  TeamMemberData,
+  StepsGalleryData,
+  StatsPackData,
   AnyTemplateData,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
@@ -547,6 +550,33 @@ export function SlideEditorForm({ slide }: Props) {
         <PricingTableEditor
           d={draft as PricingTableData}
           set={set as (d: PricingTableData) => void}
+          {...editorProps}
+        />
+      );
+      break;
+    case "teamMember":
+      body = (
+        <TeamMemberEditor
+          d={draft as TeamMemberData}
+          set={set as (d: TeamMemberData) => void}
+          {...editorProps}
+        />
+      );
+      break;
+    case "stepsGallery":
+      body = (
+        <StepsGalleryEditor
+          d={draft as StepsGalleryData}
+          set={set as (d: StepsGalleryData) => void}
+          {...editorProps}
+        />
+      );
+      break;
+    case "statsPack":
+      body = (
+        <StatsPackEditor
+          d={draft as StatsPackData}
+          set={set as (d: StatsPackData) => void}
           {...editorProps}
         />
       );
@@ -4677,6 +4707,211 @@ function PricingTableEditor({
           value={d.source ?? ""}
           onChange={(e) => set({ ...d, source: e.target.value })}
           placeholder="IVA esclusa. Prezzi validi fino al…"
+        />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Team Member ---------------- */
+function TeamMemberEditor({ d, set, errFor, slideId, overrides }: EditorProps<TeamMemberData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input
+          value={d.eyebrow ?? ""}
+          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+          placeholder="IL TEAM"
+        />
+      </Field>
+      <ImageUploadField
+        label="Foto"
+        value={d.imageUrl}
+        onChange={(url) => set({ ...d, imageUrl: url })}
+      />
+      <Field
+        label="Nome"
+        error={errFor("name")}
+        slideId={slideId}
+        fieldPath="name"
+        overrides={overrides}
+      >
+        <Input
+          value={d.name ?? ""}
+          onChange={(e) => set({ ...d, name: e.target.value })}
+          placeholder="Mario Rossi"
+        />
+      </Field>
+      <Field label="Ruolo" slideId={slideId} fieldPath="role" overrides={overrides}>
+        <Input
+          value={d.role ?? ""}
+          onChange={(e) => set({ ...d, role: e.target.value })}
+          placeholder="Founder & CEO"
+        />
+      </Field>
+      <Field label="Bio" slideId={slideId} fieldPath="bio" overrides={overrides}>
+        <Textarea
+          rows={3}
+          value={d.bio ?? ""}
+          onChange={(e) => set({ ...d, bio: e.target.value })}
+          placeholder="Breve descrizione di cosa fa e perché è credibile."
+        />
+      </Field>
+      <ArrayField<string>
+        label="Highlights (chip)"
+        items={d.highlights ?? []}
+        onChange={(arr) => set({ ...d, highlights: arr })}
+        maxItems={4}
+        empty=""
+        render={(item, change) => (
+          <Input
+            value={item}
+            onChange={(e) => change(e.target.value)}
+            placeholder="es. 10+ anni esperienza"
+          />
+        )}
+      />
+      <Field label="Handle social">
+        <Input
+          value={d.handle ?? ""}
+          onChange={(e) => set({ ...d, handle: e.target.value })}
+          placeholder="@mariorossi"
+        />
+      </Field>
+    </div>
+  );
+}
+
+/* ---------------- Steps Gallery ---------------- */
+function StepsGalleryEditor({ d, set, errFor, slideId, overrides }: EditorProps<StepsGalleryData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input
+          value={d.eyebrow ?? ""}
+          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+          placeholder="TUTORIAL"
+        />
+      </Field>
+      <Field
+        label="Titolo"
+        error={errFor("title")}
+        slideId={slideId}
+        fieldPath="title"
+        overrides={overrides}
+      >
+        <Input
+          value={d.title ?? ""}
+          onChange={(e) => set({ ...d, title: e.target.value })}
+          placeholder="Come fare in 4 passi."
+        />
+      </Field>
+      <ArrayField<StepsGalleryData["steps"][number]>
+        label="Step (3-4)"
+        items={d.steps}
+        onChange={(steps) => set({ ...d, steps })}
+        maxItems={4}
+        empty={{ number: "", title: "Nuovo step", desc: "" }}
+        render={(step, change, i) => (
+          <div className="space-y-2 rounded-md border border-border p-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={step.number ?? ""}
+                onChange={(e) => change({ ...step, number: e.target.value })}
+                placeholder={`0${i + 1}`}
+              />
+              <Input
+                value={step.title}
+                onChange={(e) => change({ ...step, title: e.target.value })}
+                placeholder="Titolo step"
+              />
+            </div>
+            <ImageUploadField
+              label="Immagine step"
+              value={step.imageUrl}
+              onChange={(url) => change({ ...step, imageUrl: url })}
+            />
+            <Textarea
+              rows={2}
+              value={step.desc ?? ""}
+              onChange={(e) => change({ ...step, desc: e.target.value })}
+              placeholder="Descrizione breve (1 frase)"
+            />
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+
+/* ---------------- Stats Pack ---------------- */
+function StatsPackEditor({ d, set, errFor, slideId, overrides }: EditorProps<StatsPackData>) {
+  return (
+    <div className="space-y-4">
+      <Field label="Eyebrow" slideId={slideId} fieldPath="eyebrow" overrides={overrides}>
+        <Input
+          value={d.eyebrow ?? ""}
+          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+          placeholder="I NUMERI"
+        />
+      </Field>
+      <Field
+        label="Titolo"
+        error={errFor("title")}
+        slideId={slideId}
+        fieldPath="title"
+        overrides={overrides}
+      >
+        <Input
+          value={d.title ?? ""}
+          onChange={(e) => set({ ...d, title: e.target.value })}
+          placeholder="Risultati che parlano."
+        />
+      </Field>
+      <ArrayField<StatsPackData["stats"][number]>
+        label="Numeri (3-4)"
+        items={d.stats}
+        onChange={(stats) => set({ ...d, stats })}
+        maxItems={4}
+        empty={{ value: "0", unit: "", label: "Etichetta", trend: "flat" }}
+        render={(stat, change, i) => (
+          <div className="space-y-2 rounded-md border border-border p-2">
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                value={stat.value}
+                onChange={(e) => change({ ...stat, value: e.target.value })}
+                placeholder="+250"
+              />
+              <Input
+                value={stat.unit ?? ""}
+                onChange={(e) => change({ ...stat, unit: e.target.value })}
+                placeholder="%"
+              />
+              <select
+                className="rounded-md border border-input bg-background px-2 text-sm"
+                value={stat.trend ?? "flat"}
+                onChange={(e) =>
+                  change({ ...stat, trend: e.target.value as "up" | "down" | "flat" })
+                }
+              >
+                <option value="up">↑ Up</option>
+                <option value="down">↓ Down</option>
+                <option value="flat">— Flat</option>
+              </select>
+            </div>
+            <Input
+              value={stat.label}
+              onChange={(e) => change({ ...stat, label: e.target.value })}
+              placeholder={`Etichetta numero ${i + 1}`}
+            />
+          </div>
+        )}
+      />
+      <Field label="Fonte / disclaimer">
+        <Input
+          value={d.source ?? ""}
+          onChange={(e) => set({ ...d, source: e.target.value })}
+          placeholder="Dato medio clienti 2025"
         />
       </Field>
     </div>

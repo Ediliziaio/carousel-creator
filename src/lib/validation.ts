@@ -47,6 +47,9 @@ import type {
   FunnelChartData,
   PollData,
   PricingTableData,
+  TeamMemberData,
+  StepsGalleryData,
+  StatsPackData,
   AnyTemplateData,
 } from "./templates";
 import { TEMPLATE_META } from "./templates";
@@ -756,6 +759,41 @@ export function validateSlideData(
         d.options.forEach((o, i) => {
           if (empty(o.label))
             err(`options.${i}.label`, `Opzione ${i + 1}: etichetta obbligatoria`);
+        });
+      }
+      break;
+    }
+    case "teamMember": {
+      const d = data as TeamMemberData;
+      if (empty(d.name)) err("name", `Nome: ${REQUIRED}`);
+      if (empty(d.role)) err("role", `Ruolo: ${REQUIRED}`);
+      break;
+    }
+    case "stepsGallery": {
+      const d = data as StepsGalleryData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.steps || d.steps.length < 2) {
+        err("steps", `Step: servono almeno 2 (hai ${d.steps?.length ?? 0})`);
+      } else if (d.steps.length > 4) {
+        err("steps", `Step: massimo 4 (hai ${d.steps.length})`);
+      } else {
+        d.steps.forEach((s, i) => {
+          if (empty(s.title)) err(`steps.${i}.title`, `Step ${i + 1}: titolo obbligatorio`);
+        });
+      }
+      break;
+    }
+    case "statsPack": {
+      const d = data as StatsPackData;
+      if (empty(d.title)) err("title", `Titolo: ${REQUIRED}`);
+      if (!d.stats || d.stats.length < 2) {
+        err("stats", `Numeri: servono almeno 2 (hai ${d.stats?.length ?? 0})`);
+      } else if (d.stats.length > 4) {
+        err("stats", `Numeri: massimo 4 (hai ${d.stats.length})`);
+      } else {
+        d.stats.forEach((s, i) => {
+          if (empty(s.value)) err(`stats.${i}.value`, `Numero ${i + 1}: valore obbligatorio`);
+          if (empty(s.label)) err(`stats.${i}.label`, `Numero ${i + 1}: etichetta obbligatoria`);
         });
       }
       break;
