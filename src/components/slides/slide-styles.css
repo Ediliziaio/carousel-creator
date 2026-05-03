@@ -605,7 +605,7 @@
   margin-bottom: 30px;
 }
 .tpl-center h1 {
-  font-size: 64px;
+  font-size: 96px;
   line-height: 1.1;
   letter-spacing: -0.03em;
   max-width: 640px;
@@ -621,7 +621,7 @@
   margin: 36px 0;
 }
 .tpl-center .sub {
-  font-size: 34px;
+  font-size: 40px;
   color: var(--text-soft);
   max-width: 460px;
   line-height: 1.5;
@@ -989,7 +989,7 @@
   z-index: 1;
 }
 .tpl-cover h1 {
-  font-size: 80px;
+  font-size: 96px;
   color: var(--text-strong);
   line-height: 1.05;
   letter-spacing: -0.025em;
@@ -997,7 +997,7 @@
   max-width: 640px;
 }
 .tpl-cover .sub {
-  font-size: 34px;
+  font-size: 40px;
   color: var(--text-soft);
   max-width: 520px;
   line-height: 1.5;

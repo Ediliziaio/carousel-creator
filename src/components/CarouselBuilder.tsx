@@ -9,6 +9,7 @@ import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
 import { BrandQuickSwitch } from "@/components/BrandQuickSwitch";
 import { BulkOperationsDialog } from "@/components/BulkOperationsDialog";
 import { MultiFormatExportDialog } from "@/components/MultiFormatExportDialog";
+import { ProjectSwitcher } from "@/components/ProjectSwitcher";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
@@ -115,6 +116,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
 
   const [contentName, setContentName] = useState("");
   const [contentType, setContentType] = useState<ContentType>("carousel");
+  const [projectName, setProjectName] = useState("");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
   // Snapshot del payload all'ultimo save / hydrate. dirty è computed = current !== snapshot.
@@ -147,6 +149,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         if (data.activeLang) setActiveLang(data.activeLang);
         setContentName(content.name);
         setContentType(content.type);
+        setProjectName(proj.name);
         setSavedSnapshot(JSON.stringify({ brand: brandFromProject, slides: slidesData }));
         setSavedName(content.name);
       } catch (e) {
@@ -382,15 +385,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:h-screen">
       <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2 md:h-14 md:flex-nowrap md:px-4 md:py-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => void navigate({ to: "/projects/$projectId", params: { projectId } })}
-          title="Torna al progetto"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <ProjectSwitcher currentProjectId={projectId} currentName={projectName} />
         <Input
           value={contentName}
           onChange={(e) => setContentName(e.target.value)}
