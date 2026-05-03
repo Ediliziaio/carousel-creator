@@ -2208,8 +2208,8 @@ function MythEditor({ d, set, errFor, slideId, overrides }: EditorProps<MythData
           Mito (falso)
         </div>
         <Input
-          value={d.myth.label}
-          onChange={(e) => set({ ...d, myth: { ...d.myth, label: e.target.value } })}
+          value={(d.myth ?? {}).label ?? ""}
+          onChange={(e) => set({ ...d, myth: { ...(d.myth ?? {}), label: e.target.value } })}
           placeholder="MITO"
         />
         <Field
@@ -2222,8 +2222,8 @@ function MythEditor({ d, set, errFor, slideId, overrides }: EditorProps<MythData
           <Textarea
             data-field="myth.text"
             rows={2}
-            value={d.myth.text}
-            onChange={(e) => set({ ...d, myth: { ...d.myth, text: e.target.value } })}
+            value={(d.myth ?? {}).text ?? ""}
+            onChange={(e) => set({ ...d, myth: { ...(d.myth ?? {}), text: e.target.value } })}
           />
         </Field>
       </div>
@@ -2232,8 +2232,8 @@ function MythEditor({ d, set, errFor, slideId, overrides }: EditorProps<MythData
           Realtà (vero)
         </div>
         <Input
-          value={d.reality.label}
-          onChange={(e) => set({ ...d, reality: { ...d.reality, label: e.target.value } })}
+          value={(d.reality ?? {}).label ?? ""}
+          onChange={(e) => set({ ...d, reality: { ...(d.reality ?? {}), label: e.target.value } })}
           placeholder="REALTÀ"
         />
         <Field
@@ -2246,8 +2246,8 @@ function MythEditor({ d, set, errFor, slideId, overrides }: EditorProps<MythData
           <Textarea
             data-field="reality.text"
             rows={2}
-            value={d.reality.text}
-            onChange={(e) => set({ ...d, reality: { ...d.reality, text: e.target.value } })}
+            value={(d.reality ?? {}).text ?? ""}
+            onChange={(e) => set({ ...d, reality: { ...(d.reality ?? {}), text: e.target.value } })}
           />
         </Field>
       </div>
@@ -2783,8 +2783,8 @@ function ProblemSolutionEditor({
           Problema
         </div>
         <Input
-          value={d.problem.label}
-          onChange={(e) => set({ ...d, problem: { ...d.problem, label: e.target.value } })}
+          value={(d.problem ?? {}).label ?? ""}
+          onChange={(e) => set({ ...d, problem: { ...(d.problem ?? {}), label: e.target.value } })}
           placeholder="IL PROBLEMA"
         />
         <Field
@@ -2797,8 +2797,8 @@ function ProblemSolutionEditor({
           <Textarea
             data-field="problem.text"
             rows={2}
-            value={d.problem.text}
-            onChange={(e) => set({ ...d, problem: { ...d.problem, text: e.target.value } })}
+            value={(d.problem ?? {}).text ?? ""}
+            onChange={(e) => set({ ...d, problem: { ...(d.problem ?? {}), text: e.target.value } })}
           />
         </Field>
       </div>
@@ -2807,8 +2807,8 @@ function ProblemSolutionEditor({
           Soluzione
         </div>
         <Input
-          value={d.solution.label}
-          onChange={(e) => set({ ...d, solution: { ...d.solution, label: e.target.value } })}
+          value={(d.solution ?? {}).label ?? ""}
+          onChange={(e) => set({ ...d, solution: { ...(d.solution ?? {}), label: e.target.value } })}
           placeholder="LA SOLUZIONE"
         />
         <Field
@@ -2821,8 +2821,8 @@ function ProblemSolutionEditor({
           <Textarea
             data-field="solution.text"
             rows={2}
-            value={d.solution.text}
-            onChange={(e) => set({ ...d, solution: { ...d.solution, text: e.target.value } })}
+            value={(d.solution ?? {}).text ?? ""}
+            onChange={(e) => set({ ...d, solution: { ...(d.solution ?? {}), text: e.target.value } })}
           />
         </Field>
       </div>
