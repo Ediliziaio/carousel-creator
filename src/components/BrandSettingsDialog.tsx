@@ -240,8 +240,8 @@ export function BrandSettingsDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="mr-1 h-4 w-4" /> Brand
+        <Button variant="outline" size="sm" title="Impostazioni brand avanzate (font, effetti, lingue)">
+          <Settings className="mr-1 h-4 w-4" /> Avanzato
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">

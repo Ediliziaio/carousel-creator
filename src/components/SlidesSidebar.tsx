@@ -10,7 +10,16 @@ import { validateSlide, validateAllSlides } from "@/lib/validation";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { NewSlideDialog } from "@/components/NewSlideDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Copy, Trash2, GripVertical, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Copy,
+  Trash2,
+  GripVertical,
+  AlertTriangle,
+  Sparkles,
+  Wand2,
+  PlusSquare,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -228,7 +237,17 @@ export function SlidesSidebar() {
         </button>
       )}
       <div className="flex-1 space-y-3 overflow-auto p-3">
-        {mounted ? (
+        {slides.length === 0 ? (
+          <EmptySlidesHint
+            onPickTemplate={() => setDialogOpen(true)}
+            onOpenPresets={() =>
+              window.dispatchEvent(new CustomEvent("builder:open-carousel-presets"))
+            }
+            onOpenTextImport={() =>
+              window.dispatchEvent(new CustomEvent("builder:open-text-import"))
+            }
+          />
+        ) : mounted ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={slides.map((s) => s.id)} strategy={verticalListSortingStrategy}>
               {slides.map((sl, i) => (
@@ -249,5 +268,62 @@ export function SlidesSidebar() {
         onPick={handlePick}
       />
     </aside>
+  );
+}
+
+function EmptySlidesHint({
+  onPickTemplate,
+  onOpenPresets,
+  onOpenTextImport,
+}: {
+  onPickTemplate: () => void;
+  onOpenPresets: () => void;
+  onOpenTextImport: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-background/40 p-3 text-center">
+      <p className="mt-1 text-xs font-medium text-muted-foreground">
+        Da dove vuoi partire?
+      </p>
+      <button
+        type="button"
+        onClick={onOpenTextImport}
+        className="group flex items-start gap-2 rounded-md border border-border bg-card p-2 text-left transition hover:border-primary hover:bg-primary/5"
+      >
+        <Wand2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <div className="text-xs font-semibold leading-tight">Da testo / brief</div>
+          <div className="mt-0.5 text-[10px] text-muted-foreground">
+            Incolla un testo, ottieni 5-10 slide
+          </div>
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={onOpenPresets}
+        className="group flex items-start gap-2 rounded-md border border-border bg-card p-2 text-left transition hover:border-primary hover:bg-primary/5"
+      >
+        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <div className="text-xs font-semibold leading-tight">Da preset</div>
+          <div className="mt-0.5 text-[10px] text-muted-foreground">
+            Funnel, educational, lead gen
+          </div>
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={onPickTemplate}
+        className="group flex items-start gap-2 rounded-md border border-border bg-card p-2 text-left transition hover:border-primary hover:bg-primary/5"
+      >
+        <PlusSquare className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <div className="text-xs font-semibold leading-tight">Slide singola</div>
+          <div className="mt-0.5 text-[10px] text-muted-foreground">
+            Scegli un template e parti da zero
+          </div>
+        </div>
+      </button>
+    </div>
   );
 }

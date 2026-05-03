@@ -6,6 +6,7 @@ import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { SlideEditorForm } from "@/components/SlideEditorForm";
 import { JsonEditor } from "@/components/JsonEditor";
 import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
+import { BrandQuickSwitch } from "@/components/BrandQuickSwitch";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
@@ -462,6 +463,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
               <ShieldOff className="h-4 w-4" />
             )}
           </Button>
+          <BrandQuickSwitch />
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
             <Upload className="mr-1 h-4 w-4" /> Import JSON

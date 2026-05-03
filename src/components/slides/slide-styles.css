@@ -35,6 +35,23 @@
 .slide-frame * {
   box-sizing: border-box;
 }
+/* Robustezza tipografica: titoli e blocchi di testo spezzano parole troppo
+   lunghe (URL, hashtag, monospaziati) per non sforare il bounding box della
+   slide. Senza queste regole, contenuti utente "ostili" rendevano la slide
+   illeggibile o con testo tagliato. */
+.slide-frame h1,
+.slide-frame h2,
+.slide-frame h3,
+.slide-frame p,
+.slide-frame li,
+.slide-frame .eyebrow,
+.slide-frame .quote-text,
+.slide-frame .hook-text,
+.slide-frame .cta-headline {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
 .slide-frame .slide-inner {
   width: 100%;
   height: 100%;

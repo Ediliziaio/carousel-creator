@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,14 @@ export function ContentImportDialog() {
   const [mode, setMode] = useState<"text" | "json" | "csv">("text");
   const importContentBundle = useCarousel((s) => s.importContentBundle);
   const slides = useCarousel((s) => s.slides);
+
+  // Empty state della sidebar emette questo evento per aprire il dialog senza
+  // dover cliccare manualmente il bottone trigger.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("builder:open-text-import", handler);
+    return () => window.removeEventListener("builder:open-text-import", handler);
+  }, []);
 
   const parsed: ImportResult | null = useMemo(() => {
     if (!text.trim()) return null;

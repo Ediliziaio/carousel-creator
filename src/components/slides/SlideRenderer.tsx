@@ -1,4 +1,5 @@
 import "./slide-styles.css";
+import { useLayoutEffect, useRef } from "react";
 import {
   type Slide,
   type BrandSettings,
@@ -112,6 +113,35 @@ function buildClassName(slide: Slide, brand: BrandSettings): string {
   return parts.join(" ");
 }
 
+/** Min font (px) accettabile dopo lo shrink: sotto questo non si scende per garantire leggibilità. */
+const AUTO_FIT_MIN_FONT_PX = 24;
+/** Step di riduzione per ogni iterazione (px). */
+const AUTO_FIT_STEP = 4;
+
+/** Riduce il fontSize degli h1 / h2 / titoli grandi nel body se overflowano il loro parent. */
+function applyAutoFit(rootEl: HTMLElement) {
+  const candidates = rootEl.querySelectorAll<HTMLElement>(
+    "h1, h2, .hook-text, .cta-headline, .quote-text, .big-num",
+  );
+  candidates.forEach((el) => {
+    const parent = el.parentElement;
+    if (!parent) return;
+    // Reset al fontSize calcolato da CSS prima di rimisurare (evita di restare bloccato al min al re-render).
+    el.style.fontSize = "";
+    const computed = window.getComputedStyle(el);
+    const startSize = parseFloat(computed.fontSize);
+    if (!Number.isFinite(startSize) || startSize <= AUTO_FIT_MIN_FONT_PX) return;
+    let size = startSize;
+    let guard = 30;
+    const overflows = () =>
+      el.scrollHeight - parent.clientHeight > 1 || el.scrollWidth - parent.clientWidth > 1;
+    while (size > AUTO_FIT_MIN_FONT_PX && overflows() && guard-- > 0) {
+      size -= AUTO_FIT_STEP;
+      el.style.fontSize = `${size}px`;
+    }
+  });
+}
+
 export function SlideRenderer({
   slide,
   brand,
@@ -124,6 +154,13 @@ export function SlideRenderer({
   const data = getSlideData(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage);
   const fmt = slide.format ?? "portrait";
   const dim = FORMAT_DIMENSIONS[fmt];
+
+  // Auto-fit dei titoli: dopo ogni render, scansiona h1/h2 nel body e riduce
+  // il font se overflowano. Centralizzato qui invece che sui ~40 template.
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (bodyRef.current) applyAutoFit(bodyRef.current);
+  });
   const validation = showValidation
     ? validateSlide(slide, lang ?? brand.defaultLanguage, brand.defaultLanguage)
     : null;
@@ -162,7 +199,9 @@ export function SlideRenderer({
           <span className="count">{counter}</span>
         </header>
 
-        <div className="body">{renderBody(slide, data, brand)}</div>
+        <div className="body" ref={bodyRef}>
+          {renderBody(slide, data, brand)}
+        </div>
 
         <footer className="foot-row">
           <span className="handle-inline">{brand.handle}</span>
