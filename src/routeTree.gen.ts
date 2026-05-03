@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
+import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects/$projectId.index'
 import { Route as ProjectsProjectIdBuilderContentIdRouteImport } from './routes/projects/$projectId.builder.$contentId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -41,6 +42,11 @@ const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
   path: '/projects/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProjectsProjectIdRoute,
+} as any)
 const ProjectsProjectIdBuilderContentIdRoute =
   ProjectsProjectIdBuilderContentIdRouteImport.update({
     id: '/builder/$contentId',
@@ -54,14 +60,15 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
-  '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
 export interface FileRoutesById {
@@ -71,6 +78,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
 export interface FileRouteTypes {
@@ -81,14 +89,15 @@ export interface FileRouteTypes {
     | '/signup'
     | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/'
     | '/projects/$projectId/builder/$contentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/signup'
-    | '/projects/$projectId'
     | '/projects'
+    | '/projects/$projectId'
     | '/projects/$projectId/builder/$contentId'
   id:
     | '__root__'
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/'
     | '/projects/$projectId/builder/$contentId'
   fileRoutesById: FileRoutesById
 }
@@ -145,6 +155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/$projectId/': {
+      id: '/projects/$projectId/'
+      path: '/'
+      fullPath: '/projects/$projectId/'
+      preLoaderRoute: typeof ProjectsProjectIdIndexRouteImport
+      parentRoute: typeof ProjectsProjectIdRoute
+    }
     '/projects/$projectId/builder/$contentId': {
       id: '/projects/$projectId/builder/$contentId'
       path: '/builder/$contentId'
@@ -156,10 +173,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface ProjectsProjectIdRouteChildren {
+  ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
   ProjectsProjectIdBuilderContentIdRoute: typeof ProjectsProjectIdBuilderContentIdRoute
 }
 
 const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
+  ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   ProjectsProjectIdBuilderContentIdRoute:
     ProjectsProjectIdBuilderContentIdRoute,
 }
