@@ -124,7 +124,16 @@ const AUTO_FIT_MIN_FONT_PX = 24;
 /** Step di riduzione per ogni iterazione (px). */
 const AUTO_FIT_STEP = 4;
 
-/** Riduce il fontSize degli h1 / h2 / titoli grandi nel body se overflowano il loro parent. */
+/**
+ * Riduce il fontSize degli h1/h2/titoli grandi nel body se overflowano il parent.
+ *
+ * IMPORTANTE: rispetta gli override font-size dell'utente. Se l'elemento ha un
+ * inline font-size NON applicato da noi (cioè non marcato con data-autofit),
+ * lasciamo stare — l'utente ha deciso esplicitamente quella dimensione.
+ *
+ * I nostri shrink vengono marcati con data-autofit="1" così al render
+ * successivo possiamo riconoscerli e resettarli prima di rimisurare.
+ */
 function applyAutoFit(rootEl: HTMLElement) {
   const candidates = rootEl.querySelectorAll<HTMLElement>(
     "h1, h2, .hook-text, .cta-headline, .quote-text, .big-num",
@@ -132,8 +141,18 @@ function applyAutoFit(rootEl: HTMLElement) {
   candidates.forEach((el) => {
     const parent = el.parentElement;
     if (!parent) return;
-    // Reset al fontSize calcolato da CSS prima di rimisurare (evita di restare bloccato al min al re-render).
-    el.style.fontSize = "";
+    const hasInlineFontSize = el.style.fontSize !== "";
+    const wasAutoFit = el.dataset.autofit === "1";
+    // Se l'utente ha messo un override (inline font-size NON nostro), non toccare.
+    if (hasInlineFontSize && !wasAutoFit) {
+      delete el.dataset.autofit;
+      return;
+    }
+    // Reset il nostro shrink precedente per ricalcolare da zero.
+    if (wasAutoFit) {
+      el.style.fontSize = "";
+      delete el.dataset.autofit;
+    }
     const computed = window.getComputedStyle(el);
     const startSize = parseFloat(computed.fontSize);
     if (!Number.isFinite(startSize) || startSize <= AUTO_FIT_MIN_FONT_PX) return;
@@ -141,10 +160,13 @@ function applyAutoFit(rootEl: HTMLElement) {
     let guard = 30;
     const overflows = () =>
       el.scrollHeight - parent.clientHeight > 1 || el.scrollWidth - parent.clientWidth > 1;
+    let shrunk = false;
     while (size > AUTO_FIT_MIN_FONT_PX && overflows() && guard-- > 0) {
       size -= AUTO_FIT_STEP;
       el.style.fontSize = `${size}px`;
+      shrunk = true;
     }
+    if (shrunk) el.dataset.autofit = "1";
   });
 }
 
