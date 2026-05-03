@@ -47,6 +47,7 @@ import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 import { getContent, saveContent, type ContentType } from "@/lib/contentsApi";
 import { getProject, updateProject } from "@/lib/projectsApi";
+import { captureThumbnail } from "@/lib/export";
 
 interface BuilderProps {
   projectId: string;
@@ -82,8 +83,9 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   const [contentType, setContentType] = useState<ContentType>("carousel");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const lastLoadedRef = useRef<string>("");
+  // Snapshot del payload all'ultimo save / hydrate. dirty è computed = current !== snapshot.
+  const [savedSnapshot, setSavedSnapshot] = useState<string>("");
+  const [savedName, setSavedName] = useState<string>("");
 
   // Load project + content on mount.
   useEffect(() => {
@@ -108,8 +110,8 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         if (data.activeLang) setActiveLang(data.activeLang);
         setContentName(content.name);
         setContentType(content.type);
-        lastLoadedRef.current = JSON.stringify({ brand: brandFromProject, slides: slidesData });
-        setDirty(false);
+        setSavedSnapshot(JSON.stringify({ brand: brandFromProject, slides: slidesData }));
+        setSavedName(content.name);
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
@@ -121,27 +123,46 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
     };
   }, [projectId, contentId, loadJSON, setActiveLang, navigate]);
 
-  // Track dirty state when store changes (after hydration done).
+  const currentSnapshot = useMemo(
+    () => (hydrating ? "" : JSON.stringify({ brand, slides })),
+    [brand, slides, hydrating],
+  );
+  const dirty = !hydrating && (currentSnapshot !== savedSnapshot || contentName !== savedName);
+
+  // Avvisa l'utente se chiude la pagina con modifiche non salvate.
   useEffect(() => {
-    if (hydrating) return;
-    const current = JSON.stringify({ brand, slides });
-    if (current !== lastLoadedRef.current) setDirty(true);
-  }, [brand, slides, hydrating]);
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
 
   async function handleSave() {
     setSaving(true);
     try {
+      const finalName = contentName || "Senza titolo";
+      // Genera una thumbnail della prima slide (best-effort, non blocca il save).
+      let thumbnail: string | null = null;
+      const firstSlide = slides[0];
+      if (firstSlide) {
+        const node = exportRefs.current.get(firstSlide.id);
+        if (node) thumbnail = await captureThumbnail(node, brand);
+      }
       await saveContent({
         id: contentId,
         projectId,
         type: contentType,
-        name: contentName || "Senza titolo",
+        name: finalName,
         data: { brand, slides, activeLang },
+        thumbnail,
       });
-      // Salviamo brand anche a livello progetto, così è la fonte di verità per il prossimo content.
+      // Brand per-progetto: fonte di verità. Si propaga ai content fratelli al loro prossimo open.
       await updateProject(projectId, { brand });
-      lastLoadedRef.current = JSON.stringify({ brand, slides });
-      setDirty(false);
+      setSavedSnapshot(JSON.stringify({ brand, slides }));
+      setSavedName(finalName);
       toast.success("Salvato");
     } catch (e) {
       toast.error((e as Error).message);

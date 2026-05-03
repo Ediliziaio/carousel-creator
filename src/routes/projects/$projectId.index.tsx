@@ -3,6 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -22,6 +32,7 @@ import {
   type ContentType,
 } from "@/lib/contentsApi";
 import { UserMenu } from "@/components/UserMenu";
+import { makeDefaultSlide, type SlideFormat } from "@/lib/templates";
 
 export const Route = createFileRoute("/projects/$projectId/")({
   component: ProjectDashboard,
@@ -62,6 +73,7 @@ function ProjectDashboard() {
   const [items, setItems] = useState<ContentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<ContentType>("carousel");
+  const [pendingDelete, setPendingDelete] = useState<ContentRow | null>(null);
 
   useEffect(() => {
     void load();
@@ -95,11 +107,25 @@ function ProjectDashboard() {
 
   async function onCreate(type: ContentType) {
     try {
+      // Default format e slide iniziali in base al tipo:
+      // - post: 1 slide quadrata 1:1
+      // - story: 1 slide verticale 9:16
+      // - carousel: vuoto (utente costruisce slide multiple)
+      const defaultFormat: SlideFormat =
+        type === "story" ? "story" : type === "post" ? "square" : "portrait";
+      const initialSlides =
+        type === "carousel" ? [] : [makeDefaultSlide("cover", defaultFormat)];
       const row = await saveContent({
         projectId,
         type,
         name: TYPE_META[type].defaultName,
-        data: { brand: project?.brand ?? null, slides: [], activeLang: "it" },
+        data: {
+          brand: project?.brand ?? null,
+          slides: initialSlides,
+          activeLang: "it",
+          contentType: type,
+          defaultFormat,
+        },
       });
       void navigate({
         to: "/projects/$projectId/builder/$contentId",
@@ -110,8 +136,7 @@ function ProjectDashboard() {
     }
   }
 
-  async function onDeleteContent(id: string) {
-    if (!confirm("Eliminare questo contenuto?")) return;
+  async function performDeleteContent(id: string) {
     try {
       await deleteContent(id);
       setItems((p) => p.filter((x) => x.id !== id));
@@ -228,7 +253,7 @@ function ProjectDashboard() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              void onDeleteContent(c.id);
+                              setPendingDelete(c);
                             }}
                             className="absolute right-2 top-2 rounded-md bg-card/80 p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                             title="Elimina"
@@ -245,6 +270,33 @@ function ProjectDashboard() {
           </Tabs>
         )}
       </main>
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare il contenuto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete &&
+                `Stai per eliminare "${pendingDelete.name}". L'operazione non è reversibile.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDelete) void performDeleteContent(pendingDelete.id);
+                setPendingDelete(null);
+              }}
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

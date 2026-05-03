@@ -107,6 +107,52 @@ export async function waitForImages(node: HTMLElement): Promise<void> {
   );
 }
 
+/**
+ * Cattura una thumbnail compatta (JPEG ~320px wide) da un nodo slide.
+ * Usato per popolare il campo `thumbnail` dei contenuti — peso tipico 15-30 KB,
+ * ok per stoccaggio JSONB su Supabase.
+ */
+export async function captureThumbnail(
+  node: HTMLElement,
+  brand: BrandSettings,
+  maxWidth = 320,
+): Promise<string | null> {
+  try {
+    await ensureFontsFor(brand);
+    await waitForImages(node);
+    const w = node.offsetWidth || 1080;
+    const h = node.offsetHeight || 1350;
+    const dataUrl = await toPng(node, {
+      width: w,
+      height: h,
+      pixelRatio: 0.5,
+      cacheBust: false,
+      backgroundColor: brand.bgColor || "#0A0A0A",
+    });
+    // Resize via canvas + JPEG compression
+    return await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const tw = Math.round(img.width * scale);
+        const th = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = tw;
+        canvas.height = th;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas 2D non disponibile"));
+        ctx.drawImage(img, 0, 0, tw, th);
+        resolve(canvas.toDataURL("image/jpeg", 0.7));
+      };
+      img.onerror = () => reject(new Error("Image decode error"));
+      img.src = dataUrl;
+    });
+  } catch (e) {
+    console.warn("[captureThumbnail] failed:", e);
+    return null;
+  }
+}
+
 export async function captureNode(node: HTMLElement, brand: BrandSettings): Promise<string> {
   await ensureFontsFor(brand);
   await waitForImages(node);

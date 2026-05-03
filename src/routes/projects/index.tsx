@@ -13,6 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Plus, FolderKanban, Trash2 } from "lucide-react";
@@ -31,6 +41,7 @@ function ProjectsPage() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<ProjectRow | null>(null);
 
   useEffect(() => {
     void refresh();
@@ -69,8 +80,7 @@ function ProjectsPage() {
     }
   }
 
-  async function onDelete(id: string) {
-    if (!confirm("Eliminare il progetto e tutti i contenuti collegati?")) return;
+  async function performDelete(id: string) {
     try {
       await deleteProject(id);
       toast.success("Progetto eliminato");
@@ -201,7 +211,7 @@ function ProjectsPage() {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    void onDelete(p.id);
+                    setPendingDelete(p);
                   }}
                   className="absolute right-3 top-3 rounded-md p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                   title="Elimina progetto"
@@ -213,6 +223,33 @@ function ProjectsPage() {
           </div>
         )}
       </main>
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare il progetto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete &&
+                `Verranno eliminati definitivamente "${pendingDelete.name}" e tutti i contenuti (post, caroselli, storie) collegati.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDelete) void performDelete(pendingDelete.id);
+                setPendingDelete(null);
+              }}
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

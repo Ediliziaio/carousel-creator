@@ -661,8 +661,10 @@ export const useCarousel = create<CarouselState>()(
       storage: createJSONStorage(() => localStorage),
       // SSR safety: don't auto-rehydrate on server. We call rehydrate() in __root.tsx on the client.
       skipHydration: true,
+      // NOTA: 'brand' NON è qui — il brand è ora per-progetto (campo
+      // projects.brand su Supabase) e viene caricato dal builder al mount.
+      // Persistere brand in localStorage causava drift tra progetti.
       partialize: (s) => ({
-        brand: s.brand,
         brandPresets: s.brandPresets.filter((p) => !p.builtIn),
         slideCombos: s.slideCombos,
         templateCategoryOrder: s.templateCategoryOrder,
@@ -699,7 +701,7 @@ export const useCarousel = create<CarouselState>()(
           );
           return {
             ...currentState,
-            brand: mergeBrand(ps?.brand),
+            // brand NON è ripristinato da localStorage — viene caricato dal builder per-progetto.
             brandPresets: [...BUILT_IN_PRESETS, ...customPresets.filter((p) => p && !p.builtIn)],
             slideCombos: safeCombos,
             templateCategoryOrder: picker.templateCategoryOrder,

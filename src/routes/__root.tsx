@@ -11,7 +11,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { useCarousel } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { toast } from "sonner";
 
 function clearLocalStateAndReload() {
   try {
@@ -107,19 +106,9 @@ function RootComponent() {
   useEffect(() => initAuth(), [initAuth]);
 
   useEffect(() => {
-    let restored = false;
-    try {
-      restored = !!localStorage.getItem("carousel-brand-v1");
-    } catch {
-      /* ignore */
-    }
-    void useCarousel.persist.rehydrate()?.then(() => {
-      if (restored) {
-        toast.success("Brand ripristinato dalla sessione precedente", {
-          duration: 3000,
-        });
-      }
-    });
+    // Rehydrate user-level settings (presets, picker order, ecc.) — NON il brand:
+    // il brand è ora per-progetto e viene caricato dal builder.
+    void useCarousel.persist.rehydrate();
   }, []);
 
   useEffect(() => {
