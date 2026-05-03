@@ -16,6 +16,14 @@ dist-ssr
 .nitro
 *.local
 
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Claude Code local
+.claude/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
