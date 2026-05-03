@@ -71,6 +71,72 @@ export function getContentStatus(row: ContentRow): ContentStatus {
   return "in_progress";
 }
 
+/** Data di pubblicazione programmata ISO (es. "2026-12-25T10:00:00.000Z"), se presente. */
+export function getContentScheduledAt(row: ContentRow): string | null {
+  const raw = (row.data as { scheduledAt?: string })?.scheduledAt;
+  return typeof raw === "string" && raw ? raw : null;
+}
+
+/** Data di pubblicazione effettiva (settata quando lo status passa a 'published'). */
+export function getContentPublishedAt(row: ContentRow): string | null {
+  const raw = (row.data as { publishedAt?: string })?.publishedAt;
+  return typeof raw === "string" && raw ? raw : null;
+}
+
+/**
+ * Aggiorna la data di pubblicazione programmata di un contenuto. Setta anche
+ * automaticamente lo status a 'scheduled' se non già 'published', così la
+ * card si sposta nella colonna giusta.
+ */
+export async function updateContentSchedule(
+  id: string,
+  scheduledAt: string | null,
+): Promise<ContentRow> {
+  const src = await getContent(id);
+  if (!src) throw new Error("Contenuto non trovato");
+  const data = (src.data && typeof src.data === "object" ? { ...src.data } : {}) as Record<
+    string,
+    unknown
+  >;
+  if (scheduledAt) {
+    data.scheduledAt = scheduledAt;
+    // Se non era già pubblicato, allinea lo status a 'scheduled'.
+    if (data.status !== "published") data.status = "scheduled";
+  } else {
+    delete data.scheduledAt;
+    // Se era 'scheduled' e ora non c'è più data, riportalo a 'review'.
+    if (data.status === "scheduled") data.status = "review";
+  }
+  const { data: row, error } = await supabase
+    .from("contents")
+    .update({ data })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return row as ContentRow;
+}
+
+/**
+ * Formatta una data ISO in italiano breve. Aggiunge "oggi"/"domani"/"ieri"
+ * per le 3 date più vicine (UX Trello-style).
+ */
+export function formatScheduleLabel(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays === 0) return "Oggi";
+  if (diffDays === 1) return "Domani";
+  if (diffDays === -1) return "Ieri";
+  if (diffDays > 1 && diffDays <= 6) {
+    return d.toLocaleDateString("it-IT", { weekday: "long" });
+  }
+  return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" });
+}
+
 export interface ContentRow {
   id: string;
   project_id: string;

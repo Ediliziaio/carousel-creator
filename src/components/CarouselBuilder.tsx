@@ -79,6 +79,7 @@ interface ContentDataShape {
   activeLang?: string;
   status?: ContentStatus | "draft";
   publishedAt?: string;
+  scheduledAt?: string;
   /** Brief importato da file/incolla — pronto da convertire in slide. */
   brief?: string;
 }
@@ -160,6 +161,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   const [contentType, setContentType] = useState<ContentType>("carousel");
   const [projectName, setProjectName] = useState("");
   const [status, setStatus] = useState<ContentStatus>("in_progress");
+  const [scheduledAt, setScheduledAt] = useState<string>("");
   const [brief, setBrief] = useState<string>("");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -201,8 +203,25 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
             : "in_progress";
         setStatus(initialStatus);
         setBrief(data.brief ?? "");
+        // Carica data programmata e converte in formato yyyy-mm-dd per input[type=date].
+        if (data.scheduledAt) {
+          const d = new Date(data.scheduledAt);
+          if (!Number.isNaN(d.getTime())) {
+            setScheduledAt(d.toISOString().split("T")[0]);
+          }
+        } else {
+          setScheduledAt("");
+        }
+        const initialScheduled = data.scheduledAt
+          ? new Date(data.scheduledAt).toISOString().split("T")[0]
+          : "";
         setSavedSnapshot(
-          JSON.stringify({ brand: brandFromProject, slides: slidesData, status: initialStatus }),
+          JSON.stringify({
+            brand: brandFromProject,
+            slides: slidesData,
+            status: initialStatus,
+            scheduledAt: initialScheduled,
+          }),
         );
         setSavedName(content.name);
       } catch (e) {
@@ -217,8 +236,8 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   }, [projectId, contentId, loadJSON, setActiveLang, navigate]);
 
   const currentSnapshot = useMemo(
-    () => (hydrating ? "" : JSON.stringify({ brand, slides, status })),
-    [brand, slides, status, hydrating],
+    () => (hydrating ? "" : JSON.stringify({ brand, slides, status, scheduledAt })),
+    [brand, slides, status, scheduledAt, hydrating],
   );
   const dirty = !hydrating && (currentSnapshot !== savedSnapshot || contentName !== savedName);
 
@@ -255,12 +274,15 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
           activeLang,
           status,
           publishedAt: status === "published" ? new Date().toISOString() : undefined,
+          scheduledAt: scheduledAt
+            ? new Date(scheduledAt + "T09:00:00").toISOString()
+            : undefined,
         },
         thumbnail,
       });
       // Brand per-progetto: fonte di verità. Si propaga ai content fratelli al loro prossimo open.
       await updateProject(projectId, { brand });
-      setSavedSnapshot(JSON.stringify({ brand, slides, status }));
+      setSavedSnapshot(JSON.stringify({ brand, slides, status, scheduledAt }));
       setSavedName(finalName);
       toast.success(status === "published" ? "Pubblicato ✓" : "Salvato come bozza");
     } catch (e) {
@@ -529,6 +551,39 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
               ))}
             </SelectContent>
           </Select>
+          <div className="relative">
+            <Input
+              type="date"
+              value={scheduledAt}
+              onChange={(e) => {
+                const v = e.target.value;
+                setScheduledAt(v);
+                // Auto-bump status a 'scheduled' quando setti una data e non è già pubblicato
+                if (v && status !== "published" && status !== "scheduled") {
+                  setStatus("scheduled");
+                }
+                // Clear data → torna a review se era scheduled
+                if (!v && status === "scheduled") {
+                  setStatus("review");
+                }
+              }}
+              className="h-8 w-[140px] pl-7 text-xs"
+              title="Data pubblicazione programmata"
+            />
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs">
+              📅
+            </span>
+            {scheduledAt && (
+              <button
+                type="button"
+                onClick={() => setScheduledAt("")}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-destructive"
+                title="Rimuovi data"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <CarouselPresetDialog />
           <QuickOfferEditor />
           <HookOfferMicroEditor />

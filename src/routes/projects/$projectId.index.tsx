@@ -58,15 +58,20 @@ import {
   saveContent,
   duplicateContent,
   updateContentStatus,
+  updateContentSchedule,
   bulkCreateBacklog,
   bulkCreateFromBriefs,
   getContentStatus,
+  getContentScheduledAt,
+  formatScheduleLabel,
   STATUS_META,
   STATUS_ORDER,
   type ContentRow,
   type ContentType,
   type ContentStatus,
 } from "@/lib/contentsApi";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { Input } from "@/components/ui/input";
 import { makeDefaultSlide, type SlideFormat } from "@/lib/templates";
@@ -260,6 +265,34 @@ function ProjectDashboard() {
     }
   }
 
+  async function onScheduleChange(id: string, scheduledAt: string | null) {
+    // Optimistic update
+    setItems((p) =>
+      p.map((c) => {
+        if (c.id !== id) return c;
+        const data = (c.data && typeof c.data === "object" ? { ...c.data } : {}) as Record<
+          string,
+          unknown
+        >;
+        if (scheduledAt) {
+          data.scheduledAt = scheduledAt;
+          if (data.status !== "published") data.status = "scheduled";
+        } else {
+          delete data.scheduledAt;
+          if (data.status === "scheduled") data.status = "review";
+        }
+        return { ...c, data: data as unknown };
+      }),
+    );
+    try {
+      await updateContentSchedule(id, scheduledAt);
+      toast.success(scheduledAt ? `📅 Pianificato` : "Data rimossa");
+    } catch (e) {
+      toast.error((e as Error).message);
+      void load();
+    }
+  }
+
   async function performDeleteContent(id: string) {
     try {
       await deleteContent(id);
@@ -439,6 +472,7 @@ function ProjectDashboard() {
                 items={filtered}
                 projectId={projectId}
                 onStatusChange={onStatusChange}
+                onScheduleChange={onScheduleChange}
                 onDuplicate={onDuplicate}
                 onDelete={(c) => setPendingDelete(c)}
               />
@@ -446,6 +480,7 @@ function ProjectDashboard() {
               <GridView
                 items={filtered}
                 projectId={projectId}
+                onScheduleChange={onScheduleChange}
                 onDuplicate={onDuplicate}
                 onDelete={(c) => setPendingDelete(c)}
               />
@@ -540,12 +575,14 @@ function KanbanBoard({
   items,
   projectId,
   onStatusChange,
+  onScheduleChange,
   onDuplicate,
   onDelete,
 }: {
   items: ContentRow[];
   projectId: string;
   onStatusChange: (id: string, status: ContentStatus) => void;
+  onScheduleChange: (id: string, scheduledAt: string | null) => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
 }) {
@@ -602,6 +639,7 @@ function KanbanBoard({
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
                     onStatusChange={onStatusChange}
+                    onScheduleChange={onScheduleChange}
                   />
                 ))
               )}
@@ -619,17 +657,20 @@ function KanbanCard({
   onDuplicate,
   onDelete,
   onStatusChange,
+  onScheduleChange,
 }: {
   content: ContentRow;
   projectId: string;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
   onStatusChange: (id: string, status: ContentStatus) => void;
+  onScheduleChange: (id: string, scheduledAt: string | null) => void;
 }) {
   const status = getContentStatus(content);
   const typeMeta = TYPE_META[content.type];
   const TypeIcon = typeMeta.icon;
   const hasBrief = !!(content.data as { brief?: string })?.brief;
+  const scheduledIso = getContentScheduledAt(content);
 
   return (
     <div
@@ -675,18 +716,29 @@ function KanbanCard({
           )}
         </div>
       </Link>
-      <Select value={status} onValueChange={(v) => onStatusChange(content.id, v as ContentStatus)}>
-        <SelectTrigger className="mt-1.5 h-6 w-full px-1.5 text-[10px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STATUS_ORDER.map((s) => (
-            <SelectItem key={s} value={s} className="text-xs">
-              {STATUS_META[s].emoji} {STATUS_META[s].label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="mt-1.5 flex items-center gap-1">
+        <Select
+          value={status}
+          onValueChange={(v) => onStatusChange(content.id, v as ContentStatus)}
+        >
+          <SelectTrigger className="h-6 flex-1 px-1.5 text-[10px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_ORDER.map((s) => (
+              <SelectItem key={s} value={s} className="text-xs">
+                {STATUS_META[s].emoji} {STATUS_META[s].label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <SchedulePopover
+          contentId={content.id}
+          scheduledIso={scheduledIso}
+          onChange={onScheduleChange}
+          compact
+        />
+      </div>
       <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 transition group-hover:opacity-100">
         <button
           onClick={(e) => {
@@ -715,15 +767,85 @@ function KanbanCard({
   );
 }
 
+/* Popover compatto per pianificare data senza aprire il builder. */
+function SchedulePopover({
+  contentId,
+  scheduledIso,
+  onChange,
+  compact,
+}: {
+  contentId: string;
+  scheduledIso: string | null;
+  onChange: (id: string, iso: string | null) => void;
+  compact?: boolean;
+}) {
+  const dateInput = scheduledIso
+    ? new Date(scheduledIso).toISOString().split("T")[0]
+    : "";
+  const label = scheduledIso ? formatScheduleLabel(scheduledIso) : "";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className={`flex shrink-0 items-center gap-0.5 rounded border px-1.5 transition ${
+            scheduledIso
+              ? "border-blue-500/40 bg-blue-500/10 text-blue-700"
+              : "border-border text-muted-foreground hover:bg-muted"
+          } ${compact ? "h-6 text-[10px]" : "h-7 text-xs"}`}
+          title={scheduledIso ? `Pianificato: ${label}` : "Pianifica data"}
+        >
+          <Calendar className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
+          {scheduledIso && <span className="font-medium">{label}</span>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[260px] p-3" align="end" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-2 text-xs font-semibold">Data di pubblicazione</div>
+        <Input
+          type="date"
+          defaultValue={dateInput}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v) {
+              const iso = new Date(v + "T09:00:00").toISOString();
+              onChange(contentId, iso);
+            } else {
+              onChange(contentId, null);
+            }
+          }}
+          className="h-9 text-sm"
+        />
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Quando setti una data, il contenuto si sposta automaticamente in{" "}
+          <strong>📅 Da pubblicare</strong>.
+        </p>
+        {scheduledIso && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange(contentId, null)}
+            className="mt-2 h-7 w-full text-xs"
+          >
+            Rimuovi data
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /* ===================== GridView ===================== */
 function GridView({
   items,
   projectId,
+  onScheduleChange,
   onDuplicate,
   onDelete,
 }: {
   items: ContentRow[];
   projectId: string;
+  onScheduleChange: (id: string, scheduledAt: string | null) => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
 }) {
@@ -735,6 +857,7 @@ function GridView({
         const typeMeta = TYPE_META[c.type];
         const TypeIcon = typeMeta.icon;
         const hasBrief = !!(c.data as { brief?: string })?.brief;
+        const scheduledIso = getContentScheduledAt(c);
         return (
           <Card key={c.id} className="group relative overflow-hidden p-3 transition hover:shadow-md">
             <Link
@@ -758,6 +881,12 @@ function GridView({
                   <TypeIcon className="h-3 w-3" />
                   {typeMeta.label}
                 </span>
+                {scheduledIso && (
+                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+                    <Calendar className="h-3 w-3" />
+                    {formatScheduleLabel(scheduledIso)}
+                  </span>
+                )}
               </div>
               <div className="mt-3 flex items-start gap-2">
                 <h3 className="flex-1 truncate font-medium text-foreground">{c.name}</h3>
@@ -784,6 +913,11 @@ function GridView({
               </div>
             </Link>
             <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition group-hover:opacity-100">
+              <SchedulePopover
+                contentId={c.id}
+                scheduledIso={scheduledIso}
+                onChange={onScheduleChange}
+              />
               <button
                 onClick={(e) => {
                   e.preventDefault();
