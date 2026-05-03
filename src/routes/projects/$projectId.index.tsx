@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-r
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,6 +19,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +48,8 @@ import {
   Wand2,
   Kanban,
   List,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import { getProject, type ProjectRow } from "@/lib/projectsApi";
 import {
@@ -61,6 +68,7 @@ import {
   type ContentStatus,
 } from "@/lib/contentsApi";
 import { UserMenu } from "@/components/UserMenu";
+import { Input } from "@/components/ui/input";
 import { makeDefaultSlide, type SlideFormat } from "@/lib/templates";
 
 export const Route = createFileRoute("/projects/$projectId/")({
@@ -72,30 +80,34 @@ interface TypeMeta {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   defaultName: string;
+  emoji: string;
 }
 
 const TYPE_META: Record<ContentType, TypeMeta> = {
   post: {
     label: "Post",
-    description: "Immagini singole 1:1 o 4:5 per il feed.",
+    description: "Immagine singola 1:1 o 4:5",
     icon: ImageIcon,
     defaultName: "Nuovo post",
+    emoji: "📷",
   },
   carousel: {
-    label: "Caroselli",
-    description: "Sequenze multi-slide editoriali.",
+    label: "Carosello",
+    description: "Sequenze multi-slide",
     icon: Images,
     defaultName: "Nuovo carosello",
+    emoji: "📑",
   },
   story: {
-    label: "Storie",
-    description: "Verticali 9:16 per Instagram/Facebook stories.",
+    label: "Storia",
+    description: "Verticale 9:16",
     icon: Smartphone,
     defaultName: "Nuova storia",
+    emoji: "📱",
   },
 };
 
-const VIEW_KEY = "project-dashboard-view";
+const VIEW_KEY = "project-dashboard-view-v2";
 type ViewMode = "kanban" | "list";
 
 function ProjectDashboard() {
@@ -104,12 +116,16 @@ function ProjectDashboard() {
   const [project, setProject] = useState<ProjectRow | null>(null);
   const [items, setItems] = useState<ContentRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<ContentType>("carousel");
   const [pendingDelete, setPendingDelete] = useState<ContentRow | null>(null);
   const [view, setView] = useState<ViewMode>(() => {
     if (typeof window === "undefined") return "kanban";
     return (localStorage.getItem(VIEW_KEY) as ViewMode) || "kanban";
   });
+  // Filtri attivi: tipi inclusi (default: tutti). Set di ContentType.
+  const [activeTypes, setActiveTypes] = useState<Set<ContentType>>(
+    new Set(["post", "carousel", "story"]),
+  );
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem(VIEW_KEY, view);
@@ -137,15 +153,49 @@ function ProjectDashboard() {
     }
   }
 
-  // Filtra per type attivo (tab) — il Kanban ha 5 colonne SOLO del type selezionato.
-  const itemsByTab = useMemo(() => items.filter((i) => i.type === tab), [items, tab]);
-  const grouped = useMemo(() => {
+  // Filter applicato a TUTTI i contenuti (no tabs).
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return items.filter((c) => {
+      if (!activeTypes.has(c.type)) return false;
+      if (term && !c.name.toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [items, activeTypes, search]);
+
+  // Stats per stato (su tutti i contenuti del progetto, non filtrati).
+  const statsByStatus = useMemo(() => {
+    const out: Record<ContentStatus, number> = {
+      backlog: 0,
+      in_progress: 0,
+      review: 0,
+      scheduled: 0,
+      published: 0,
+    };
+    items.forEach((c) => {
+      out[getContentStatus(c)]++;
+    });
+    return out;
+  }, [items]);
+
+  const countsByType = useMemo(() => {
     return {
-      post: items.filter((i) => i.type === "post"),
-      carousel: items.filter((i) => i.type === "carousel"),
-      story: items.filter((i) => i.type === "story"),
+      post: items.filter((i) => i.type === "post").length,
+      carousel: items.filter((i) => i.type === "carousel").length,
+      story: items.filter((i) => i.type === "story").length,
     };
   }, [items]);
+
+  const toggleType = (t: ContentType) => {
+    setActiveTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      // Se rimasto vuoto, riattiva tutti (UX safety).
+      if (next.size === 0) return new Set(["post", "carousel", "story"]);
+      return next;
+    });
+  };
 
   async function onCreate(type: ContentType) {
     try {
@@ -186,7 +236,6 @@ function ProjectDashboard() {
   }
 
   async function onStatusChange(id: string, newStatus: ContentStatus) {
-    // Optimistic update
     setItems((p) =>
       p.map((c) =>
         c.id === id
@@ -204,10 +253,9 @@ function ProjectDashboard() {
     );
     try {
       await updateContentStatus(id, newStatus);
-      toast.success(`Spostato in: ${STATUS_META[newStatus].label}`);
+      toast.success(`→ ${STATUS_META[newStatus].label}`);
     } catch (e) {
       toast.error((e as Error).message);
-      // Rollback: rifetch
       void load();
     }
   }
@@ -250,76 +298,159 @@ function ProjectDashboard() {
             Caricamento…
           </div>
         ) : (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as ContentType)}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <TabsList className="grid w-full max-w-md grid-cols-3">
-                {(Object.keys(TYPE_META) as ContentType[]).map((t) => {
+          <>
+            {/* === STATS RIASSUNTO === */}
+            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+              {STATUS_ORDER.map((s) => {
+                const meta = STATUS_META[s];
+                const n = statsByStatus[s];
+                return (
+                  <div
+                    key={s}
+                    className={`rounded-lg border p-3 ${meta.bg}`}
+                    title={`${n} contenuti in ${meta.label}`}
+                  >
+                    <div className={`text-xs font-semibold uppercase tracking-wider ${meta.color}`}>
+                      {meta.emoji} {meta.label}
+                    </div>
+                    <div className="mt-1 text-2xl font-bold tabular-nums">{n}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* === TOOLBAR === */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {/* Filter chips type */}
+              <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
+                {(["post", "carousel", "story"] as ContentType[]).map((t) => {
+                  const active = activeTypes.has(t);
                   const Icon = TYPE_META[t].icon;
                   return (
-                    <TabsTrigger key={t} value={t} className="gap-2">
-                      <Icon className="h-4 w-4" />
-                      {TYPE_META[t].label}
-                      <span className="ml-1 rounded-full bg-muted px-1.5 text-xs">
-                        {grouped[t].length}
+                    <button
+                      key={t}
+                      onClick={() => toggleType(t)}
+                      className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs transition ${
+                        active
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                      title={`Filtra ${TYPE_META[t].label.toLowerCase()}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span>{TYPE_META[t].label}</span>
+                      <span
+                        className={`rounded-full px-1.5 text-[10px] ${
+                          active ? "bg-primary-foreground/20" : "bg-muted"
+                        }`}
+                      >
+                        {countsByType[t]}
                       </span>
-                    </TabsTrigger>
+                    </button>
                   );
                 })}
-              </TabsList>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
+              </div>
+
+              {/* Search */}
+              <div className="relative flex-1 sm:flex-none">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Cerca per nome…"
+                  className="h-9 w-full pl-8 text-sm sm:w-[220px]"
+                />
+              </div>
+
+              <div className="ml-auto flex items-center gap-2">
+                {/* View toggle */}
+                <div className="flex items-center gap-0.5 rounded-md border border-border p-0.5">
                   <button
                     onClick={() => setView("kanban")}
                     className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
                       view === "kanban" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                     }`}
+                    title="Vista Kanban"
                   >
-                    <Kanban className="h-3.5 w-3.5" /> Kanban
+                    <Kanban className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => setView("list")}
                     className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
                       view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                     }`}
+                    title="Vista Griglia"
                   >
-                    <List className="h-3.5 w-3.5" /> Griglia
+                    <List className="h-3.5 w-3.5" />
                   </button>
                 </div>
+
                 <BulkCreateDialog
                   projectId={projectId}
-                  type={tab}
+                  defaultType="carousel"
                   onCreated={(rows) => setItems((p) => [...rows, ...p])}
                 />
-                <Button onClick={() => void onCreate(tab)} size="sm">
-                  <Plus className="mr-1 h-4 w-4" />
-                  Nuovo {TYPE_META[tab].label.toLowerCase()}
-                </Button>
+
+                {/* Bottone unico "+ Nuovo" con dropdown scelta type */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-1 h-4 w-4" /> Nuovo
+                      <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[220px]">
+                    {(["carousel", "post", "story"] as ContentType[]).map((t) => {
+                      const meta = TYPE_META[t];
+                      const Icon = meta.icon;
+                      return (
+                        <DropdownMenuItem
+                          key={t}
+                          onClick={() => void onCreate(t)}
+                          className="cursor-pointer gap-2 py-2"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <div className="flex-1">
+                            <div className="text-sm font-medium">{meta.label}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {meta.description}
+                            </div>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
-            {(Object.keys(TYPE_META) as ContentType[]).map((t) => (
-              <TabsContent key={t} value={t} className="mt-4">
-                {view === "kanban" ? (
-                  <KanbanBoard
-                    items={t === tab ? itemsByTab : grouped[t]}
-                    projectId={projectId}
-                    onStatusChange={onStatusChange}
-                    onDuplicate={onDuplicate}
-                    onDelete={(c) => setPendingDelete(c)}
-                  />
-                ) : (
-                  <GridView
-                    items={t === tab ? itemsByTab : grouped[t]}
-                    projectId={projectId}
-                    typeMeta={TYPE_META[t]}
-                    onCreate={() => void onCreate(t)}
-                    onDuplicate={onDuplicate}
-                    onDelete={(c) => setPendingDelete(c)}
-                  />
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
+            {/* === BODY: KANBAN o GRID === */}
+            {filtered.length === 0 ? (
+              <EmptyState
+                onCreate={onCreate}
+                hasItems={items.length > 0}
+                onResetFilters={() => {
+                  setActiveTypes(new Set(["post", "carousel", "story"]));
+                  setSearch("");
+                }}
+              />
+            ) : view === "kanban" ? (
+              <KanbanBoard
+                items={filtered}
+                projectId={projectId}
+                onStatusChange={onStatusChange}
+                onDuplicate={onDuplicate}
+                onDelete={(c) => setPendingDelete(c)}
+              />
+            ) : (
+              <GridView
+                items={filtered}
+                projectId={projectId}
+                onDuplicate={onDuplicate}
+                onDelete={(c) => setPendingDelete(c)}
+              />
+            )}
+          </>
         )}
       </main>
 
@@ -353,6 +484,57 @@ function ProjectDashboard() {
   );
 }
 
+/* ===================== Empty state ===================== */
+function EmptyState({
+  onCreate,
+  hasItems,
+  onResetFilters,
+}: {
+  onCreate: (t: ContentType) => void;
+  hasItems: boolean;
+  onResetFilters: () => void;
+}) {
+  if (hasItems) {
+    // Filtri attivi ma nessun risultato
+    return (
+      <Card className="flex flex-col items-center gap-3 py-16 text-center">
+        <Search className="h-10 w-10 text-muted-foreground" />
+        <p className="font-medium">Nessun risultato</p>
+        <p className="text-sm text-muted-foreground">Prova a rimuovere i filtri attivi.</p>
+        <Button variant="outline" onClick={onResetFilters} className="mt-2">
+          Reimposta filtri
+        </Button>
+      </Card>
+    );
+  }
+  return (
+    <Card className="flex flex-col items-center gap-4 py-20 text-center">
+      <div className="flex gap-2 text-3xl">📷 📑 📱</div>
+      <div>
+        <p className="text-base font-medium">Nessun contenuto in questo progetto</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Crea il primo o importa una lista da file/Claude.
+        </p>
+      </div>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {(["carousel", "post", "story"] as ContentType[]).map((t) => {
+          const meta = TYPE_META[t];
+          const Icon = meta.icon;
+          return (
+            <Button
+              key={t}
+              onClick={() => onCreate(t)}
+              variant={t === "carousel" ? "default" : "outline"}
+            >
+              <Icon className="mr-1 h-4 w-4" /> {meta.label}
+            </Button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 /* ===================== KanbanBoard ===================== */
 function KanbanBoard({
   items,
@@ -376,8 +558,7 @@ function KanbanBoard({
       published: [],
     };
     items.forEach((c) => {
-      const s = getContentStatus(c);
-      out[s].push(c);
+      out[getContentStatus(c)].push(c);
     });
     return out;
   }, [items]);
@@ -446,11 +627,15 @@ function KanbanCard({
   onStatusChange: (id: string, status: ContentStatus) => void;
 }) {
   const status = getContentStatus(content);
+  const typeMeta = TYPE_META[content.type];
+  const TypeIcon = typeMeta.icon;
+  const hasBrief = !!(content.data as { brief?: string })?.brief;
+
   return (
     <div
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", content.id)}
-      className="group relative cursor-move rounded-md border border-border bg-card p-2.5 shadow-sm transition hover:shadow-md"
+      className="group relative cursor-move rounded-md border border-border bg-card p-2 shadow-sm transition hover:shadow-md"
     >
       <Link
         to="/projects/$projectId/builder/$contentId"
@@ -465,31 +650,43 @@ function KanbanCard({
               className="h-full w-full object-cover"
             />
           </div>
-        ) : null}
-        <div className="text-xs font-medium leading-tight text-foreground line-clamp-2">
-          {content.name}
+        ) : (
+          <div className="mb-2 flex aspect-[4/5] w-full items-center justify-center rounded-sm bg-muted/30">
+            <TypeIcon className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+        )}
+        <div className="flex items-start gap-1.5">
+          <TypeIcon className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+          <div className="text-xs font-medium leading-tight text-foreground line-clamp-2 flex-1">
+            {content.name}
+          </div>
         </div>
-        <div className="mt-1 text-[10px] text-muted-foreground">
-          {new Date(content.updated_at).toLocaleDateString("it-IT", {
-            day: "2-digit",
-            month: "short",
-          })}
+        <div className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span>
+            {new Date(content.updated_at).toLocaleDateString("it-IT", {
+              day: "2-digit",
+              month: "short",
+            })}
+          </span>
+          {hasBrief && (
+            <span className="ml-auto rounded bg-primary/15 px-1 text-[9px] font-semibold text-primary">
+              📝 brief
+            </span>
+          )}
         </div>
       </Link>
-      <div className="mt-2 flex items-center gap-1">
-        <Select value={status} onValueChange={(v) => onStatusChange(content.id, v as ContentStatus)}>
-          <SelectTrigger className="h-6 w-full px-1.5 text-[10px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_ORDER.map((s) => (
-              <SelectItem key={s} value={s} className="text-xs">
-                {STATUS_META[s].emoji} {STATUS_META[s].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select value={status} onValueChange={(v) => onStatusChange(content.id, v as ContentStatus)}>
+        <SelectTrigger className="mt-1.5 h-6 w-full px-1.5 text-[10px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_ORDER.map((s) => (
+            <SelectItem key={s} value={s} className="text-xs">
+              {STATUS_META[s].emoji} {STATUS_META[s].label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 transition group-hover:opacity-100">
         <button
           onClick={(e) => {
@@ -518,41 +715,26 @@ function KanbanCard({
   );
 }
 
-/* ===================== GridView (vista classica) ===================== */
+/* ===================== GridView ===================== */
 function GridView({
   items,
   projectId,
-  typeMeta,
-  onCreate,
   onDuplicate,
   onDelete,
 }: {
   items: ContentRow[];
   projectId: string;
-  typeMeta: TypeMeta;
-  onCreate: () => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
 }) {
-  const Icon = typeMeta.icon;
-  if (items.length === 0) {
-    return (
-      <Card className="flex flex-col items-center gap-3 py-16 text-center">
-        <Icon className="h-10 w-10 text-muted-foreground" />
-        <p className="font-medium">Nessun {typeMeta.label.toLowerCase()}</p>
-        <p className="text-sm text-muted-foreground">Crea il primo per iniziare.</p>
-        <Button onClick={onCreate} className="mt-2">
-          <Plus className="mr-2 h-4 w-4" />
-          Crea
-        </Button>
-      </Card>
-    );
-  }
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((c) => {
         const status = getContentStatus(c);
         const meta = STATUS_META[status];
+        const typeMeta = TYPE_META[c.type];
+        const TypeIcon = typeMeta.icon;
+        const hasBrief = !!(c.data as { brief?: string })?.brief;
         return (
           <Card key={c.id} className="group relative overflow-hidden p-3 transition hover:shadow-md">
             <Link
@@ -560,7 +742,7 @@ function GridView({
               params={{ projectId, contentId: c.id }}
               className="block"
             >
-              <div className="aspect-square w-full overflow-hidden rounded-md bg-muted">
+              <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted">
                 {c.thumbnail ? (
                   <img
                     src={c.thumbnail}
@@ -569,9 +751,13 @@ function GridView({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Icon className="h-10 w-10 text-muted-foreground/40" />
+                    <TypeIcon className="h-10 w-10 text-muted-foreground/40" />
                   </div>
                 )}
+                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-card/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                  <TypeIcon className="h-3 w-3" />
+                  {typeMeta.label}
+                </span>
               </div>
               <div className="mt-3 flex items-start gap-2">
                 <h3 className="flex-1 truncate font-medium text-foreground">{c.name}</h3>
@@ -582,13 +768,20 @@ function GridView({
                   {meta.emoji} {meta.label}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {new Date(c.updated_at).toLocaleDateString("it-IT", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
+              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  {new Date(c.updated_at).toLocaleDateString("it-IT", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+                {hasBrief && (
+                  <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                    📝 brief
+                  </span>
+                )}
+              </div>
             </Link>
             <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition group-hover:opacity-100">
               <button
@@ -624,14 +817,15 @@ function GridView({
 /* ===================== BulkCreateDialog ===================== */
 function BulkCreateDialog({
   projectId,
-  type,
+  defaultType,
   onCreated,
 }: {
   projectId: string;
-  type: ContentType;
+  defaultType: ContentType;
   onCreated: (rows: ContentRow[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [type, setType] = useState<ContentType>(defaultType);
   const [mode, setMode] = useState<"titles" | "brief" | "file">("titles");
   const [text, setText] = useState("");
   const [creating, setCreating] = useState(false);
@@ -724,13 +918,30 @@ function BulkCreateDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Wand2 className="mr-1 h-4 w-4" /> Importa contenuti
+          <Wand2 className="mr-1 h-4 w-4" /> Importa
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Importa contenuti in massa</DialogTitle>
         </DialogHeader>
+
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Crea come:</Label>
+          <Select value={type} onValueChange={(v) => setType(v as ContentType)}>
+            <SelectTrigger className="h-8 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(["carousel", "post", "story"] as ContentType[]).map((t) => (
+                <SelectItem key={t} value={t} className="text-xs">
+                  {TYPE_META[t].emoji} {TYPE_META[t].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="titles">Solo titoli</TabsTrigger>
@@ -742,8 +953,7 @@ function BulkCreateDialog({
             <form onSubmit={onTitlesSubmit} className="space-y-3">
               <p className="text-xs text-muted-foreground">
                 Una riga = un contenuto. Vengono creati vuoti in stato{" "}
-                <strong>💡 Da creare</strong>. Tipo:{" "}
-                <strong>{TYPE_META[type].label.toLowerCase()}</strong>.
+                <strong>💡 Da creare</strong>.
               </p>
               <Textarea
                 value={text}
@@ -769,14 +979,13 @@ function BulkCreateDialog({
             <form onSubmit={onBriefSubmit} className="space-y-3">
               <p className="text-xs text-muted-foreground">
                 Incolla testi separati da <code className="rounded bg-muted px-1">---</code> o
-                da heading <code className="rounded bg-muted px-1">#&nbsp;Titolo</code>. Ogni
-                blocco diventa un contenuto col brief già pronto da convertire in slide.
+                da heading <code className="rounded bg-muted px-1">#&nbsp;Titolo</code>.
               </p>
               <Textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={14}
-                placeholder={`# 5 errori nei preventivi edili\n## Il problema\n...\n## I 4 fondamentali\n- voce\n\n---\n\n# Pianificazione cantiere\n## Step 1\n...`}
+                placeholder={`# 5 errori nei preventivi edili\n## Il problema\n...\n\n---\n\n# Pianificazione cantiere\n## Step 1\n...`}
                 className="font-mono text-xs"
                 autoFocus
               />
@@ -789,10 +998,8 @@ function BulkCreateDialog({
 
           <TabsContent value="file" className="mt-4 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Trascina un file o clicca per caricare. Formati supportati:{" "}
-              <strong>.md / .txt / .csv / .json / .xlsx / .docx / .pdf</strong>. Il file viene
-              spezzato in N contenuti basandosi su heading <code>#</code> o separatori{" "}
-              <code>---</code>.
+              Trascina o clicca. Formati supportati:{" "}
+              <strong>.md / .txt / .csv / .json / .xlsx / .docx / .pdf</strong>.
             </p>
             <div
               onDragOver={(e) => {
@@ -806,7 +1013,7 @@ function BulkCreateDialog({
                 const f = e.dataTransfer.files?.[0];
                 if (f) void handleFile(f);
               }}
-              className={`flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition ${
+              className={`relative flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition ${
                 drag
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-muted-foreground/40"
@@ -827,12 +1034,11 @@ function BulkCreateDialog({
                   <input
                     type="file"
                     accept=".md,.markdown,.txt,.csv,.json,.xlsx,.xls,.docx,.pdf"
-                    className="absolute h-full w-full cursor-pointer opacity-0"
+                    className="absolute inset-0 cursor-pointer opacity-0"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
                       if (f) void handleFile(f);
                     }}
-                    style={{ position: "absolute", inset: 0 }}
                   />
                 </>
               )}
@@ -848,9 +1054,7 @@ function BulkCreateDialog({
                       <span className="text-muted-foreground">{i + 1}.</span>
                       <span className="truncate font-medium">{b.name}</span>
                       {b.brief && (
-                        <span className="text-muted-foreground">
-                          ({b.brief.length} char)
-                        </span>
+                        <span className="text-muted-foreground">({b.brief.length} char)</span>
                       )}
                     </li>
                   ))}
