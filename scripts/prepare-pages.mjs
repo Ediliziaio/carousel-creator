@@ -34,13 +34,15 @@ ${styles}
 
 await mkdir(clientDir, { recursive: true });
 await writeFile(join(clientDir, "index.html"), html);
-await writeFile(join(clientDir, "404.html"), html);
+// NOTA: niente 404.html. Su Cloudflare Pages, se 404.html esiste viene servito
+// con HTTP 404 anche per le rotte SPA — bypassa il _redirects sotto. Senza
+// 404.html, _redirects /* -> /index.html 200 funziona come SPA fallback.
 await mkdir(join(clientDir, "login"), { recursive: true });
 await mkdir(join(clientDir, "signup"), { recursive: true });
-await writeFile(join(clientDir, "login.html"), html);
-await writeFile(join(clientDir, "signup.html"), html);
+await mkdir(join(clientDir, "projects"), { recursive: true });
 await writeFile(join(clientDir, "login", "index.html"), html);
 await writeFile(join(clientDir, "signup", "index.html"), html);
+await writeFile(join(clientDir, "projects", "index.html"), html);
 
 // Cache-Control: HTML revalidates ogni richiesta (fix per stale cache),
 // asset hashed restano cacheable a lungo.
