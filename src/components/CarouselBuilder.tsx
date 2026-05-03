@@ -75,20 +75,49 @@ interface ContentDataShape {
  * mergiandola sopra i default. Difesa contro payload DB legacy o testo
  * importato che lascia buchi (es. hook senza .hook → crash su .length).
  */
+/**
+ * Deep merge: per ogni campo del default, se l'incoming ha lo stesso campo
+ * SI USA l'incoming. Ma se il default è un oggetto (non array) e l'incoming
+ * è anche oggetto → merge ricorsivo a 1 livello (basta per i nostri template
+ * che hanno al massimo profondità 2: es. problemSolution.problem.label).
+ */
+function deepMergeWithDefaults(
+  base: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...base };
+  for (const k of Object.keys(incoming)) {
+    const v = incoming[k];
+    if (v === undefined || v === null) continue;
+    const baseV = base[k];
+    // Se il default è array e l'incoming non lo è → mantieni default.
+    if (Array.isArray(baseV) && !Array.isArray(v)) continue;
+    // Se default è oggetto e incoming è oggetto (non array) → merge nested.
+    if (
+      baseV != null &&
+      typeof baseV === "object" &&
+      !Array.isArray(baseV) &&
+      v != null &&
+      typeof v === "object" &&
+      !Array.isArray(v)
+    ) {
+      out[k] = deepMergeWithDefaults(
+        baseV as Record<string, unknown>,
+        v as Record<string, unknown>,
+      );
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 function sanitizeSlide(slide: Slide | null | undefined): Slide | null {
   if (!slide || !slide.template) return null;
   try {
     const base = makeDefaultData(slide.template) as unknown as Record<string, unknown>;
     const incoming = (slide.data ?? {}) as unknown as Record<string, unknown>;
-    // Merge che NON sovrascrive valori del default con undefined dall'incoming.
-    // Inoltre se un campo è array nel default e l'incoming non è array, mantieni il default.
-    const merged: Record<string, unknown> = { ...base };
-    for (const k of Object.keys(incoming)) {
-      const v = incoming[k];
-      if (v === undefined || v === null) continue;
-      if (Array.isArray(base[k]) && !Array.isArray(v)) continue;
-      merged[k] = v;
-    }
+    const merged = deepMergeWithDefaults(base, incoming);
     return { ...slide, data: merged as unknown as Slide["data"] };
   } catch {
     return null;
