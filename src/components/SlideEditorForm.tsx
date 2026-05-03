@@ -68,6 +68,7 @@ import { TextStylePopover } from "@/components/TextStylePopover";
 import { FontSizeSlider } from "@/components/FontSizeSlider";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle, Info } from "lucide-react";
+import { AIRewriteButton } from "@/components/AIRewriteButton";
 import { LIMITS } from "@/lib/validation";
 
 interface Props {
@@ -2721,14 +2722,22 @@ function HookEditor({ d, set, errFor, slideId, overrides }: EditorProps<HookData
         fieldPath="hook"
         overrides={overrides}
       >
-        <Textarea
-          data-field="hook"
-          rows={3}
-          maxLength={LIMITS.hookMax}
-          value={d.hook ?? ""}
-          onChange={(e) => set({ ...d, hook: e.target.value })}
-          placeholder="Il 90% sbaglia questo."
-        />
+        <div className="flex items-start gap-1">
+          <Textarea
+            data-field="hook"
+            rows={3}
+            maxLength={LIMITS.hookMax}
+            value={d.hook ?? ""}
+            onChange={(e) => set({ ...d, hook: e.target.value })}
+            placeholder="Il 90% sbaglia questo."
+            className="flex-1"
+          />
+          <AIRewriteButton
+            value={d.hook ?? ""}
+            onApply={(v) => set({ ...d, hook: v })}
+            context="hook iniziale"
+          />
+        </div>
       </Field>
       <p className="text-[10px] text-muted-foreground">
         {(d.hook ?? "").length}/{LIMITS.hookMax}

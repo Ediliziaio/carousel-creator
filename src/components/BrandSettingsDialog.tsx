@@ -37,6 +37,7 @@ import { langLabel, LANG_NAMES } from "@/lib/i18n";
 import { ImageUploadField } from "@/components/ImageUploadField";
 import { PresetCard } from "@/components/PresetCard";
 import { themeFromBrand } from "@/lib/presets";
+import { extractPaletteFromImage, type ExtractedPalette } from "@/lib/colorExtract";
 import {
   Settings,
   X,
@@ -281,10 +282,26 @@ export function BrandSettingsDialog() {
               <ImageUploadField
                 label="Logo principale (default)"
                 value={b.logoDataUrl}
-                onChange={(url) => setDraft({ logoDataUrl: url })}
+                onChange={(url) => {
+                  setDraft({ logoDataUrl: url });
+                }}
                 hint="Usato se non hai caricato versioni dedicate per sfondo chiaro/scuro. PNG trasparente."
                 maxMB={2}
               />
+              {b.logoDataUrl && (
+                <LogoPaletteSuggester
+                  logoUrl={b.logoDataUrl}
+                  currentAccent={b.accent}
+                  onApply={(palette) =>
+                    setDraft({
+                      accent: palette.primary,
+                      accentSecondary: palette.secondary,
+                      bgColor: palette.bgSuggested,
+                      textColor: palette.textSuggested,
+                    })
+                  }
+                />
+              )}
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <ImageUploadField
                   label="Logo per sfondo scuro"
@@ -783,6 +800,83 @@ function ToggleRow({
         {desc && <div className="text-xs text-muted-foreground">{desc}</div>}
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+/**
+ * Suggerisce una palette estratta dal logo. Si riesegue ad ogni cambio di logo
+ * con un piccolo debounce. Mostra 3-5 swatch + bottone "Applica al brand".
+ */
+function LogoPaletteSuggester({
+  logoUrl,
+  currentAccent,
+  onApply,
+}: {
+  logoUrl: string;
+  currentAccent: string;
+  onApply: (palette: ExtractedPalette) => void;
+}) {
+  const [palette, setPalette] = useState<ExtractedPalette | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setPalette(null);
+    void extractPaletteFromImage(logoUrl).then((p) => {
+      if (!cancelled) {
+        setPalette(p);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [logoUrl]);
+
+  if (loading) {
+    return (
+      <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
+        Analizzo i colori del logo…
+      </div>
+    );
+  }
+  if (!palette) return null;
+
+  const alreadyApplied = palette.primary.toLowerCase() === currentAccent.toLowerCase();
+
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+      <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
+        <Wand2 className="h-3.5 w-3.5 text-primary" />
+        Palette suggerita dal logo
+      </div>
+      <div className="mb-3 flex items-center gap-2">
+        {palette.all.slice(0, 5).map((c, i) => (
+          <div
+            key={i}
+            className="h-8 w-8 rounded-md border border-border"
+            style={{ background: c }}
+            title={c}
+          />
+        ))}
+        <span className="ml-2 text-[11px] text-muted-foreground">
+          {palette.primary} · {palette.secondary}
+        </span>
+      </div>
+      <Button
+        size="sm"
+        onClick={() => onApply(palette)}
+        disabled={alreadyApplied}
+        variant={alreadyApplied ? "outline" : "default"}
+      >
+        {alreadyApplied ? "Già applicata" : "Applica palette dal logo"}
+      </Button>
+      <p className="mt-2 text-[10px] text-muted-foreground">
+        Estrae i colori dominanti del logo (non grigi/bianchi). Imposta accent, accent
+        secondario, bg suggerito e colore testo coerente.
+      </p>
     </div>
   );
 }

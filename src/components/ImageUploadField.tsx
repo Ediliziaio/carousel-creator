@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { Upload, X, Image as ImageIcon, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { PhotoSearchDialog } from "@/components/PhotoSearchDialog";
 
 interface Props {
   label: string;
@@ -101,6 +102,14 @@ export function ImageUploadField({
             <ImageIcon className="h-3 w-3" /> Immagine caricata
           </span>
           <div className="flex gap-1">
+            <PhotoSearchDialog
+              trigger={
+                <Button type="button" size="sm" variant="ghost">
+                  <Search className="mr-1 h-3.5 w-3.5" /> Stock
+                </Button>
+              }
+              onPick={(dataUrl) => onChange(dataUrl)}
+            />
             <Button type="button" size="sm" variant="outline" onClick={openPicker}>
               <RefreshCw className="mr-1 h-3.5 w-3.5" /> Sostituisci
             </Button>
@@ -137,6 +146,16 @@ export function ImageUploadField({
             <span className="font-medium text-foreground">clicca per scegliere</span>
           </div>
           <div className="text-[10px] text-muted-foreground">PNG / JPG / WEBP — max {maxMB}MB</div>
+          <div onClick={(e) => e.stopPropagation()} className="mt-2">
+            <PhotoSearchDialog
+              trigger={
+                <Button type="button" size="sm" variant="outline">
+                  <Search className="mr-1 h-3.5 w-3.5" /> Cerca foto stock
+                </Button>
+              }
+              onPick={(dataUrl) => onChange(dataUrl)}
+            />
+          </div>
         </div>
       )}
       <input

@@ -154,6 +154,11 @@ interface CarouselState {
   setTextOverride: (slideId: string, fieldPath: string, style: TextStyle) => void;
   clearTextOverride: (slideId: string, fieldPath: string) => void;
 
+  /** Bulk: trova/sostituisci testo in tutte le slide. Ritorna numero di occorrenze sostituite. */
+  replaceTextInAllSlides: (find: string, replace: string, caseSensitive: boolean) => number;
+  /** Bulk: rimuove tutti i textOverrides delle slide (reset font/colori a default template). */
+  clearAllTextOverrides: () => void;
+
   /** Memory of last fontSize used per field type (e.g. {title: 100, paragraphs: 36}). */
   lastFontSizeByFieldType: Record<string, number>;
   setLastFontSizeForFieldType: (typeKey: string, size: number) => void;
@@ -375,6 +380,49 @@ export const useCarousel = create<CarouselState>()(
               }
               return { ...sl, textOverrides: Object.keys(next).length > 0 ? next : undefined };
             }),
+          }),
+        ),
+
+      replaceTextInAllSlides: (find, replace, caseSensitive) => {
+        if (!find) return 0;
+        let count = 0;
+        const flags = caseSensitive ? "g" : "gi";
+        const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(escaped, flags);
+        const visit = (val: unknown): unknown => {
+          if (typeof val === "string") {
+            const matches = val.match(re);
+            if (matches) {
+              count += matches.length;
+              return val.replace(re, replace);
+            }
+            return val;
+          }
+          if (Array.isArray(val)) return val.map(visit);
+          if (val && typeof val === "object") {
+            const out: Record<string, unknown> = {};
+            for (const k of Object.keys(val)) {
+              out[k] = visit((val as Record<string, unknown>)[k]);
+            }
+            return out;
+          }
+          return val;
+        };
+        set((s) =>
+          withHistory(s, {
+            slides: s.slides.map((sl) => ({
+              ...sl,
+              data: visit(sl.data) as typeof sl.data,
+            })),
+          }),
+        );
+        return count;
+      },
+
+      clearAllTextOverrides: () =>
+        set((s) =>
+          withHistory(s, {
+            slides: s.slides.map((sl) => ({ ...sl, textOverrides: undefined })),
           }),
         ),
 

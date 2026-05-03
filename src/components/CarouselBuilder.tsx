@@ -7,6 +7,8 @@ import { SlideEditorForm } from "@/components/SlideEditorForm";
 import { JsonEditor } from "@/components/JsonEditor";
 import { BrandSettingsDialog } from "@/components/BrandSettingsDialog";
 import { BrandQuickSwitch } from "@/components/BrandQuickSwitch";
+import { BulkOperationsDialog } from "@/components/BulkOperationsDialog";
+import { MultiFormatExportDialog } from "@/components/MultiFormatExportDialog";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
@@ -472,6 +474,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
             )}
           </Button>
           <BrandQuickSwitch />
+          <BulkOperationsDialog />
           <BrandSettingsDialog />
           <Button variant="outline" size="sm" onClick={onImportJson}>
             <Upload className="mr-1 h-4 w-4" /> Import JSON
@@ -515,6 +518,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
             brandTitle={contentName || brand.carouselTitle}
             onError={setExportError}
           />
+          <MultiFormatExportDialog baseName={contentName || brand.carouselTitle || "carosello"} />
           <UserMenu />
         </div>
       </header>
