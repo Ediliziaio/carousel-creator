@@ -187,18 +187,40 @@ export async function bulkCreateBacklog(
   type: ContentType,
   names: string[],
 ): Promise<ContentRow[]> {
+  return bulkCreateFromBriefs(
+    projectId,
+    type,
+    names.map((n) => ({ name: n, brief: "" })),
+  );
+}
+
+/**
+ * Crea N contenuti in 'backlog' partendo da brief importati (file md/csv/
+ * xlsx/docx/pdf). Salva il brief in data.brief così l'utente quando apre
+ * la card può cliccare "Genera slide" per passarlo al parser markdown.
+ */
+export async function bulkCreateFromBriefs(
+  projectId: string,
+  type: ContentType,
+  briefs: { name: string; brief: string }[],
+): Promise<ContentRow[]> {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
   if (!userId) throw new Error("Devi essere loggato.");
-  const rows = names
-    .map((n) => n.trim())
-    .filter(Boolean)
-    .map((name) => ({
+  const rows = briefs
+    .filter((b) => (b.name || b.brief).trim())
+    .map((b) => ({
       project_id: projectId,
       user_id: userId,
       type,
-      name,
-      data: { brand: null, slides: [], activeLang: "it", status: "backlog" },
+      name: (b.name || "Senza titolo").slice(0, 200),
+      data: {
+        brand: null,
+        slides: [],
+        activeLang: "it",
+        status: "backlog",
+        brief: b.brief || undefined,
+      },
       thumbnail: null,
     }));
   if (rows.length === 0) return [];

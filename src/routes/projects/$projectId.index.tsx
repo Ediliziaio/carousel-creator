@@ -52,6 +52,7 @@ import {
   duplicateContent,
   updateContentStatus,
   bulkCreateBacklog,
+  bulkCreateFromBriefs,
   getContentStatus,
   STATUS_META,
   STATUS_ORDER,
@@ -631,14 +632,20 @@ function BulkCreateDialog({
   onCreated: (rows: ContentRow[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"titles" | "brief" | "file">("titles");
   const [text, setText] = useState("");
   const [creating, setCreating] = useState(false);
+  const [parsedBriefs, setParsedBriefs] = useState<{ name: string; brief: string }[]>([]);
+  const [drag, setDrag] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [fileName, setFileName] = useState<string>("");
+
   const lines = text
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
 
-  async function onSubmit(e: FormEvent) {
+  async function onTitlesSubmit(e: FormEvent) {
     e.preventDefault();
     if (lines.length === 0) return;
     setCreating(true);
@@ -655,43 +662,214 @@ function BulkCreateDialog({
     }
   }
 
+  async function onBriefSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setCreating(true);
+    try {
+      const { splitTextIntoBriefs } = await import("@/lib/bulkImport");
+      const briefs = splitTextIntoBriefs(text);
+      const rows = await bulkCreateFromBriefs(projectId, type, briefs);
+      onCreated(rows);
+      toast.success(`${rows.length} ${TYPE_META[type].label.toLowerCase()} creati con brief`);
+      setOpen(false);
+      setText("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleFile(file: File) {
+    setParsing(true);
+    setFileName(file.name);
+    try {
+      const { parseFileToBriefs } = await import("@/lib/bulkImport");
+      const briefs = await parseFileToBriefs(file);
+      if (briefs.length === 0) {
+        toast.error("Nessun contenuto rilevato nel file");
+        setParsedBriefs([]);
+      } else {
+        setParsedBriefs(briefs);
+        toast.success(`${briefs.length} contenuti rilevati nel file`);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+      setParsedBriefs([]);
+    } finally {
+      setParsing(false);
+    }
+  }
+
+  async function onFileSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (parsedBriefs.length === 0) return;
+    setCreating(true);
+    try {
+      const rows = await bulkCreateFromBriefs(projectId, type, parsedBriefs);
+      onCreated(rows);
+      toast.success(`${rows.length} ${TYPE_META[type].label.toLowerCase()} importati da ${fileName}`);
+      setOpen(false);
+      setParsedBriefs([]);
+      setFileName("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Wand2 className="mr-1 h-4 w-4" /> Aggiungi N idee
+          <Wand2 className="mr-1 h-4 w-4" /> Importa contenuti
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Aggiungi più contenuti in 1 colpo</DialogTitle>
+          <DialogTitle>Importa contenuti in massa</DialogTitle>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Una riga = un contenuto. Vengono creati in stato{" "}
-            <strong>💡 Da creare</strong>, vuoti. Poi li lavorerai uno a uno.
-            Tipo: <strong>{TYPE_META[type].label.toLowerCase()}</strong>.
-          </p>
-          <Label htmlFor="bulk-text">Idee / titoli (uno per riga)</Label>
-          <Textarea
-            id="bulk-text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={10}
-            placeholder={
-              "5 errori nei preventivi edili\nCome pianificare un cantiere senza ritardi\nCalcolo dei margini: il metodo FIFO\nFatturazione SDI: la guida 2026\n+800 imprese in 12 mesi"
-            }
-            className="font-mono text-sm"
-            autoFocus
-          />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{lines.length} righe valide</span>
-            <Button type="submit" disabled={creating || lines.length === 0}>
-              {creating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              Crea {lines.length} {TYPE_META[type].label.toLowerCase()}
-            </Button>
-          </div>
-        </form>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="titles">Solo titoli</TabsTrigger>
+            <TabsTrigger value="brief">Testo + brief</TabsTrigger>
+            <TabsTrigger value="file">Carica file</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="titles" className="mt-4">
+            <form onSubmit={onTitlesSubmit} className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Una riga = un contenuto. Vengono creati vuoti in stato{" "}
+                <strong>💡 Da creare</strong>. Tipo:{" "}
+                <strong>{TYPE_META[type].label.toLowerCase()}</strong>.
+              </p>
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={10}
+                placeholder={
+                  "5 errori nei preventivi edili\nCome pianificare un cantiere senza ritardi\n+800 imprese in 12 mesi"
+                }
+                className="font-mono text-sm"
+                autoFocus
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{lines.length} righe valide</span>
+                <Button type="submit" disabled={creating || lines.length === 0}>
+                  {creating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                  Crea {lines.length}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="brief" className="mt-4">
+            <form onSubmit={onBriefSubmit} className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Incolla testi separati da <code className="rounded bg-muted px-1">---</code> o
+                da heading <code className="rounded bg-muted px-1">#&nbsp;Titolo</code>. Ogni
+                blocco diventa un contenuto col brief già pronto da convertire in slide.
+              </p>
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={14}
+                placeholder={`# 5 errori nei preventivi edili\n## Il problema\n...\n## I 4 fondamentali\n- voce\n\n---\n\n# Pianificazione cantiere\n## Step 1\n...`}
+                className="font-mono text-xs"
+                autoFocus
+              />
+              <Button type="submit" disabled={creating || !text.trim()}>
+                {creating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                Crea con brief
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="file" className="mt-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Trascina un file o clicca per caricare. Formati supportati:{" "}
+              <strong>.md / .txt / .csv / .json / .xlsx / .docx / .pdf</strong>. Il file viene
+              spezzato in N contenuti basandosi su heading <code>#</code> o separatori{" "}
+              <code>---</code>.
+            </p>
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDrag(false);
+                const f = e.dataTransfer.files?.[0];
+                if (f) void handleFile(f);
+              }}
+              className={`flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition ${
+                drag
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-muted-foreground/40"
+              }`}
+            >
+              {parsing ? (
+                <>
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <p className="text-sm">Sto leggendo il file…</p>
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm font-medium">Trascina qui o clicca</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    .md / .txt / .csv / .json / .xlsx / .docx / .pdf
+                  </p>
+                  <input
+                    type="file"
+                    accept=".md,.markdown,.txt,.csv,.json,.xlsx,.xls,.docx,.pdf"
+                    className="absolute h-full w-full cursor-pointer opacity-0"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleFile(f);
+                    }}
+                    style={{ position: "absolute", inset: 0 }}
+                  />
+                </>
+              )}
+            </div>
+            {parsedBriefs.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/30 p-3">
+                <div className="mb-2 text-xs font-semibold">
+                  📄 {fileName} — {parsedBriefs.length} contenuti rilevati
+                </div>
+                <ul className="max-h-[180px] space-y-0.5 overflow-y-auto text-xs">
+                  {parsedBriefs.slice(0, 20).map((b, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-muted-foreground">{i + 1}.</span>
+                      <span className="truncate font-medium">{b.name}</span>
+                      {b.brief && (
+                        <span className="text-muted-foreground">
+                          ({b.brief.length} char)
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                  {parsedBriefs.length > 20 && (
+                    <li className="text-muted-foreground">
+                      …e altri {parsedBriefs.length - 20}
+                    </li>
+                  )}
+                </ul>
+                <div className="mt-3 flex justify-end">
+                  <Button onClick={onFileSubmit} disabled={creating}>
+                    {creating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                    Importa {parsedBriefs.length} {TYPE_META[type].label.toLowerCase()}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

@@ -50,6 +50,7 @@ import {
   FORMAT_DIMENSIONS,
   DEFAULT_BRAND,
   makeDefaultData,
+  makeDefaultSlide,
   type BrandSettings,
   type Slide,
 } from "@/lib/templates";
@@ -78,6 +79,8 @@ interface ContentDataShape {
   activeLang?: string;
   status?: ContentStatus | "draft";
   publishedAt?: string;
+  /** Brief importato da file/incolla — pronto da convertire in slide. */
+  brief?: string;
 }
 
 /**
@@ -157,6 +160,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   const [contentType, setContentType] = useState<ContentType>("carousel");
   const [projectName, setProjectName] = useState("");
   const [status, setStatus] = useState<ContentStatus>("in_progress");
+  const [brief, setBrief] = useState<string>("");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
   // Snapshot del payload all'ultimo save / hydrate. dirty è computed = current !== snapshot.
@@ -196,6 +200,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
             ? (rawStatus as ContentStatus)
             : "in_progress";
         setStatus(initialStatus);
+        setBrief(data.brief ?? "");
         setSavedSnapshot(
           JSON.stringify({ brand: brandFromProject, slides: slidesData, status: initialStatus }),
         );
@@ -599,6 +604,35 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         <ExportErrorBanner message={exportError} onDismiss={() => setExportError(null)} />
       )}
 
+      {brief && slides.length === 0 && (
+        <BriefBanner
+          brief={brief}
+          onGenerate={async () => {
+            try {
+              const { parseTextToSlides } = await import("@/lib/textToSlides");
+              const result = parseTextToSlides(brief);
+              if (result.items.length === 0) {
+                toast.error("Brief non riconosciuto: usa # Titolo + ## Sezioni");
+                return;
+              }
+              const newSlides = result.items.map((it) =>
+                makeDefaultSlide(it.template, "portrait"),
+              );
+              // Applica i data parsati su ogni slide.
+              const slidesWithData: Slide[] = newSlides.map((s, i) => ({
+                ...s,
+                data: result.items[i].data as Slide["data"],
+              }));
+              loadJSON({ brand, slides: slidesWithData });
+              toast.success(`${slidesWithData.length} slide generate dal brief`);
+            } catch (e) {
+              toast.error((e as Error).message);
+            }
+          }}
+          onClear={() => setBrief("")}
+        />
+      )}
+
       {validationIssues.length > 0 && (
         <div
           role="alert"
@@ -788,5 +822,69 @@ function slugify(s: string) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "carosello"
+  );
+}
+
+/**
+ * Banner che appare quando un contenuto ha un brief importato (da file o
+ * incolla bulk) ma le slide non sono ancora state generate. Click → parser
+ * markdown → slide popolate.
+ */
+function BriefBanner({
+  brief,
+  onGenerate,
+  onClear,
+}: {
+  brief: string;
+  onGenerate: () => void | Promise<void>;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-primary/30 bg-primary/5">
+      <div className="flex items-start gap-3 px-4 py-2.5">
+        <div className="mt-0.5 text-lg">📝</div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold text-foreground">
+            Brief importato — pronto da convertire in slide
+          </div>
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            {brief.split("\n").find((l) => l.trim())?.slice(0, 120)}
+            {brief.length > 120 ? "…" : ""} · {brief.length} caratteri
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setOpen(!open)}
+          className="h-7 text-xs"
+        >
+          {open ? "Nascondi" : "Mostra"}
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => void onGenerate()}
+          className="h-7"
+        >
+          ✨ Genera slide dal brief
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onClear}
+          className="h-7"
+          title="Scarta il brief"
+        >
+          ✕
+        </Button>
+      </div>
+      {open && (
+        <div className="border-t border-primary/20 bg-card/50 px-4 py-3">
+          <pre className="max-h-[200px] overflow-auto whitespace-pre-wrap text-[11px] text-muted-foreground">
+            {brief}
+          </pre>
+        </div>
+      )}
+    </div>
   );
 }
