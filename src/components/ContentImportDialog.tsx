@@ -15,8 +15,8 @@ import {
   SAMPLE_BUNDLES,
   type ImportResult,
 } from "@/lib/contentImport";
-import { parseTextToSlides } from "@/lib/textToSlides";
-import { Sparkles } from "lucide-react";
+import { parseTextToSlides, CLAUDE_PROJECT_PROMPT } from "@/lib/textToSlides";
+import { Sparkles, BotMessageSquare } from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META } from "@/lib/templates";
 import { toast } from "sonner";
@@ -92,7 +92,34 @@ export function ContentImportDialog() {
               <code className="rounded bg-muted px-1">## titolo</code> apre una nuova slide.
               Liste, numeri prominenti e CTA vengono riconosciuti automaticamente.
             </div>
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
+              <div className="mb-1 font-medium text-foreground">
+                💡 Workflow consigliato (zero costi API)
+              </div>
+              <p className="text-muted-foreground">
+                Crea un Project su <strong>Claude.ai</strong> (o un GPT su ChatGPT) con il
+                prompt sotto: scrivi <em>"fammi un carosello su X"</em>, copi la risposta,
+                la incolli qui e ottieni le slide pronte. Costo: solo il tuo abbonamento
+                mensile, nessun token a consumo.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="default"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(CLAUDE_PROJECT_PROMPT);
+                    toast.success(
+                      "Prompt copiato. Incollalo come 'Custom instructions' del Claude Project.",
+                    );
+                  } catch {
+                    toast.error("Impossibile accedere agli appunti");
+                  }
+                }}
+              >
+                <BotMessageSquare className="mr-1 h-4 w-4" /> Copia prompt per Claude/ChatGPT
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -102,7 +129,7 @@ export function ContentImportDialog() {
                   )
                 }
               >
-                Esempio: brief carosello
+                Carica esempio
               </Button>
             </div>
           </TabsContent>
