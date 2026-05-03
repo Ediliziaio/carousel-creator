@@ -1,7 +1,7 @@
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const clientDir = join(process.cwd(), "dist", "client");
+const clientDir = join(process.cwd(), "dist");
 const assetsDir = join(clientDir, "assets");
 
 const files = await readdir(assetsDir);
@@ -9,7 +9,7 @@ const entry = files.find((file) => /^app-[\w-]+\.js$/.test(file));
 const cssFiles = files.filter((file) => file.endsWith(".css"));
 
 if (!entry) {
-  throw new Error("Could not find the client entry chunk in dist/client/assets.");
+  throw new Error("Could not find the client entry chunk in dist/assets.");
 }
 
 const styles = cssFiles
@@ -41,9 +41,26 @@ await writeFile(join(clientDir, "login.html"), html);
 await writeFile(join(clientDir, "signup.html"), html);
 await writeFile(join(clientDir, "login", "index.html"), html);
 await writeFile(join(clientDir, "signup", "index.html"), html);
+
+// Cache-Control: HTML revalidates ogni richiesta (fix per stale cache),
+// asset hashed restano cacheable a lungo.
 await writeFile(
   join(clientDir, "_headers"),
-  "/*\n  Cache-Control: public, max-age=0, must-revalidate\n",
+  `/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+`,
 );
+
+// SPA fallback: rotte non risolte servono index.html con HTTP 200
+// così TanStack Router può idratare il path corretto (no 404 sui link diretti).
+await writeFile(
+  join(clientDir, "_redirects"),
+  `/*  /index.html  200
+`,
+);
+
 await rm(join(clientDir, "wrangler.json"), { force: true });
 await rm(join(process.cwd(), ".wrangler", "deploy", "config.json"), { force: true });

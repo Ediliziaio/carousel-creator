@@ -6,7 +6,7 @@ import tsConfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tailwindcss(), tsConfigPaths()],
   build: {
-    outDir: "dist/client",
+    outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
       input: "src/static-entry.tsx",
