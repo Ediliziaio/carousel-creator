@@ -112,8 +112,8 @@ const TYPE_META: Record<ContentType, TypeMeta> = {
   },
 };
 
-const VIEW_KEY = "project-dashboard-view-v2";
-type ViewMode = "kanban" | "list";
+const VIEW_KEY = "project-dashboard-view-v3";
+type ViewMode = "kanban" | "calendar" | "list";
 
 function ProjectDashboard() {
   const { projectId } = useParams({ from: "/projects/$projectId/" });
@@ -408,6 +408,15 @@ function ProjectDashboard() {
                     <Kanban className="h-3.5 w-3.5" />
                   </button>
                   <button
+                    onClick={() => setView("calendar")}
+                    className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
+                      view === "calendar" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                    }`}
+                    title="Vista Calendario"
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => setView("list")}
                     className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition ${
                       view === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
@@ -475,6 +484,12 @@ function ProjectDashboard() {
                 onScheduleChange={onScheduleChange}
                 onDuplicate={onDuplicate}
                 onDelete={(c) => setPendingDelete(c)}
+              />
+            ) : view === "calendar" ? (
+              <CalendarView
+                items={filtered}
+                projectId={projectId}
+                onScheduleChange={onScheduleChange}
               />
             ) : (
               <GridView
@@ -946,6 +961,218 @@ function GridView({
       })}
     </div>
   );
+}
+
+/* ===================== CalendarView ===================== */
+function CalendarView({
+  items,
+  projectId,
+  onScheduleChange,
+}: {
+  items: ContentRow[];
+  projectId: string;
+  onScheduleChange: (id: string, scheduledAt: string | null) => void;
+}) {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  // Costruisci le settimane del mese visibile (lun → dom).
+  const weeks = useMemo(() => buildMonthGrid(cursor), [cursor]);
+
+  // Mappa giorno (yyyy-mm-dd) → contenuti scheduled in quel giorno.
+  const byDay = useMemo(() => {
+    const out = new Map<string, ContentRow[]>();
+    items.forEach((c) => {
+      const iso = getContentScheduledAt(c);
+      if (!iso) return;
+      const key = new Date(iso).toISOString().slice(0, 10);
+      const arr = out.get(key) ?? [];
+      arr.push(c);
+      out.set(key, arr);
+    });
+    return out;
+  }, [items]);
+
+  // Contenuti senza data → mostrati in barra laterale come "da pianificare".
+  const unscheduled = useMemo(
+    () => items.filter((c) => !getContentScheduledAt(c) && getContentStatus(c) !== "published"),
+    [items],
+  );
+
+  const onDropOnDay = (e: React.DragEvent, isoDay: string) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id) return;
+    const iso = new Date(isoDay + "T09:00:00").toISOString();
+    onScheduleChange(id, iso);
+  };
+
+  const monthLabel = cursor.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_240px]">
+      <div>
+        {/* Header navigazione mese */}
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1))}
+              className="rounded-md border border-border p-1.5 text-xs hover:bg-muted"
+              title="Mese precedente"
+            >
+              ◀
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const d = new Date();
+                setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+              }}
+              className="rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted"
+            >
+              Oggi
+            </button>
+            <button
+              type="button"
+              onClick={() => setCursor((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1))}
+              className="rounded-md border border-border p-1.5 text-xs hover:bg-muted"
+              title="Mese successivo"
+            >
+              ▶
+            </button>
+          </div>
+          <div className="text-base font-semibold capitalize">{monthLabel}</div>
+        </div>
+
+        {/* Header giorni settimana */}
+        <div className="grid grid-cols-7 gap-1 border-b border-border pb-2">
+          {["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"].map((d) => (
+            <div key={d} className="text-center text-[10px] font-semibold uppercase text-muted-foreground">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Griglia giorni */}
+        <div className="mt-1 grid grid-cols-7 gap-1">
+          {weeks.flat().map((day) => {
+            const isoDay = day.iso;
+            const isCurrentMonth = day.date.getMonth() === cursor.getMonth();
+            const isToday = isoDay === today;
+            const list = byDay.get(isoDay) ?? [];
+            return (
+              <div
+                key={isoDay}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => onDropOnDay(e, isoDay)}
+                className={`min-h-[110px] rounded-md border p-1.5 transition ${
+                  isToday
+                    ? "border-primary bg-primary/5"
+                    : isCurrentMonth
+                      ? "border-border bg-card hover:bg-muted/30"
+                      : "border-border/50 bg-muted/20 text-muted-foreground/50"
+                }`}
+              >
+                <div
+                  className={`mb-1 text-[11px] font-medium ${
+                    isToday ? "text-primary" : isCurrentMonth ? "" : "text-muted-foreground/50"
+                  }`}
+                >
+                  {day.date.getDate()}
+                </div>
+                <div className="space-y-1">
+                  {list.slice(0, 3).map((c) => (
+                    <CalendarItem key={c.id} content={c} projectId={projectId} />
+                  ))}
+                  {list.length > 3 && (
+                    <div className="text-[9px] text-muted-foreground">+{list.length - 3} altri</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sidebar contenuti senza data */}
+      <aside className="space-y-2">
+        <div className="rounded-md border border-dashed border-border p-2">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Da pianificare ({unscheduled.length})
+          </div>
+          {unscheduled.length === 0 ? (
+            <div className="py-3 text-center text-[11px] text-muted-foreground">
+              Tutti pianificati 🎉
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {unscheduled.map((c) => (
+                <CalendarItem key={c.id} content={c} projectId={projectId} />
+              ))}
+            </div>
+          )}
+          <p className="mt-2 text-[9px] text-muted-foreground">
+            Trascina su un giorno per pianificarlo.
+          </p>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function CalendarItem({ content, projectId }: { content: ContentRow; projectId: string }) {
+  const status = getContentStatus(content);
+  const meta = STATUS_META[status];
+  const typeMeta = TYPE_META[content.type];
+  const TypeIcon = typeMeta.icon;
+  return (
+    <Link
+      to="/projects/$projectId/builder/$contentId"
+      params={{ projectId, contentId: content.id }}
+      draggable
+      onDragStart={(e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData("text/plain", content.id);
+      }}
+      className={`flex cursor-move items-center gap-1 rounded border px-1.5 py-1 text-[10px] leading-tight transition hover:opacity-80 ${meta.bg} ${meta.color}`}
+      title={`${typeMeta.label} · ${content.name} · ${meta.label}`}
+    >
+      <TypeIcon className="h-3 w-3 shrink-0" />
+      <span className="truncate font-medium">{content.name}</span>
+    </Link>
+  );
+}
+
+interface CalendarDay {
+  date: Date;
+  iso: string;
+}
+function buildMonthGrid(monthStart: Date): CalendarDay[][] {
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const firstDay = new Date(year, month, 1);
+  // Lunedi=0, Domenica=6
+  const dayOfWeek = (firstDay.getDay() + 6) % 7;
+  const start = new Date(year, month, 1 - dayOfWeek);
+  const weeks: CalendarDay[][] = [];
+  for (let w = 0; w < 6; w++) {
+    const week: CalendarDay[] = [];
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d);
+      week.push({
+        date,
+        iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      });
+    }
+    weeks.push(week);
+    // Stop a 5 settimane se l'ultima è tutta nel mese successivo
+    if (w === 4 && week[0].date.getMonth() !== month && week[6].date.getMonth() !== month) break;
+  }
+  return weeks;
 }
 
 /* ===================== BulkCreateDialog ===================== */
