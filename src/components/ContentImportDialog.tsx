@@ -9,13 +9,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { FileInput } from "lucide-react";
 import {
   parseContentBundle,
   parseSimpleCsv,
   SAMPLE_BUNDLES,
   type ImportResult,
 } from "@/lib/contentImport";
+import { parseTextToSlides } from "@/lib/textToSlides";
+import { Sparkles } from "lucide-react";
 import { useCarousel } from "@/lib/store";
 import { TEMPLATE_META } from "@/lib/templates";
 import { toast } from "sonner";
@@ -23,12 +24,13 @@ import { toast } from "sonner";
 export function ContentImportDialog() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<"json" | "csv">("json");
+  const [mode, setMode] = useState<"text" | "json" | "csv">("text");
   const importContentBundle = useCarousel((s) => s.importContentBundle);
   const slides = useCarousel((s) => s.slides);
 
   const parsed: ImportResult | null = useMemo(() => {
     if (!text.trim()) return null;
+    if (mode === "text") return parseTextToSlides(text);
     if (mode === "csv") return parseSimpleCsv(text);
     try {
       const json = JSON.parse(text);
@@ -68,19 +70,42 @@ export function ContentImportDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <FileInput className="mr-1 h-4 w-4" /> Importa contenuti
+          <Sparkles className="mr-1 h-4 w-4" /> Da testo
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-auto">
         <DialogHeader>
-          <DialogTitle>Importa contenuti da JSON / CSV</DialogTitle>
+          <DialogTitle>Genera slide da testo / JSON / CSV</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "json" | "csv")}>
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "text" | "json" | "csv")}>
           <TabsList>
+            <TabsTrigger value="text" className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" /> Testo (auto)
+            </TabsTrigger>
             <TabsTrigger value="json">JSON</TabsTrigger>
             <TabsTrigger value="csv">CSV semplice</TabsTrigger>
           </TabsList>
+          <TabsContent value="text" className="mt-3 space-y-2">
+            <div className="text-xs text-muted-foreground">
+              Incolla un testo strutturato (brief, articolo, script). Ogni{" "}
+              <code className="rounded bg-muted px-1">## titolo</code> apre una nuova slide.
+              Liste, numeri prominenti e CTA vengono riconosciuti automaticamente.
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setText(
+                    `# Come scrivere caroselli che convertono\n\n## Il problema\nLa maggior parte dei caroselli viene saltata in 2 secondi.\nIl motivo? Mancano i fondamentali.\n\n## I 4 fondamentali\n- Hook potente nelle prime 3 parole\n- Una sola idea per slide\n- Numeri concreti, non aggettivi\n- Call to action chiara alla fine\n\n## Il dato che cambia tutto\n73% degli utenti decide se continuare nei primi 3 secondi.\n\n## CTA\nSeguimi per altri consigli sui contenuti che convertono.`,
+                  )
+                }
+              >
+                Esempio: brief carosello
+              </Button>
+            </div>
+          </TabsContent>
           <TabsContent value="json" className="mt-3 space-y-2">
             <div className="text-xs text-muted-foreground">
               Formato:{" "}
@@ -127,12 +152,14 @@ export function ContentImportDialog() {
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={10}
-          className="mt-3 font-mono text-xs"
+          rows={mode === "text" ? 14 : 10}
+          className={`mt-3 ${mode === "text" ? "text-sm" : "font-mono text-xs"}`}
           placeholder={
-            mode === "json"
-              ? '[\n  { "template": "hook", "data": { "hook": "..." } }\n]'
-              : "hook,hook,Stai sbagliando questo\nhook,subhook,E nessuno te lo dice"
+            mode === "text"
+              ? "# Titolo del carosello\n\n## Prima slide\nIl tuo testo qui...\n\n## Punti chiave\n- Punto 1\n- Punto 2\n- Punto 3\n\n## CTA\nIscriviti alla newsletter"
+              : mode === "json"
+                ? '[\n  { "template": "hook", "data": { "hook": "..." } }\n]'
+                : "hook,hook,Stai sbagliando questo\nhook,subhook,E nessuno te lo dice"
           }
         />
 

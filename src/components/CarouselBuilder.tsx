@@ -356,10 +356,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         </Button>
         <Input
           value={contentName}
-          onChange={(e) => {
-            setContentName(e.target.value);
-            setDirty(true);
-          }}
+          onChange={(e) => setContentName(e.target.value)}
           className="order-3 h-8 w-full min-w-[220px] md:order-none md:max-w-xs"
           placeholder="Nome contenuto"
         />
