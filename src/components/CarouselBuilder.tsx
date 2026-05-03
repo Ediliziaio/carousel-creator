@@ -41,7 +41,13 @@ import {
   Save,
   Loader2,
 } from "lucide-react";
-import { FORMAT_DIMENSIONS, DEFAULT_BRAND, type BrandSettings, type Slide } from "@/lib/templates";
+import {
+  FORMAT_DIMENSIONS,
+  DEFAULT_BRAND,
+  makeDefaultData,
+  type BrandSettings,
+  type Slide,
+} from "@/lib/templates";
 import { validateAllSlides } from "@/lib/validation";
 import { langLabel } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -58,6 +64,23 @@ interface ContentDataShape {
   brand?: BrandSettings;
   slides?: Slide[];
   activeLang?: string;
+}
+
+/**
+ * Garantisce che la slide abbia tutti i campi previsti dal template,
+ * mergiandola sopra i default. Difesa contro payload DB legacy o testo
+ * importato che lascia buchi (es. hook senza .hook → crash su .length).
+ */
+function sanitizeSlide(slide: Slide | null | undefined): Slide | null {
+  if (!slide || !slide.template) return null;
+  try {
+    const base = makeDefaultData(slide.template) as unknown as Record<string, unknown>;
+    const incoming = (slide.data ?? {}) as unknown as Record<string, unknown>;
+    const merged = { ...base, ...incoming } as unknown as Slide["data"];
+    return { ...slide, data: merged };
+  } catch {
+    return null;
+  }
 }
 
 export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
@@ -105,7 +128,10 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         }
         const data = (content.data ?? {}) as ContentDataShape;
         const brandFromProject = proj.brand ?? data.brand ?? DEFAULT_BRAND;
-        const slidesData = Array.isArray(data.slides) ? data.slides : [];
+        const rawSlides = Array.isArray(data.slides) ? data.slides : [];
+        // Merge ogni slide con i default del suo template per evitare crash
+        // quando il payload nel DB ha campi mancanti (es. hook senza .hook).
+        const slidesData = rawSlides.map((s) => sanitizeSlide(s)).filter(Boolean) as Slide[];
         loadJSON({ brand: brandFromProject, slides: slidesData });
         if (data.activeLang) setActiveLang(data.activeLang);
         setContentName(content.name);

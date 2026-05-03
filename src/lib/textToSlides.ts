@@ -141,6 +141,62 @@ function sectionToSlide(sec: Section, ctx: ContextFlags): ImportedItem | null {
     );
   }
 
+  // Testimonial: blocco con citazione (riga tra virgolette o iniziando con > )
+  // e una riga "— Autore" o "- Autore".
+  const testimonial = extractTestimonial(bodyLines);
+  if (testimonial) {
+    return makeSlide(
+      "testimonial",
+      {
+        quote: testimonial.quote,
+        author: testimonial.author,
+        role: testimonial.role,
+      },
+      warnings,
+    );
+  }
+
+  // Pro/Contro: due blocchi etichettati Pro: e Contro: (o "+" e "-").
+  const prosCons = extractProsCons(bodyLines);
+  if (prosCons) {
+    return makeSlide(
+      "prosCons",
+      {
+        title: heading || "Pro & Contro",
+        pros: prosCons.pros,
+        cons: prosCons.cons,
+      },
+      warnings,
+    );
+  }
+
+  // Problema → Soluzione: linee "Problema: ..." e "Soluzione: ...".
+  const ps = extractProblemSolution(bodyLines, heading);
+  if (ps) {
+    return makeSlide(
+      "problemSolution",
+      {
+        eyebrow: heading || "Problema → Soluzione",
+        problem: { label: "IL PROBLEMA", text: ps.problem },
+        solution: { label: "LA SOLUZIONE", text: ps.solution },
+      },
+      warnings,
+    );
+  }
+
+  // FAQ: alternanza domanda → risposta (Q: / A: o ? finale).
+  const faqItems = extractFaqItems(bodyLines);
+  if (faqItems.length >= 2) {
+    return makeSlide(
+      "faq",
+      {
+        title: heading || "Domande frequenti",
+        items: faqItems.slice(0, 6),
+      },
+      warnings,
+    );
+  }
+
   // Lista: 2+ linee bullet → checklist con items[].title.
   const bulletItems = extractBulletItems(bodyLines);
   if (bulletItems.length >= 2) {
@@ -214,6 +270,114 @@ function makeSlide(
   return { template, data: merged as unknown as AnyTemplateData, warnings };
 }
 
+function extractTestimonial(
+  lines: string[],
+): { quote: string; author: string; role: string } | null {
+  if (lines.length < 2) return null;
+  // Cerca una riga citazione (tra virgolette o con `>`) e una riga `— Autore`.
+  let quote: string | null = null;
+  let authorLine: string | null = null;
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (!quote) {
+      const q = /^[>"«„]\s*(.+?)["»"]?$/.exec(l) || /^"(.+?)"$/.exec(l);
+      if (q) quote = q[1].trim();
+      continue;
+    }
+    if (/^[—–-]\s*\S+/.test(l)) {
+      authorLine = l.replace(/^[—–-]\s*/, "").trim();
+      break;
+    }
+  }
+  if (!quote || !authorLine) return null;
+  const [author, role] = authorLine.split(/\s*[,·|]\s*/);
+  return { quote, author: author.trim(), role: (role ?? "").trim() };
+}
+
+function extractProsCons(lines: string[]): { pros: string[]; cons: string[] } | null {
+  const pros: string[] = [];
+  const cons: string[] = [];
+  let mode: "pros" | "cons" | null = null;
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (/^(pro|pros|vantaggi)\s*:?$/i.test(l)) {
+      mode = "pros";
+      continue;
+    }
+    if (/^(contro|cons|svantaggi)\s*:?$/i.test(l)) {
+      mode = "cons";
+      continue;
+    }
+    if (l.startsWith("+ ")) {
+      pros.push(l.slice(2).trim());
+      continue;
+    }
+    if (l.startsWith("- ") && mode === "cons") {
+      cons.push(l.slice(2).trim());
+      continue;
+    }
+    const m = /^[-*•]\s+(.+)$/.exec(l);
+    if (m && mode) (mode === "pros" ? pros : cons).push(m[1].trim());
+  }
+  if (pros.length >= 2 && cons.length >= 2) return { pros, cons };
+  return null;
+}
+
+function extractProblemSolution(
+  lines: string[],
+  heading: string,
+): { problem: string; solution: string } | null {
+  const text = lines.join(" ");
+  const probMatch = /(?:problema|pain|dolore)\s*[:\-]\s*([^\n]+?)(?=\s*(?:soluzione|fix|risposta)\s*[:\-]|$)/i.exec(
+    text,
+  );
+  const solMatch = /(?:soluzione|fix|risposta)\s*[:\-]\s*(.+)$/i.exec(text);
+  if (probMatch && solMatch) {
+    return { problem: probMatch[1].trim(), solution: solMatch[1].trim() };
+  }
+  // Caso: due linee chiare "Problema:" e "Soluzione:" su righe separate.
+  const p = lines.find((l) => /^problema\s*:/i.test(l));
+  const s = lines.find((l) => /^soluzione\s*:/i.test(l));
+  if (p && s) {
+    return {
+      problem: p.replace(/^problema\s*:/i, "").trim(),
+      solution: s.replace(/^soluzione\s*:/i, "").trim(),
+    };
+  }
+  // Heading "Problema → Soluzione" + corpo single-line con freccia.
+  if (/(problema|pain).*?(soluzione|fix)/i.test(heading)) {
+    const arrow = /(.+?)\s*(?:→|->|⇒)\s*(.+)/.exec(text);
+    if (arrow) return { problem: arrow[1].trim(), solution: arrow[2].trim() };
+  }
+  return null;
+}
+
+function extractFaqItems(lines: string[]): { q: string; a: string }[] {
+  const items: { q: string; a: string }[] = [];
+  let pendingQ: string | null = null;
+  for (const raw of lines) {
+    const l = raw.trim();
+    const qMatch = /^(?:Q\s*[:\-]|D\s*[:\-]|domanda\s*[:\-])\s*(.+)$/i.exec(l) ||
+      (l.endsWith("?") ? [l, l] : null);
+    const aMatch = /^(?:A\s*[:\-]|R\s*[:\-]|risposta\s*[:\-])\s*(.+)$/i.exec(l);
+    if (qMatch) {
+      pendingQ = qMatch[1].trim();
+      continue;
+    }
+    if (aMatch && pendingQ) {
+      items.push({ q: pendingQ, a: aMatch[1].trim() });
+      pendingQ = null;
+      continue;
+    }
+    if (pendingQ && l.length > 0) {
+      // riga di risposta non prefissata
+      items.push({ q: pendingQ, a: l });
+      pendingQ = null;
+    }
+  }
+  return items;
+}
+
 function extractBulletItems(lines: string[]): string[] {
   const items: string[] = [];
   for (const l of lines) {
@@ -243,11 +407,13 @@ function titleCase(s: string): string {
  * per generare brief che il parser sa impaginare. Costo: 0 token API — l'utente
  * usa il proprio abbonamento Pro/Plus.
  */
-export const CLAUDE_PROJECT_PROMPT = `Sei un copywriter specializzato in caroselli editoriali per Instagram / LinkedIn.
-L'utente ti chiede caroselli, post o storie su un argomento. Devi produrre un brief
-in markdown semplificato che il software "Carousel Creator" sa impaginare automaticamente.
+export const CLAUDE_PROJECT_PROMPT = `Sei un copywriter specializzato in contenuti editoriali per social (Instagram, LinkedIn, TikTok).
+L'utente ti chiede caroselli, post o storie. Produci un brief in markdown semplificato che il
+software "Carousel Creator" sa impaginare automaticamente sui template giusti.
 
-FORMATO OBBLIGATORIO — rispondi solo con un blocco di testo così, niente preamboli:
+# FORMATO OBBLIGATORIO
+
+Rispondi solo con un blocco di testo così, niente preamboli, niente conclusioni:
 
 # <Titolo del carosello>
 
@@ -257,26 +423,98 @@ FORMATO OBBLIGATORIO — rispondi solo con un blocco di testo così, niente prea
 ## <Titolo seconda slide>
 <Body seconda slide>
 
-PATTERN RICONOSCIUTI dal parser (sfruttali per variare il ritmo):
-- prima sezione → cover (titolo grande)
-- 2-6 linee bullet "- voce" → checklist visiva
-- prima riga della sezione = numero prominente (es. "73% degli utenti...", "+250 clienti...", "3x conversioni") → slide bignum
-- titolo "CTA" / "Conclusione" / "Iscriviti" / "Contattaci" → slide call-to-action con bottone
-- altrimenti → frase centrale (titolo + body)
+# PATTERN RICONOSCIUTI (sfruttali per variare il ritmo)
 
-REGOLE:
-- 8-10 slide per carosello standard, 5-7 per uno breve
+Il parser sceglie il template in base alla forma del body. Usa attivamente questi pattern:
+
+1) COVER (prima slide del carosello)
+   → la prima sezione diventa automaticamente Cover
+   ## Hook potente in 6-8 parole
+   Sottotitolo che spiega in una frase
+
+2) BIG NUMBER (slide con statistica)
+   → metti un numero/percentuale all'inizio della prima riga del body
+   ## Il dato che cambia tutto
+   73% degli italiani non sa quanto consuma il frigorifero
+   È il primo elettrodomestico per impatto in bolletta.
+
+3) CHECKLIST (lista di 3-6 voci)
+   → 3-6 linee bullet con "-"
+   ## I 5 errori da evitare
+   - Non saltare la colazione
+   - Bere acqua subito al risveglio
+   - Camminare 10 minuti dopo cena
+   - Spegnere lo schermo 1h prima di dormire
+   - Niente caffè dopo le 14
+
+4) PROBLEMA → SOLUZIONE
+   → due righe etichettate
+   ## Il vero blocco
+   Problema: passi 3 ore a creare un carosello.
+   Soluzione: un brief strutturato e l'editor giusto ti fa scendere a 20 minuti.
+
+5) PRO & CONTRO
+   → due gruppi etichettati Pro: e Contro: con linee bullet
+   ## Lavoro da remoto
+   Pro:
+   - Più tempo per la famiglia
+   - Niente pendolarismo
+   - Concentrazione massima
+   Contro:
+   - Meno relazioni informali
+   - Confusione casa/lavoro
+   - Servono tool e routine solidi
+
+6) TESTIMONIAL (recensione cliente)
+   → riga citazione tra virgolette + riga "— Autore, ruolo"
+   ## Cosa dicono i clienti
+   "Da quando uso questo metodo ho dimezzato il tempo per creare contenuti."
+   — Marco Rossi, Marketing Manager
+
+7) FAQ (domande frequenti, 2-6 coppie)
+   → coppie domanda/risposta, le domande terminano con "?"
+   ## Domande frequenti
+   Quanto costa? Solo 29€/mese.
+   Posso disdire? Sì, in qualsiasi momento.
+   C'è una prova gratuita? 14 giorni, nessuna carta richiesta.
+
+8) CTA (slide finale)
+   → titolo "CTA" o "Conclusione" o "Iscriviti" o "Contattaci"
+   ## CTA
+   Salva questo post per quando ti servirà.
+
+9) CENTER (default — titolo + body)
+   → qualsiasi sezione che non rientra nei pattern sopra
+
+# REGOLE DI SCRITTURA
+
+- 8-10 slide per un carosello standard, 5-7 per uno breve
 - slide 1 (cover): hook potente max 6-8 parole, deve fermare lo scroll
-- almeno una bignum con un numero concreto
-- almeno una checklist con 4-6 voci brevi (max 8 parole l'una)
-- ultima slide = CTA chiara con un solo verbo (scarica, iscriviti, prenota...)
-- tono diretto, italiano, no buzzword, no anglicismi inutili, no emoji
+- inserisci almeno UNA bignum con un numero concreto (statistica, prezzo, tempo)
+- inserisci almeno UNA checklist con 4-6 voci brevi (max 8 parole l'una)
+- inserisci dove pertinente UN testimonial o UN FAQ (alza la conversione)
+- ultima slide = CTA chiara con UN solo verbo (scarica, iscriviti, prenota...)
+- tono diretto, italiano corrente, no buzzword, no emoji, no anglicismi inutili
 
-VARIAZIONI:
-- "post singolo": solo "# Titolo" + 1 sezione "## ..." con testo principale
-- "story 9:16": come post singolo ma testo molto più breve (2-3 righe max)
+# VARIAZIONI PER TIPO DI CONTENUTO
 
-Se l'argomento è troppo generico, chiedi UNA SOLA domanda mirata.`;
+- POST singolo (1 immagine, formato 1:1 o 4:5): solo "# Titolo" + 1 sezione "## …" con testo principale. Niente multi-slide.
+- STORY 9:16 (verticale): come post singolo ma testo molto più breve (2-3 righe massimo). Adatto a annunci flash o anteprima.
+- CAROUSEL multi-slide: usa il flusso completo (8-10 slide).
+
+# TEMPLATE AVANZATI (solo se l'utente li chiede esplicitamente)
+
+Esistono ~40 template nel software. I 9 sopra coprono il 90% dei casi e sono tutti
+generabili dal markdown. Per template strutturati (grafici a barre, donut, KPI dashboard,
+gallery foto, roadmap, framework con acronimo, vocabolario, offerta/pricing) il sistema
+ha un editor dedicato. In quei casi: scrivi le slide testuali in markdown e suggerisci
+all'utente che la slide-grafico la deve costruire a mano nell'editor (non si genera
+da testo libero).
+
+# SE L'UTENTE È VAGO
+
+Se l'argomento è troppo generico ("fammi un carosello"), chiedi UNA SOLA domanda
+mirata: "Su quale argomento e per quale audience?". Non più di una domanda alla volta.`;
 
 function pickCtaLabel(heading: string, body: string): string {
   const h = (heading + " " + body).toLowerCase();

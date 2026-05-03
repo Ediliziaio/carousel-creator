@@ -1467,7 +1467,8 @@ function ArrayField<T>({
   maxItems?: number;
   counter?: React.ReactNode;
 }) {
-  const atMax = maxItems !== undefined && items.length >= maxItems;
+  const safeItems: T[] = Array.isArray(items) ? items : [];
+  const atMax = maxItems !== undefined && safeItems.length >= maxItems;
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -1475,13 +1476,13 @@ function ArrayField<T>({
         {counter}
       </div>
       <div className="space-y-2">
-        {items.map((it, i) => (
+        {safeItems.map((it, i) => (
           <div key={i} className="flex gap-2">
             <div className="flex-1">
               {render(
                 it,
                 (v) => {
-                  const arr = [...items];
+                  const arr = [...safeItems];
                   arr[i] = v;
                   onChange(arr);
                 },
@@ -1492,7 +1493,7 @@ function ArrayField<T>({
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => onChange(items.filter((_, j) => j !== i))}
+              onClick={() => onChange(safeItems.filter((_, j) => j !== i))}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -1505,7 +1506,7 @@ function ArrayField<T>({
         size="sm"
         disabled={atMax}
         title={atMax ? `Hai raggiunto il massimo di ${maxItems} elementi` : undefined}
-        onClick={() => onChange([...items, structuredClone(empty)])}
+        onClick={() => onChange([...safeItems, structuredClone(empty)])}
       >
         <Plus className="h-4 w-4 mr-1" /> Aggiungi
       </Button>
@@ -2678,13 +2679,13 @@ function HookEditor({ d, set, errFor, slideId, overrides }: EditorProps<HookData
           data-field="hook"
           rows={3}
           maxLength={LIMITS.hookMax}
-          value={d.hook}
+          value={d.hook ?? ""}
           onChange={(e) => set({ ...d, hook: e.target.value })}
           placeholder="Il 90% sbaglia questo."
         />
       </Field>
       <p className="text-[10px] text-muted-foreground">
-        {d.hook.length}/{LIMITS.hookMax}
+        {(d.hook ?? "").length}/{LIMITS.hookMax}
       </p>
       <Field
         label="Sub-hook (opzionale)"
