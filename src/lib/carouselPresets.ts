@@ -1356,6 +1356,234 @@ export const BUILT_IN_CAROUSEL_PRESETS: CarouselPreset[] = [
       },
     ],
   },
+  /* ===== Preset settore EDILIZIA / SaaS edile ===== */
+  {
+    id: "construction-saas-pitch",
+    name: "Pitch SaaS edile",
+    icon: "🏗️",
+    description: "8 slide per presentare un software gestionale edile: problema, dato, processo, prezzi, garanzia, CTA.",
+    slides: [
+      {
+        template: "cover",
+        overrides: {
+          eyebrow: "🏗️ EDILIZIA DIGITALE",
+          title: "Da scartoffie a click.\nIl tuo cantiere in cloud.",
+          sub: "Gestionale per imprese edili. Setup in 10 minuti.",
+        },
+      },
+      {
+        template: "hook",
+        overrides: {
+          eyebrow: "👷 IL DATO",
+          hook: "Il 67% dei preventivi edili viene rifatto.",
+          subhook: "Ogni rifacimento = 2-4 ore perse. Ogni settimana.",
+          swipeLabel: "SCORRI →",
+        },
+      },
+      {
+        template: "checklist",
+        overrides: {
+          eyebrow: "🧱 GLI ERRORI TIPICI",
+          title: "Cosa blocca la tua impresa edile?",
+          items: [
+            { done: false, title: "Voci di preventivo scritte a mano" },
+            { done: false, title: "Listini regionali non aggiornati" },
+            { done: false, title: "Cantieri in ritardo per mancata pianificazione" },
+            { done: false, title: "Materiali ordinati senza tracciamento" },
+            { done: false, title: "Fatture e SAL gestiti in Excel" },
+          ],
+        },
+      },
+      {
+        template: "stepsGallery",
+        overrides: {
+          eyebrow: "🛠️ COME FUNZIONA",
+          title: "Dal preventivo al SAL in 4 passaggi.",
+          steps: [
+            { number: "01", title: "Preventivo", desc: "Voci da listino regionale, margine auto." },
+            { number: "02", title: "Cantiere", desc: "Pianifica fasi, squadre, materiali." },
+            { number: "03", title: "SAL", desc: "Stato avanzamento lavori in 1 click." },
+            { number: "04", title: "Fattura", desc: "Generazione e invio SDI integrato." },
+          ],
+        },
+      },
+      {
+        template: "statsPack",
+        overrides: {
+          eyebrow: "📈 I RISULTATI",
+          title: "I numeri delle imprese che ci hanno scelto.",
+          stats: [
+            { value: "+800", label: "Imprese edili attive", trend: "up" },
+            { value: "45", unit: "min", label: "Tempo medio preventivo", trend: "down" },
+            { value: "3.2", unit: "x", label: "Margini più chiari", trend: "up" },
+            { value: "94", unit: "%", label: "Retention dopo 12 mesi", trend: "up" },
+          ],
+          source: "Dato medio clienti 2025",
+        },
+      },
+      {
+        template: "pricingTable",
+        overrides: {
+          eyebrow: "💰 PIANI",
+          title: "Scegli il piano per la tua impresa.",
+          plans: [
+            {
+              name: "Cantiere",
+              price: "49€",
+              priceCaption: "/mese",
+              features: ["1 utente", "Preventivi illimitati", "Listino regionale", "Supporto email"],
+              ctaLabel: "Inizia",
+            },
+            {
+              name: "Impresa",
+              price: "129€",
+              priceCaption: "/mese",
+              badge: "POPOLARE",
+              highlighted: true,
+              features: [
+                "Fino a 5 utenti",
+                "Tutto del Cantiere",
+                "Pianificazione cantieri",
+                "SAL e fatturazione SDI",
+              ],
+              ctaLabel: "Prova 14 giorni",
+            },
+            {
+              name: "Enterprise",
+              price: "299€",
+              priceCaption: "/mese",
+              features: [
+                "Utenti illimitati",
+                "Tutto dell'Impresa",
+                "API + integrazioni",
+                "Account manager",
+              ],
+              ctaLabel: "Contattaci",
+            },
+          ],
+          source: "IVA esclusa. Min 3 mesi.",
+        },
+      },
+      {
+        template: "guarantee",
+        overrides: {
+          badge: "🛡️ GARANZIA 30 GG",
+          headline: "Soddisfatti o rimborsati.",
+          body: "Se entro 30 giorni il software non ti fa risparmiare almeno 5 ore a settimana, ti restituiamo l'intero importo.",
+          terms: "Si applica al primo mese di servizio.",
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "🚧 PRONTO A INIZIARE?",
+          headline: "Prova Edilizia in Cloud gratis.",
+          subtitle: "14 giorni gratuiti. Nessuna carta. Setup in 10 minuti.",
+          buttonLabel: "INIZIA GRATIS →",
+        },
+      },
+    ],
+  },
+  {
+    id: "construction-renovation",
+    name: "Ristrutturazione case study",
+    icon: "🔨",
+    description: "7 slide per raccontare un cantiere di ristrutturazione: prima, durante, dopo, costi, garanzia.",
+    slides: [
+      {
+        template: "cover",
+        overrides: {
+          eyebrow: "🔨 CASE STUDY",
+          title: "Ristrutturazione 90mq\nin 8 settimane.",
+          sub: "Dal sopralluogo alle chiavi. Tutto documentato.",
+        },
+      },
+      {
+        template: "compare",
+        overrides: {
+          eyebrow: "⚒️ LO STATO INIZIALE",
+          title: "Prima vs Dopo.",
+          before: {
+            title: "PRIMA",
+            items: [
+              "Pavimento anni '70 in graniglia",
+              "Bagno cieco senza ventilazione",
+              "Impianto elettrico fuori norma",
+              "Cucina chiusa di 9mq",
+            ],
+          },
+          after: {
+            title: "DOPO",
+            items: [
+              "Parquet rovere chiaro 3 strati",
+              "Bagno con finestra a soffitto",
+              "Impianto a norma CEI 64-8",
+              "Open space cucina-living 28mq",
+            ],
+          },
+        },
+      },
+      {
+        template: "stepsGallery",
+        overrides: {
+          eyebrow: "🏗️ LE FASI",
+          title: "Le 4 fasi del cantiere.",
+          steps: [
+            { number: "01", title: "Demolizione", desc: "2 settimane. Smaltimento certificato." },
+            { number: "02", title: "Impianti", desc: "3 settimane. Elettrico, idraulico, termico." },
+            { number: "03", title: "Massetti & finiture", desc: "2 settimane. Pavimenti, pareti, controsoffitti." },
+            { number: "04", title: "Consegna", desc: "1 settimana. Pulizia finale, certificazioni." },
+          ],
+        },
+      },
+      {
+        template: "statsPack",
+        overrides: {
+          eyebrow: "📊 I NUMERI DEL CANTIERE",
+          title: "Trasparenza totale.",
+          stats: [
+            { value: "90", unit: "mq", label: "Superficie", trend: "flat" },
+            { value: "8", unit: "sett.", label: "Tempo totale", trend: "flat" },
+            { value: "45", unit: "K€", label: "Investimento", trend: "flat" },
+            { value: "0", label: "Sforamenti budget", trend: "flat" },
+          ],
+          source: "Dati cantiere reale, 2025",
+        },
+      },
+      {
+        template: "checklist",
+        overrides: {
+          eyebrow: "✅ COSA È INCLUSO",
+          title: "Tutto chiavi in mano.",
+          items: [
+            { done: true, title: "Sopralluogo gratuito + computo metrico" },
+            { done: true, title: "Pratiche edilizie (CILA / SCIA)" },
+            { done: true, title: "Squadra interna (no subappalti opachi)" },
+            { done: true, title: "Aggiornamento settimanale via app" },
+            { done: true, title: "Garanzia decennale postuma" },
+          ],
+        },
+      },
+      {
+        template: "testimonial",
+        overrides: {
+          quote: "Hanno rispettato tempi e budget. La cosa più rara nell'edilizia.",
+          author: "Famiglia Rossi",
+          role: "Cliente, Milano",
+          rating: 5,
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "🏠 IL TUO PROGETTO",
+          headline: "Vuoi un sopralluogo gratuito?",
+          subtitle: "Veniamo da te entro 7 giorni con preventivo dettagliato.",
+          buttonLabel: "PRENOTA SOPRALLUOGO →",
+        },
+      },
+    ],
+  },
 ];
 
 export function getCarouselPreset(id: string): CarouselPreset | undefined {

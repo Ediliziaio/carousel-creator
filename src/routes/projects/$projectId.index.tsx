@@ -22,12 +22,16 @@ import {
   Plus,
   Smartphone,
   Trash2,
+  Copy,
+  CircleCheck,
+  CircleDashed,
 } from "lucide-react";
 import { getProject, type ProjectRow } from "@/lib/projectsApi";
 import {
   listContents,
   deleteContent,
   saveContent,
+  duplicateContent,
   type ContentRow,
   type ContentType,
 } from "@/lib/contentsApi";
@@ -136,6 +140,16 @@ function ProjectDashboard() {
     }
   }
 
+  async function onDuplicate(id: string) {
+    try {
+      const dup = await duplicateContent(id);
+      setItems((p) => [dup, ...p]);
+      toast.success("Contenuto duplicato");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   async function performDeleteContent(id: string) {
     try {
       await deleteContent(id);
@@ -238,9 +252,29 @@ function ProjectDashboard() {
                                 </div>
                               )}
                             </div>
-                            <h3 className="mt-3 truncate font-medium text-foreground">
-                              {c.name}
-                            </h3>
+                            <div className="mt-3 flex items-start gap-2">
+                              <h3 className="flex-1 truncate font-medium text-foreground">
+                                {c.name}
+                              </h3>
+                              {(() => {
+                                const st = (c.data as { status?: string })?.status ?? "draft";
+                                return st === "published" ? (
+                                  <span
+                                    className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-green-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-green-700"
+                                    title="Pubblicato"
+                                  >
+                                    <CircleCheck className="h-2.5 w-2.5" /> PUB
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground"
+                                    title="Bozza"
+                                  >
+                                    <CircleDashed className="h-2.5 w-2.5" /> BOZZA
+                                  </span>
+                                );
+                              })()}
+                            </div>
                             <p className="mt-1 text-xs text-muted-foreground">
                               {new Date(c.updated_at).toLocaleDateString("it-IT", {
                                 day: "2-digit",
@@ -249,17 +283,30 @@ function ProjectDashboard() {
                               })}
                             </p>
                           </Link>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setPendingDelete(c);
-                            }}
-                            className="absolute right-2 top-2 rounded-md bg-card/80 p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                            title="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition group-hover:opacity-100">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void onDuplicate(c.id);
+                              }}
+                              className="rounded-md bg-card/80 p-1.5 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+                              title="Duplica"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setPendingDelete(c);
+                              }}
+                              className="rounded-md bg-card/80 p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                              title="Elimina"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </Card>
                       ))}
                     </div>

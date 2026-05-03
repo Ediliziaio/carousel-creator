@@ -33,6 +33,10 @@ const PRESET_CATEGORIES: Record<string, { label: string; ids: string[] }> = {
       "results-storytelling",
     ],
   },
+  construction: {
+    label: "🏗️ Edilizia & cantieri",
+    ids: ["construction-saas-pitch", "construction-renovation"],
+  },
   educational: {
     label: "📚 Educativo & authority",
     ids: [

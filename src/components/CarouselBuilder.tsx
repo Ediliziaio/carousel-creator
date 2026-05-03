@@ -10,6 +10,7 @@ import { BrandQuickSwitch } from "@/components/BrandQuickSwitch";
 import { BulkOperationsDialog } from "@/components/BulkOperationsDialog";
 import { MultiFormatExportDialog } from "@/components/MultiFormatExportDialog";
 import { ProjectSwitcher } from "@/components/ProjectSwitcher";
+import { ContentSwitcher } from "@/components/ContentSwitcher";
 import { ExportButton } from "@/components/ExportButton";
 import { ExportErrorBanner } from "@/components/ExportErrorBanner";
 import { ExportPreviewDialog } from "@/components/ExportPreviewDialog";
@@ -68,6 +69,8 @@ interface ContentDataShape {
   brand?: BrandSettings;
   slides?: Slide[];
   activeLang?: string;
+  status?: "draft" | "published";
+  publishedAt?: string;
 }
 
 /**
@@ -146,6 +149,7 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   const [contentName, setContentName] = useState("");
   const [contentType, setContentType] = useState<ContentType>("carousel");
   const [projectName, setProjectName] = useState("");
+  const [status, setStatus] = useState<"draft" | "published">("draft");
   const [hydrating, setHydrating] = useState(true);
   const [saving, setSaving] = useState(false);
   // Snapshot del payload all'ultimo save / hydrate. dirty è computed = current !== snapshot.
@@ -179,7 +183,11 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         setContentName(content.name);
         setContentType(content.type);
         setProjectName(proj.name);
-        setSavedSnapshot(JSON.stringify({ brand: brandFromProject, slides: slidesData }));
+        setStatus(data.status === "published" ? "published" : "draft");
+        const initialStatus = data.status === "published" ? "published" : "draft";
+        setSavedSnapshot(
+          JSON.stringify({ brand: brandFromProject, slides: slidesData, status: initialStatus }),
+        );
         setSavedName(content.name);
       } catch (e) {
         toast.error((e as Error).message);
@@ -193,8 +201,8 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
   }, [projectId, contentId, loadJSON, setActiveLang, navigate]);
 
   const currentSnapshot = useMemo(
-    () => (hydrating ? "" : JSON.stringify({ brand, slides })),
-    [brand, slides, hydrating],
+    () => (hydrating ? "" : JSON.stringify({ brand, slides, status })),
+    [brand, slides, status, hydrating],
   );
   const dirty = !hydrating && (currentSnapshot !== savedSnapshot || contentName !== savedName);
 
@@ -225,14 +233,20 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
         projectId,
         type: contentType,
         name: finalName,
-        data: { brand, slides, activeLang },
+        data: {
+          brand,
+          slides,
+          activeLang,
+          status,
+          publishedAt: status === "published" ? new Date().toISOString() : undefined,
+        },
         thumbnail,
       });
       // Brand per-progetto: fonte di verità. Si propaga ai content fratelli al loro prossimo open.
       await updateProject(projectId, { brand });
-      setSavedSnapshot(JSON.stringify({ brand, slides }));
+      setSavedSnapshot(JSON.stringify({ brand, slides, status }));
       setSavedName(finalName);
-      toast.success("Salvato");
+      toast.success(status === "published" ? "Pubblicato ✓" : "Salvato come bozza");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -415,6 +429,13 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground md:h-screen">
       <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-3 border-b border-border bg-card px-3 py-2 md:h-14 md:flex-nowrap md:px-4 md:py-0">
         <ProjectSwitcher currentProjectId={projectId} currentName={projectName} />
+        <span className="text-muted-foreground/60">/</span>
+        <ContentSwitcher
+          projectId={projectId}
+          currentContentId={contentId}
+          currentName={contentName}
+          currentType={contentType}
+        />
         <Input
           value={contentName}
           onChange={(e) => setContentName(e.target.value)}
@@ -475,6 +496,19 @@ export function CarouselBuilder({ projectId, contentId }: BuilderProps) {
               <Save className="mr-1 h-4 w-4" />
             )}
             {dirty ? "Salva*" : "Salvato"}
+          </Button>
+          <Button
+            variant={status === "published" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatus(status === "published" ? "draft" : "published")}
+            title={
+              status === "published"
+                ? "Pubblicato (clicca per tornare bozza)"
+                : "Bozza (clicca per marcare come pubblicato)"
+            }
+            className={status === "published" ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            {status === "published" ? "✓ Pubblicato" : "○ Bozza"}
           </Button>
           <CarouselPresetDialog />
           <QuickOfferEditor />

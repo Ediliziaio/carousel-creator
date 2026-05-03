@@ -86,3 +86,30 @@ export async function deleteContent(id: string): Promise<void> {
   const { error } = await supabase.from("contents").delete().eq("id", id);
   if (error) throw error;
 }
+
+/** Duplica un contenuto: crea una nuova riga con stesso project_id/type/data. */
+export async function duplicateContent(id: string): Promise<ContentRow> {
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  if (!userId) throw new Error("Devi essere loggato.");
+  const src = await getContent(id);
+  if (!src) throw new Error("Contenuto sorgente non trovato");
+  // Reset status a draft sulla copia (se era published).
+  const data = (src.data && typeof src.data === "object"
+    ? { ...(src.data as Record<string, unknown>), status: "draft" }
+    : { status: "draft" }) as unknown;
+  const { data: row, error } = await supabase
+    .from("contents")
+    .insert({
+      project_id: src.project_id,
+      user_id: userId,
+      type: src.type,
+      name: `${src.name} (copia)`,
+      data,
+      thumbnail: src.thumbnail,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return row as ContentRow;
+}
