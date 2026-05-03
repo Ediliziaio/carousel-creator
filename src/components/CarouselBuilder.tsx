@@ -77,8 +77,16 @@ function sanitizeSlide(slide: Slide | null | undefined): Slide | null {
   try {
     const base = makeDefaultData(slide.template) as unknown as Record<string, unknown>;
     const incoming = (slide.data ?? {}) as unknown as Record<string, unknown>;
-    const merged = { ...base, ...incoming } as unknown as Slide["data"];
-    return { ...slide, data: merged };
+    // Merge che NON sovrascrive valori del default con undefined dall'incoming.
+    // Inoltre se un campo è array nel default e l'incoming non è array, mantieni il default.
+    const merged: Record<string, unknown> = { ...base };
+    for (const k of Object.keys(incoming)) {
+      const v = incoming[k];
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(base[k]) && !Array.isArray(v)) continue;
+      merged[k] = v;
+    }
+    return { ...slide, data: merged as unknown as Slide["data"] };
   } catch {
     return null;
   }

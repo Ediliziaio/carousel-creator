@@ -1033,7 +1033,7 @@ function Process({ slide, d }: { slide: Slide; d: ProcessData }) {
         <HL text={d.title} />
       </h1>
       <ol className="process-list">
-        {d.steps.map((s, i) => (
+        {(d.steps ?? []).map((s, i) => (
           <li key={i} className="process-step">
             <div className="process-num">{s.number ?? pad2(i + 1)}</div>
             <div className="process-body">
@@ -1560,7 +1560,7 @@ function QuickWin({ slide, d }: { slide: Slide; d: QuickWinData }) {
         <HL text={d.instruction} />
       </h1>
       <ol className="qw-steps">
-        {d.steps.map((s, i) => (
+        {(d.steps ?? []).map((s, i) => (
           <li key={i} className="qw-step">
             <span className="qw-step-num">{pad2(i + 1)}</span>
             <span style={fieldStyle(slide, `steps.${i}`)}>{s}</span>
@@ -2082,7 +2082,7 @@ function Poll({ slide, d }: { slide: Slide; d: PollData }) {
         <HL text={d.question} />
       </h1>
       <div className="poll-options">
-        {d.options.map((opt, i) => {
+        {(d.options ?? []).map((opt, i) => {
           const pct = Math.max(0, Math.min(100, opt.percentage ?? 0));
           return (
             <div
@@ -2128,8 +2128,8 @@ function PricingTable({ slide, d }: { slide: Slide; d: PricingTableData }) {
       <h1 className="pricing-title" style={fieldStyle(slide, "title")}>
         <HL text={d.title} />
       </h1>
-      <div className={`pricing-grid pricing-cols-${d.plans.length}`}>
-        {d.plans.map((p, i) => (
+      <div className={`pricing-grid pricing-cols-${(d.plans ?? []).length}`}>
+        {(d.plans ?? []).map((p, i) => (
           <div
             key={i}
             className={`pricing-card ${p.highlighted ? "is-highlight" : ""}`}
@@ -2210,8 +2210,8 @@ function StepsGallery({ slide, d }: { slide: Slide; d: StepsGalleryData }) {
       <h1 className="steps-title" style={fieldStyle(slide, "title")}>
         <HL text={d.title} />
       </h1>
-      <div className={`steps-grid steps-cols-${Math.min(d.steps.length, 4)}`}>
-        {d.steps.map((s, i) => (
+      <div className={`steps-grid steps-cols-${Math.min((d.steps ?? []).length, 4)}`}>
+        {(d.steps ?? []).map((s, i) => (
           <div key={i} className="step-card">
             <div className={`step-photo ${s.imageUrl ? "" : "empty"}`}>
               {s.imageUrl && <img src={s.imageUrl} alt={s.title} />}
@@ -2239,8 +2239,8 @@ function StatsPack({ slide, d }: { slide: Slide; d: StatsPackData }) {
       <h1 className="stats-title" style={fieldStyle(slide, "title")}>
         <HL text={d.title} />
       </h1>
-      <div className={`stats-grid stats-cols-${Math.min(d.stats.length, 4)}`}>
-        {d.stats.map((s, i) => (
+      <div className={`stats-grid stats-cols-${Math.min((d.stats ?? []).length, 4)}`}>
+        {(d.stats ?? []).map((s, i) => (
           <div key={i} className="stat-card">
             <div className="stat-value" style={fieldStyle(slide, `stats.${i}.value`)}>
               <span className="stat-num">{s.value}</span>
