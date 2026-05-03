@@ -25,9 +25,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Plus, FolderKanban, Trash2 } from "lucide-react";
+import { Loader2, Plus, FolderKanban, Trash2, Check } from "lucide-react";
 import { listProjects, createProject, deleteProject, type ProjectRow } from "@/lib/projectsApi";
 import { UserMenu } from "@/components/UserMenu";
+import { useCarousel } from "@/lib/store";
+import { applyThemeToBrand } from "@/lib/presets";
+import { DEFAULT_BRAND } from "@/lib/templates";
+
+const DEFAULT_PROJECT_BRAND_KEY = "default-project-brand-id";
 
 export const Route = createFileRoute("/projects/")({
   component: ProjectsPage,
@@ -42,10 +47,24 @@ function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [pendingDelete, setPendingDelete] = useState<ProjectRow | null>(null);
+  const brandPresets = useCarousel((s) => s.brandPresets);
+  // ID del brand preset di default per nuovi progetti, salvato in localStorage.
+  // null = "Default base" (DEFAULT_BRAND), nessun preset.
+  const [defaultBrandId, setDefaultBrandId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(DEFAULT_PROJECT_BRAND_KEY);
+  });
+  // Brand selezionato per il progetto in creazione (default = quello salvato).
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(defaultBrandId);
 
   useEffect(() => {
     void refresh();
   }, []);
+
+  // Quando il dialog viene riaperto, riparti dal default brand persistito.
+  useEffect(() => {
+    if (open) setSelectedBrandId(defaultBrandId);
+  }, [open, defaultBrandId]);
 
   async function refresh() {
     setLoading(true);
@@ -64,9 +83,15 @@ function ProjectsPage() {
     if (!name.trim()) return;
     setCreating(true);
     try {
+      // Brand iniziale: applica la palette del preset selezionato sopra DEFAULT_BRAND.
+      const preset = selectedBrandId
+        ? brandPresets.find((p) => p.id === selectedBrandId)
+        : null;
+      const brand = preset ? applyThemeToBrand(DEFAULT_BRAND, preset.theme) : null;
       const p = await createProject({
         name: name.trim(),
         description: description.trim() || null,
+        brand,
       });
       toast.success("Progetto creato");
       setOpen(false);
@@ -78,6 +103,19 @@ function ProjectsPage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  function setAsDefaultBrand(id: string | null) {
+    if (typeof window !== "undefined") {
+      if (id) localStorage.setItem(DEFAULT_PROJECT_BRAND_KEY, id);
+      else localStorage.removeItem(DEFAULT_PROJECT_BRAND_KEY);
+    }
+    setDefaultBrandId(id);
+    toast.success(
+      id
+        ? `"${brandPresets.find((p) => p.id === id)?.name ?? "Brand"}" è ora il default`
+        : "Default reimpostato",
+    );
   }
 
   async function performDelete(id: string) {
@@ -143,6 +181,76 @@ function ProjectsPage() {
                       placeholder="Cliente, target, note..."
                       rows={3}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Brand di partenza</Label>
+                      {selectedBrandId !== defaultBrandId && (
+                        <button
+                          type="button"
+                          onClick={() => setAsDefaultBrand(selectedBrandId)}
+                          className="text-[10px] text-primary underline"
+                        >
+                          Imposta come default
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid max-h-[200px] grid-cols-2 gap-2 overflow-y-auto rounded-md border border-border p-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBrandId(null)}
+                        className={`flex items-center gap-2 rounded-md border p-2 text-left transition hover:bg-muted ${
+                          selectedBrandId === null
+                            ? "border-primary ring-1 ring-primary"
+                            : "border-border"
+                        }`}
+                      >
+                        <div className="flex h-8 w-8 shrink-0 overflow-hidden rounded-md border border-border bg-muted" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-medium">Default base</div>
+                          {defaultBrandId === null && (
+                            <div className="text-[9px] text-primary">⭐ default</div>
+                          )}
+                        </div>
+                        {selectedBrandId === null && (
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                        )}
+                      </button>
+                      {brandPresets.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setSelectedBrandId(p.id)}
+                          className={`flex items-center gap-2 rounded-md border p-2 text-left transition hover:bg-muted ${
+                            selectedBrandId === p.id
+                              ? "border-primary ring-1 ring-primary"
+                              : "border-border"
+                          }`}
+                        >
+                          <div className="flex h-8 w-8 shrink-0 overflow-hidden rounded-md border border-border">
+                            <span style={{ background: p.theme.bgColor }} className="flex-1" />
+                            <span style={{ background: p.theme.accent }} className="flex-1" />
+                            <span
+                              style={{ background: p.theme.accentSecondary }}
+                              className="flex-1"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs font-medium">{p.name}</div>
+                            {defaultBrandId === p.id && (
+                              <div className="text-[9px] text-primary">⭐ default</div>
+                            )}
+                          </div>
+                          {selectedBrandId === p.id && (
+                            <Check className="h-3.5 w-3.5 text-primary" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Potrai modificare il brand in qualsiasi momento dalle impostazioni del
+                      progetto.
+                    </p>
                   </div>
                 </div>
                 <DialogFooter className="mt-6">
