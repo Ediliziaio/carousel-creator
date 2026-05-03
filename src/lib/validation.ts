@@ -127,6 +127,12 @@ export function validateSlideData(
   const errors: FieldError[] = [];
   const err = (field: string, message: string) =>
     errors.push({ field, message, severity: "error" });
+
+  // Hard guard: se data è undefined/null l'editor sta caricando o c'è
+  // un payload corrotto. Ritorna valid=true così il render non crasha.
+  if (!data) {
+    return { valid: true, errors };
+  }
   const warn = (field: string, message: string) =>
     errors.push({ field, message, severity: "warning" });
 

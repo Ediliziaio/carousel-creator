@@ -1678,7 +1678,7 @@ function ImageQuoteEditor({
         <Textarea
           data-field="quote"
           rows={4}
-          value={d.quote}
+          value={d.quote ?? ''}
           onChange={(e) => set({ ...d, quote: e.target.value })}
         />
       </Field>
@@ -1692,7 +1692,7 @@ function ImageQuoteEditor({
         >
           <Input
             data-field="author"
-            value={d.author}
+            value={d.author ?? ''}
             onChange={(e) => set({ ...d, author: e.target.value })}
           />
         </Field>
@@ -2139,12 +2139,12 @@ function TestimonialEditor({ d, set, errFor, slideId, overrides }: EditorProps<T
         <Textarea
           data-field="quote"
           rows={4}
-          value={d.quote}
+          value={d.quote ?? ''}
           onChange={(e) => set({ ...d, quote: e.target.value })}
         />
       </Field>
       <p className="text-[10px] text-muted-foreground">
-        {d.quote.length}/{LIMITS.quoteMax} caratteri (min {LIMITS.quoteMin})
+        {(d.quote ?? '').length}/{LIMITS.quoteMax} caratteri (min {LIMITS.quoteMin})
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
@@ -2157,7 +2157,7 @@ function TestimonialEditor({ d, set, errFor, slideId, overrides }: EditorProps<T
           <Input
             data-field="author"
             maxLength={LIMITS.authorMax}
-            value={d.author}
+            value={d.author ?? ''}
             onChange={(e) => set({ ...d, author: e.target.value })}
           />
         </Field>
@@ -2480,12 +2480,12 @@ function QuoteBigEditor({ d, set, errFor, slideId, overrides }: EditorProps<Quot
         <Textarea
           data-field="quote"
           rows={4}
-          value={d.quote}
+          value={d.quote ?? ''}
           onChange={(e) => set({ ...d, quote: e.target.value })}
         />
       </Field>
       <p className="text-[10px] text-muted-foreground">
-        {d.quote.length}/{LIMITS.quoteMax}
+        {(d.quote ?? '').length}/{LIMITS.quoteMax}
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
@@ -2498,7 +2498,7 @@ function QuoteBigEditor({ d, set, errFor, slideId, overrides }: EditorProps<Quot
           <Input
             data-field="author"
             maxLength={LIMITS.authorMax}
-            value={d.author}
+            value={d.author ?? ''}
             onChange={(e) => set({ ...d, author: e.target.value })}
           />
         </Field>
@@ -2656,7 +2656,7 @@ function CtaEditor({ d, set, errFor, slideId, overrides }: EditorProps<CtaData>)
           data-field="headline"
           rows={2}
           maxLength={LIMITS.headlineMax}
-          value={d.headline}
+          value={d.headline ?? ''}
           onChange={(e) => set({ ...d, headline: e.target.value })}
         />
       </Field>
@@ -3426,7 +3426,7 @@ function UrgencyEditor({ d, set, errFor, slideId, overrides }: EditorProps<Urgen
           data-field="headline"
           rows={2}
           maxLength={LIMITS.headlineMax}
-          value={d.headline}
+          value={d.headline ?? ''}
           onChange={(e) => set({ ...d, headline: e.target.value })}
           placeholder="Le iscrizioni chiudono tra…"
         />
@@ -3631,7 +3631,7 @@ function GuaranteeEditor({ d, set, errFor, slideId, overrides }: EditorProps<Gua
         <Textarea
           data-field="headline"
           rows={2}
-          value={d.headline}
+          value={d.headline ?? ''}
           onChange={(e) => set({ ...d, headline: e.target.value })}
           placeholder="Garanzia soddisfatti o rimborsati 30 giorni."
         />
@@ -3646,7 +3646,7 @@ function GuaranteeEditor({ d, set, errFor, slideId, overrides }: EditorProps<Gua
         <Textarea
           data-field="body"
           rows={4}
-          value={d.body}
+          value={d.body ?? ''}
           onChange={(e) => set({ ...d, body: e.target.value })}
           placeholder="Provalo. Se entro 30 giorni…"
         />
