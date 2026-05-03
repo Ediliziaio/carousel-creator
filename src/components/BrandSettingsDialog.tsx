@@ -279,12 +279,36 @@ export function BrandSettingsDialog() {
                 />
               </div>
               <ImageUploadField
-                label="Logo aziendale (opzionale)"
+                label="Logo principale (default)"
                 value={b.logoDataUrl}
                 onChange={(url) => setDraft({ logoDataUrl: url })}
-                hint="Mostrato accanto al nome brand nell'header. Sfondo trasparente consigliato."
+                hint="Usato se non hai caricato versioni dedicate per sfondo chiaro/scuro. PNG trasparente."
                 maxMB={2}
               />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <ImageUploadField
+                  label="Logo per sfondo scuro"
+                  value={b.logoDataUrlDark}
+                  onChange={(url) => setDraft({ logoDataUrlDark: url })}
+                  hint="Versione chiara del logo. Usata automaticamente quando lo sfondo del brand è scuro."
+                  maxMB={2}
+                />
+                <ImageUploadField
+                  label="Logo per sfondo chiaro"
+                  value={b.logoDataUrlLight}
+                  onChange={(url) => setDraft({ logoDataUrlLight: url })}
+                  hint="Versione scura del logo. Usata automaticamente quando lo sfondo è chiaro."
+                  maxMB={2}
+                />
+              </div>
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs">
+                <div className="font-medium mb-1">💡 Auto-switch logo</div>
+                <p className="text-muted-foreground">
+                  Quando cambi palette brand, il software sceglie automaticamente il logo più
+                  adatto in base alla luminosità dello sfondo. Se hai una sola versione, carica
+                  solo il "Logo principale".
+                </p>
+              </div>
               <div className="rounded-md border border-dashed border-border p-3">
                 <div className="text-xs text-muted-foreground mb-2">
                   Le impostazioni del brand vengono salvate automaticamente nel browser e

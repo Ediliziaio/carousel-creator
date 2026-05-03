@@ -957,6 +957,405 @@ export const BUILT_IN_CAROUSEL_PRESETS: CarouselPreset[] = [
       },
     ],
   },
+  /* ===== NUOVI PRESET (usano template moderni: poll/statsPack/teamMember/stepsGallery) ===== */
+  {
+    id: "results-storytelling",
+    name: "Risultati di un cliente",
+    icon: "📊",
+    description:
+      "8 slide per mostrare il caso studio di un cliente: problema, processo, numeri, testimonial, CTA.",
+    slides: [
+      {
+        template: "cover",
+        overrides: {
+          eyebrow: "CASE STUDY",
+          title: "Da 0 a 100K in 6 mesi.\nEcco come.",
+          sub: "Il caso reale di un nostro cliente.",
+        },
+      },
+      {
+        template: "teamMember",
+        overrides: {
+          eyebrow: "IL CLIENTE",
+          name: "Giulia Bianchi",
+          role: "Founder · TechShop",
+          bio: "Ha fondato il suo e-commerce nel 2024. Stagnante per 8 mesi a 12K/mese.",
+          highlights: ["E-commerce B2C", "Settore tech", "Team di 3"],
+        },
+      },
+      {
+        template: "problemSolution",
+        overrides: {
+          eyebrow: "IL BLOCCO",
+          problem: { label: "PROBLEMA", text: "Traffico crescente ma conversioni piatte al 0,8%." },
+          solution: { label: "INTUIZIONE", text: "Funnel di sponsor + landing dedicate per audience tiepida." },
+        },
+      },
+      {
+        template: "stepsGallery",
+        overrides: {
+          eyebrow: "IL PROCESSO",
+          title: "I 4 step che abbiamo applicato.",
+          steps: [
+            { number: "01", title: "Audit", desc: "Mappato l'intero funnel in 5 giorni." },
+            { number: "02", title: "Setup", desc: "3 audience custom, 2 lookalike, 1 retargeting." },
+            { number: "03", title: "Test", desc: "8 creatività testate, 2 vincenti scalate." },
+            { number: "04", title: "Scaling", desc: "Budget x4 sui winner, ROAS sopra 3x." },
+          ],
+        },
+      },
+      {
+        template: "statsPack",
+        overrides: {
+          eyebrow: "I RISULTATI",
+          title: "I numeri parlano da soli.",
+          stats: [
+            { value: "+733", unit: "%", label: "Fatturato", trend: "up" },
+            { value: "3.4", unit: "x", label: "ROAS medio", trend: "up" },
+            { value: "1.2", unit: "%", label: "Tasso conversione", trend: "up" },
+            { value: "0", label: "Mesi per breakeven", trend: "flat" },
+          ],
+          source: "Dati interni cliente, 2025",
+        },
+      },
+      {
+        template: "testimonial",
+        overrides: {
+          quote: "Mi hanno fatto crescere più in 6 mesi che nei 2 anni precedenti.",
+          author: "Giulia Bianchi",
+          role: "Founder TechShop",
+          rating: 5,
+        },
+      },
+      {
+        template: "checklist",
+        overrides: {
+          eyebrow: "COSA SERVE PER REPLICARLO",
+          title: "Checklist per applicare lo stesso metodo.",
+          items: [
+            { done: true, title: "Avere un prodotto validato sul mercato" },
+            { done: true, title: "Almeno 3K€/mese di budget pubblicitario" },
+            { done: true, title: "Capacità di gestire +50 ordini/giorno" },
+            { done: true, title: "Disponibilità a iterare velocemente" },
+          ],
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "VUOI RISULTATI SIMILI?",
+          headline: "Parliamo del tuo caso.",
+          subtitle: "Analisi gratuita del tuo funnel attuale.",
+          buttonLabel: "PRENOTA UNA CALL →",
+        },
+      },
+    ],
+  },
+  {
+    id: "engagement-poll",
+    name: "Sondaggio + opinione",
+    icon: "📊",
+    description: "5 slide minimaliste per generare engagement: pone domanda, mostra dati, prende posizione.",
+    slides: [
+      {
+        template: "hook",
+        overrides: {
+          eyebrow: "DOMANDA",
+          hook: "Pavimento parquet o gres?",
+          subhook: "C'è un vincitore chiaro nei sondaggi del 2025.",
+        },
+      },
+      {
+        template: "poll",
+        overrides: {
+          eyebrow: "IL SONDAGGIO",
+          question: "Tu cosa sceglieresti per casa?",
+          options: [
+            { label: "Parquet (caldo, naturale)", percentage: 64, leading: true },
+            { label: "Gres porcellanato (resistente)", percentage: 36 },
+          ],
+          totalVotes: "2.840 voti",
+          source: "Sondaggio Instagram, gen 2026",
+        },
+      },
+      {
+        template: "compare",
+        overrides: {
+          eyebrow: "I FATTI",
+          title: "Pro e contro reali (no opinioni).",
+          before: {
+            title: "PARQUET",
+            items: ["Caldo al tatto", "Estetica unica", "Si rovina con acqua", "150-300€/mq"],
+          },
+          after: {
+            title: "GRES",
+            items: ["Indistruttibile", "Effetti realistici disponibili", "Freddo al tatto", "30-100€/mq"],
+          },
+        },
+      },
+      {
+        template: "center",
+        overrides: {
+          eyebrow: "LA NOSTRA POSIZIONE",
+          title: "Non esiste 'meglio'.\nEsiste meglio per te.",
+          sub: "Dipende da clima, budget, uso e gusto personale.",
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "DUBBI?",
+          headline: "Scrivici la tua situazione.",
+          subtitle: "Ti aiutiamo a scegliere senza sbagliare.",
+          buttonLabel: "CHIEDI ORA →",
+        },
+      },
+    ],
+  },
+  {
+    id: "service-pricing",
+    name: "Listino servizi",
+    icon: "💰",
+    description: "6 slide per presentare un'offerta a piani (Base/Pro/Premium) con benefici e CTA.",
+    slides: [
+      {
+        template: "cover",
+        overrides: {
+          eyebrow: "I NOSTRI SERVIZI",
+          title: "Soluzioni su misura\nper ogni esigenza.",
+          sub: "3 piani per partire, crescere e dominare.",
+        },
+      },
+      {
+        template: "problemSolution",
+        overrides: {
+          eyebrow: "PERCHÉ NOI",
+          problem: { label: "PROBLEMA COMUNE", text: "Servizi standardizzati che non parlano alla tua realtà." },
+          solution: { label: "LA NOSTRA RISPOSTA", text: "3 livelli costruiti per business in 3 fasi diverse." },
+        },
+      },
+      {
+        template: "pricingTable",
+        overrides: {
+          eyebrow: "PIANI E PREZZI",
+          title: "Trova il tuo livello.",
+          plans: [
+            {
+              name: "Base",
+              price: "490€",
+              priceCaption: "/mese",
+              features: ["Setup iniziale", "1 canale", "Report mensile", "Supporto via email"],
+              ctaLabel: "Inizia",
+            },
+            {
+              name: "Pro",
+              price: "1.290€",
+              priceCaption: "/mese",
+              badge: "POPOLARE",
+              highlighted: true,
+              features: [
+                "Tutto del piano Base",
+                "Fino a 3 canali",
+                "Report settimanali",
+                "Call mensile dedicata",
+              ],
+              ctaLabel: "Prova 14 giorni",
+            },
+            {
+              name: "Premium",
+              price: "2.990€",
+              priceCaption: "/mese",
+              features: [
+                "Tutto del piano Pro",
+                "Canali illimitati",
+                "Report on-demand",
+                "Account manager dedicato",
+              ],
+              ctaLabel: "Contattaci",
+            },
+          ],
+          source: "IVA esclusa. Min 3 mesi.",
+        },
+      },
+      {
+        template: "checklist",
+        overrides: {
+          eyebrow: "COSA INCLUDE OGNI PIANO",
+          title: "Tutti i piani garantiscono:",
+          items: [
+            { done: true, title: "Onboarding strutturato in 7 giorni" },
+            { done: true, title: "Dashboard analitica accessibile 24/7" },
+            { done: true, title: "Garanzia soddisfatti o rimborsati 30 giorni" },
+            { done: true, title: "Disdetta in qualsiasi momento" },
+          ],
+        },
+      },
+      {
+        template: "guarantee",
+        overrides: {
+          badge: "GARANZIA 30 GG",
+          headline: "Soddisfatti o rimborsati.",
+          body: "Se entro 30 giorni non vedi risultati misurabili, ti restituiamo l'intero importo. Senza domande.",
+          terms: "Si applica al primo mese di servizio.",
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "SCEGLI IL TUO PIANO",
+          headline: "Pronto a iniziare?",
+          subtitle: "Audit gratuito di 30 minuti per scegliere insieme.",
+          buttonLabel: "PRENOTA AUDIT GRATUITO →",
+        },
+      },
+    ],
+  },
+  {
+    id: "founder-story",
+    name: "Chi siamo / Founder",
+    icon: "👤",
+    description: "6 slide per presentare il founder o team con storia, valori e prove.",
+    slides: [
+      {
+        template: "hook",
+        overrides: {
+          eyebrow: "PIACERE, NOI SIAMO",
+          hook: "Costruiamo ciò che vorremmo usare.",
+          subhook: "Da 10 anni nel settore. Mai un cliente scontento.",
+        },
+      },
+      {
+        template: "teamMember",
+        overrides: {
+          eyebrow: "IL FOUNDER",
+          name: "Florin Andriciuc",
+          role: "CEO & Founder",
+          bio: "10 anni nell'edilizia digitale. Ha portato 200+ studi tecnici online. Crede che l'AI debba essere uno strumento, non un sostituto.",
+          highlights: ["10+ anni", "200+ progetti", "Top voice AI 2025"],
+          handle: "@floandriciuc",
+        },
+      },
+      {
+        template: "myth",
+        overrides: {
+          eyebrow: "PERCHÉ ESISTIAMO",
+          title: "Sfatiamo un mito.",
+          myth: { label: "DICONO CHE", text: "L'edilizia non può essere digitale." },
+          reality: { label: "LA REALTÀ", text: "Gli studi che digitalizzano triplicano i contatti in 12 mesi." },
+        },
+      },
+      {
+        template: "framework",
+        overrides: {
+          eyebrow: "IL NOSTRO METODO",
+          title: "Il framework AEDIX.",
+          acronym: "AEDIX",
+          letters: [
+            { letter: "A", name: "Analisi", desc: "Studio del posizionamento attuale e gap competitivi." },
+            { letter: "E", name: "Esecuzione", desc: "Setup tecnico e creazione asset in 30 giorni." },
+            { letter: "D", name: "Distribuzione", desc: "Multicanale: social, SEO, paid." },
+            { letter: "I", name: "Iterazione", desc: "Cicli di test settimanali sui dati reali." },
+            { letter: "X", name: "X-factor", desc: "L'identità unica che ti distingue dai competitor." },
+          ],
+        },
+      },
+      {
+        template: "socialProof",
+        overrides: {
+          eyebrow: "CHI CI HA SCELTO",
+          clientName: "200+ studi tecnici",
+          tagline: "che hanno raddoppiato i contatti in 12 mesi.",
+          summary: "La nostra rete include studi di architettura, ingegneria e geometri da Nord a Sud Italia.",
+          metrics: [
+            { value: "+200", unit: "%", label: "Lead medi" },
+            { value: "12", label: "Mesi al ROI" },
+            { value: "94", unit: "%", label: "Retention clienti" },
+          ],
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "PARLIAMONE",
+          headline: "Vuoi essere il prossimo?",
+          subtitle: "Audit gratuito di 30 minuti, senza impegno.",
+          buttonLabel: "RICHIEDI AUDIT →",
+        },
+      },
+    ],
+  },
+  {
+    id: "tutorial-howto",
+    name: "Tutorial 'Come fare X'",
+    icon: "🎓",
+    description: "6 slide didattiche con step visivi e checklist finale per insegnare un processo.",
+    slides: [
+      {
+        template: "cover",
+        overrides: {
+          eyebrow: "GUIDA RAPIDA",
+          title: "Come scegliere il pavimento giusto in 4 step.",
+          sub: "Senza pentirsene tra 5 anni.",
+        },
+      },
+      {
+        template: "hook",
+        overrides: {
+          eyebrow: "IL PROBLEMA",
+          hook: "Il 70% sceglie il pavimento sbagliato.",
+          subhook: "E lo capisce solo dopo averlo posato.",
+        },
+      },
+      {
+        template: "stepsGallery",
+        overrides: {
+          eyebrow: "IL METODO",
+          title: "I 4 passi da fare prima di acquistare.",
+          steps: [
+            { number: "01", title: "Definisci il traffico", desc: "Quante persone passano in quella stanza ogni giorno?" },
+            { number: "02", title: "Considera il clima", desc: "Pavimento freddo o caldo al tatto è un fattore reale." },
+            { number: "03", title: "Calcola il budget reale", desc: "Includendo posa, battiscopa, smaltimento del vecchio." },
+            { number: "04", title: "Visita uno showroom", desc: "Le foto online ingannano. Tocca e cammina." },
+          ],
+        },
+      },
+      {
+        template: "mistakes",
+        overrides: {
+          eyebrow: "ATTENZIONE",
+          title: "I 3 errori da evitare.",
+          mistakes: [
+            { title: "Scegliere solo dalle foto", why: "Il 60% dei reclami è per 'colore diverso dal vivo'." },
+            { title: "Risparmiare sulla posa", why: "Un buon pavimento mal posato dura 3 anni invece di 30." },
+            { title: "Saltare il sopralluogo", why: "L'umidità e i livelli del pavimento esistente cambiano tutto." },
+          ],
+        },
+      },
+      {
+        template: "checklist",
+        overrides: {
+          eyebrow: "PRIMA DI ACQUISTARE",
+          title: "Stampa questa checklist.",
+          items: [
+            { done: false, title: "Misurato la stanza in 3 punti diversi" },
+            { done: false, title: "Calcolato il budget completo (non solo il materiale)" },
+            { done: false, title: "Verificato umidità e planarità del fondo" },
+            { done: false, title: "Visto il campione fisico, non solo online" },
+            { done: false, title: "Confrontato 3 preventivi di posa" },
+          ],
+        },
+      },
+      {
+        template: "cta",
+        overrides: {
+          eyebrow: "DUBBI SPECIFICI?",
+          headline: "Mandaci la foto della tua stanza.",
+          subtitle: "Ti diciamo entro 24h cosa scegliere e perché.",
+          buttonLabel: "INVIA FOTO →",
+        },
+      },
+    ],
+  },
 ];
 
 export function getCarouselPreset(id: string): CarouselPreset | undefined {

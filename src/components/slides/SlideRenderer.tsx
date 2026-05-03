@@ -56,6 +56,7 @@ import {
   renderHighlighted,
   textStyleToCss,
   FORMAT_DIMENSIONS,
+  pickLogoForBrand,
 } from "@/lib/templates";
 import { getSlideData } from "@/lib/i18n";
 import { validateSlide } from "@/lib/validation";
@@ -198,7 +199,10 @@ export function SlideRenderer({
       <div className="slide-inner">
         <header className="head-row">
           <span className="brand">
-            {brand.logoDataUrl && <img src={brand.logoDataUrl} alt="" className="brand-logo" />}
+            {(() => {
+              const logoUrl = pickLogoForBrand(brand);
+              return logoUrl ? <img src={logoUrl} alt="" className="brand-logo" /> : null;
+            })()}
             {brand.brand}
           </span>
           <span className="count">{counter}</span>

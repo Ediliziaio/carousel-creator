@@ -618,7 +618,12 @@ export interface BrandSettings {
   fontBody: FontChoice;
   headingWeight: Weight;
   bodyWeight: Weight;
+  /** Logo "default": usato quando non c'è una variante per lo sfondo corrente. */
   logoDataUrl?: string;
+  /** Logo per sfondi chiari (testo scuro): usato se bgColor è chiaro. */
+  logoDataUrlLight?: string;
+  /** Logo per sfondi scuri (testo chiaro): usato se bgColor è scuro. */
+  logoDataUrlDark?: string;
   effects: BrandEffects;
   languages: string[];
   defaultLanguage: string;
@@ -638,6 +643,8 @@ export const DEFAULT_BRAND: BrandSettings = {
   headingWeight: 800,
   bodyWeight: 400,
   logoDataUrl: undefined,
+  logoDataUrlLight: undefined,
+  logoDataUrlDark: undefined,
   effects: { ...DEFAULT_EFFECTS },
   languages: ["it"],
   defaultLanguage: "it",
@@ -1372,6 +1379,35 @@ export function makeDefaultData(template: TemplateId): AnyTemplateData {
         ],
       } as PricingTableData;
   }
+}
+
+/**
+ * Calcola la luminanza relativa di un colore HEX (0 = nero, 1 = bianco).
+ * Usato per decidere se un brand bg è "chiaro" o "scuro" → quale logo mostrare.
+ */
+export function colorLuminance(hex: string): number {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return 0;
+  const v = parseInt(m[1], 16);
+  const r = ((v >> 16) & 0xff) / 255;
+  const g = ((v >> 8) & 0xff) / 255;
+  const b = (v & 0xff) / 255;
+  // Formula relative luminance W3C
+  const f = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+/**
+ * Sceglie la URL del logo da usare in base al bgColor del brand.
+ * - bg chiaro (luminanza > 0.5) → logoDataUrlLight (versione per sfondi chiari, tipicamente logo scuro)
+ * - bg scuro → logoDataUrlDark (versione per sfondi scuri, tipicamente logo chiaro)
+ * - fallback → logoDataUrl (default)
+ */
+export function pickLogoForBrand(brand: BrandSettings): string | undefined {
+  const lum = colorLuminance(brand.bgColor);
+  if (lum > 0.5 && brand.logoDataUrlLight) return brand.logoDataUrlLight;
+  if (lum <= 0.5 && brand.logoDataUrlDark) return brand.logoDataUrlDark;
+  return brand.logoDataUrl;
 }
 
 export function makeDefaultSlide(template: TemplateId, format: SlideFormat = "portrait"): Slide {

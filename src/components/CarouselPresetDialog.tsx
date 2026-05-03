@@ -24,20 +24,28 @@ const PRESET_CATEGORIES: Record<string, { label: string; ids: string[] }> = {
     label: "🎯 Vendita & marketing",
     ids: [
       "sales-funnel",
+      "service-pricing",
       "product-launch",
       "flash-sale",
       "objection-crusher",
       "case-study",
       "before-after-story",
+      "results-storytelling",
     ],
   },
   educational: {
     label: "📚 Educativo & authority",
-    ids: ["educational-pack", "myth-busting", "authority-builder"],
+    ids: [
+      "educational-pack",
+      "myth-busting",
+      "authority-builder",
+      "tutorial-howto",
+      "founder-story",
+    ],
   },
   lead: {
     label: "🪝 Lead generation",
-    ids: ["webinar-funnel"],
+    ids: ["webinar-funnel", "engagement-poll"],
   },
 };
 
