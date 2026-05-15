@@ -50,6 +50,7 @@ import {
   List,
   Search,
   ChevronDown,
+  Video,
 } from "lucide-react";
 import { getProject, updateProject, type ProjectRow } from "@/lib/projectsApi";
 import {
@@ -436,7 +437,18 @@ function ProjectDashboard() {
               }
             />
           </div>
-          <UserMenu />
+          <div className="flex items-center gap-2">
+            <Link
+              to="/projects/$projectId/studio"
+              params={{ projectId }}
+              className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium transition hover:bg-muted"
+              title="Studio video, avatar, audio"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Studio
+            </Link>
+            <UserMenu />
+          </div>
         </div>
       </header>
 

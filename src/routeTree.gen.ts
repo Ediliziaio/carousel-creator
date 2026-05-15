@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
 import { Route as ProjectsProjectIdIndexRouteImport } from './routes/projects/$projectId.index'
+import { Route as ProjectsProjectIdStudioRouteImport } from './routes/projects/$projectId.studio'
 import { Route as ProjectsProjectIdBuilderContentIdRouteImport } from './routes/projects/$projectId.builder.$contentId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -47,6 +48,11 @@ const ProjectsProjectIdIndexRoute = ProjectsProjectIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectsProjectIdRoute,
 } as any)
+const ProjectsProjectIdStudioRoute = ProjectsProjectIdStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => ProjectsProjectIdRoute,
+} as any)
 const ProjectsProjectIdBuilderContentIdRoute =
   ProjectsProjectIdBuilderContentIdRouteImport.update({
     id: '/builder/$contentId',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/studio': typeof ProjectsProjectIdStudioRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/projects': typeof ProjectsIndexRoute
+  '/projects/$projectId/studio': typeof ProjectsProjectIdStudioRoute
   '/projects/$projectId': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/projects/$projectId': typeof ProjectsProjectIdRouteWithChildren
   '/projects/': typeof ProjectsIndexRoute
+  '/projects/$projectId/studio': typeof ProjectsProjectIdStudioRoute
   '/projects/$projectId/': typeof ProjectsProjectIdIndexRoute
   '/projects/$projectId/builder/$contentId': typeof ProjectsProjectIdBuilderContentIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/studio'
     | '/projects/$projectId/'
     | '/projects/$projectId/builder/$contentId'
   fileRoutesByTo: FileRoutesByTo
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/projects'
+    | '/projects/$projectId/studio'
     | '/projects/$projectId'
     | '/projects/$projectId/builder/$contentId'
   id:
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/projects/$projectId'
     | '/projects/'
+    | '/projects/$projectId/studio'
     | '/projects/$projectId/'
     | '/projects/$projectId/builder/$contentId'
   fileRoutesById: FileRoutesById
@@ -162,6 +174,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectIdIndexRouteImport
       parentRoute: typeof ProjectsProjectIdRoute
     }
+    '/projects/$projectId/studio': {
+      id: '/projects/$projectId/studio'
+      path: '/studio'
+      fullPath: '/projects/$projectId/studio'
+      preLoaderRoute: typeof ProjectsProjectIdStudioRouteImport
+      parentRoute: typeof ProjectsProjectIdRoute
+    }
     '/projects/$projectId/builder/$contentId': {
       id: '/projects/$projectId/builder/$contentId'
       path: '/builder/$contentId'
@@ -173,11 +192,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface ProjectsProjectIdRouteChildren {
+  ProjectsProjectIdStudioRoute: typeof ProjectsProjectIdStudioRoute
   ProjectsProjectIdIndexRoute: typeof ProjectsProjectIdIndexRoute
   ProjectsProjectIdBuilderContentIdRoute: typeof ProjectsProjectIdBuilderContentIdRoute
 }
 
 const ProjectsProjectIdRouteChildren: ProjectsProjectIdRouteChildren = {
+  ProjectsProjectIdStudioRoute: ProjectsProjectIdStudioRoute,
   ProjectsProjectIdIndexRoute: ProjectsProjectIdIndexRoute,
   ProjectsProjectIdBuilderContentIdRoute:
     ProjectsProjectIdBuilderContentIdRoute,
