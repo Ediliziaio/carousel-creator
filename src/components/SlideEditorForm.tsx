@@ -69,6 +69,7 @@ import { FontSizeSlider } from "@/components/FontSizeSlider";
 import { langLabel } from "@/lib/i18n";
 import { Trash2, Plus, AlertCircle, Info } from "lucide-react";
 import { AIRewriteButton } from "@/components/AIRewriteButton";
+import { AdvancedFields } from "@/components/AdvancedFields";
 import { LIMITS } from "@/lib/validation";
 
 interface Props {
@@ -3122,13 +3123,7 @@ function OfferEditor({ d, set, errFor, slideId, overrides }: EditorProps<OfferDa
   const incErr = errFor("includes");
   return (
     <div className="space-y-4">
-      <Field label="Badge (opzionale)">
-        <Input
-          value={d.badge ?? ""}
-          onChange={(e) => set({ ...d, badge: e.target.value })}
-          placeholder="OFFERTA LIMITATA"
-        />
-      </Field>
+      {/* CAMPI PRIMARI: nome + prezzo + CTA + includes */}
       <Field
         label="Nome prodotto"
         error={errFor("productName")}
@@ -3218,18 +3213,29 @@ function OfferEditor({ d, set, errFor, slideId, overrides }: EditorProps<OfferDa
           placeholder="ACQUISTA ORA →"
         />
       </Field>
-      <Field
-        label="Urgenza (opzionale)"
-        slideId={slideId}
-        fieldPath="urgency"
-        overrides={overrides}
-      >
-        <Input
-          value={d.urgency ?? ""}
-          onChange={(e) => set({ ...d, urgency: e.target.value })}
-          placeholder="Solo per i primi 50 — scade in 48h"
-        />
-      </Field>
+
+      {/* AVANZATE: badge + urgenza */}
+      <AdvancedFields hint="badge, urgenza, modificatori secondari">
+        <Field label="Badge (opzionale)">
+          <Input
+            value={d.badge ?? ""}
+            onChange={(e) => set({ ...d, badge: e.target.value })}
+            placeholder="OFFERTA LIMITATA"
+          />
+        </Field>
+        <Field
+          label="Urgenza (opzionale)"
+          slideId={slideId}
+          fieldPath="urgency"
+          overrides={overrides}
+        >
+          <Input
+            value={d.urgency ?? ""}
+            onChange={(e) => set({ ...d, urgency: e.target.value })}
+            placeholder="Solo per i primi 50 — scade in 48h"
+          />
+        </Field>
+      </AdvancedFields>
     </div>
   );
 }
@@ -3402,18 +3408,7 @@ function TipPackEditor({ d, set, errFor, slideId, overrides }: EditorProps<TipPa
 function UrgencyEditor({ d, set, errFor, slideId, overrides }: EditorProps<UrgencyData>) {
   return (
     <div className="space-y-4">
-      <Field
-        label="Eyebrow (opzionale)"
-        slideId={slideId}
-        fieldPath="eyebrow"
-        overrides={overrides}
-      >
-        <Input
-          value={d.eyebrow ?? ""}
-          onChange={(e) => set({ ...d, eyebrow: e.target.value })}
-          placeholder="URGENTE"
-        />
-      </Field>
+      {/* PRIMARI: headline + deadline + cta */}
       <Field
         label="Headline"
         hint={HL_HINT}
@@ -3447,18 +3442,6 @@ function UrgencyEditor({ d, set, errFor, slideId, overrides }: EditorProps<Urgen
         />
       </Field>
       <Field
-        label="Posti rimasti (opzionale)"
-        slideId={slideId}
-        fieldPath="unitsLeft"
-        overrides={overrides}
-      >
-        <Input
-          value={d.unitsLeft ?? ""}
-          onChange={(e) => set({ ...d, unitsLeft: e.target.value })}
-          placeholder="Solo 7 posti rimasti"
-        />
-      </Field>
-      <Field
         label="Etichetta CTA"
         error={errFor("ctaLabel")}
         slideId={slideId}
@@ -3473,6 +3456,34 @@ function UrgencyEditor({ d, set, errFor, slideId, overrides }: EditorProps<Urgen
           placeholder="PRENOTA ORA →"
         />
       </Field>
+
+      {/* AVANZATE: eyebrow + posti rimasti */}
+      <AdvancedFields hint="eyebrow, scarcity">
+        <Field
+          label="Eyebrow (opzionale)"
+          slideId={slideId}
+          fieldPath="eyebrow"
+          overrides={overrides}
+        >
+          <Input
+            value={d.eyebrow ?? ""}
+            onChange={(e) => set({ ...d, eyebrow: e.target.value })}
+            placeholder="URGENTE"
+          />
+        </Field>
+        <Field
+          label="Posti rimasti (opzionale)"
+          slideId={slideId}
+          fieldPath="unitsLeft"
+          overrides={overrides}
+        >
+          <Input
+            value={d.unitsLeft ?? ""}
+            onChange={(e) => set({ ...d, unitsLeft: e.target.value })}
+            placeholder="Solo 7 posti rimasti"
+          />
+        </Field>
+      </AdvancedFields>
     </div>
   );
 }
@@ -3606,20 +3617,7 @@ function BonusStackEditor({ d, set, errFor, slideId, overrides }: EditorProps<Bo
 function GuaranteeEditor({ d, set, errFor, slideId, overrides }: EditorProps<GuaranteeData>) {
   return (
     <div className="space-y-4">
-      <Field label="Badge (opzionale)">
-        <Input
-          value={d.badge ?? ""}
-          onChange={(e) => set({ ...d, badge: e.target.value })}
-          placeholder="100% SODDISFATTI"
-        />
-      </Field>
-      <Field label="Sigillo / icona (emoji)" hint="Es. 🛡️ 🔒 ✅">
-        <Input
-          value={d.seal ?? ""}
-          onChange={(e) => set({ ...d, seal: e.target.value })}
-          placeholder="🛡️"
-        />
-      </Field>
+      {/* PRIMARI: headline + body */}
       <Field
         label="Headline"
         hint={HL_HINT}
@@ -3651,18 +3649,36 @@ function GuaranteeEditor({ d, set, errFor, slideId, overrides }: EditorProps<Gua
           placeholder="Provalo. Se entro 30 giorni…"
         />
       </Field>
-      <Field
-        label="Condizioni (opzionale)"
-        slideId={slideId}
-        fieldPath="terms"
-        overrides={overrides}
-      >
-        <Input
-          value={d.terms ?? ""}
-          onChange={(e) => set({ ...d, terms: e.target.value })}
-          placeholder="Basta una mail. Rimborso entro 48h."
-        />
-      </Field>
+
+      {/* AVANZATE: badge + seal + terms */}
+      <AdvancedFields hint="badge, sigillo, condizioni">
+        <Field label="Badge (opzionale)">
+          <Input
+            value={d.badge ?? ""}
+            onChange={(e) => set({ ...d, badge: e.target.value })}
+            placeholder="100% SODDISFATTI"
+          />
+        </Field>
+        <Field label="Sigillo / icona (emoji)" hint="Es. 🛡️ 🔒 ✅">
+          <Input
+            value={d.seal ?? ""}
+            onChange={(e) => set({ ...d, seal: e.target.value })}
+            placeholder="🛡️"
+          />
+        </Field>
+        <Field
+          label="Condizioni (opzionale)"
+          slideId={slideId}
+          fieldPath="terms"
+          overrides={overrides}
+        >
+          <Input
+            value={d.terms ?? ""}
+            onChange={(e) => set({ ...d, terms: e.target.value })}
+            placeholder="Basta una mail. Rimborso entro 48h."
+          />
+        </Field>
+      </AdvancedFields>
     </div>
   );
 }
