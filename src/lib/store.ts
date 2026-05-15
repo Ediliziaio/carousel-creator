@@ -389,12 +389,15 @@ export const useCarousel = create<CarouselState>()(
         const flags = caseSensitive ? "g" : "gi";
         const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const re = new RegExp(escaped, flags);
+        // Escape "$" nel replacement per evitare che JS interpreti $1 $& $`
+        // come backreference quando l'utente vuole il carattere letterale.
+        const safeReplace = replace.replace(/\$/g, "$$$$");
         const visit = (val: unknown): unknown => {
           if (typeof val === "string") {
             const matches = val.match(re);
             if (matches) {
               count += matches.length;
-              return val.replace(re, replace);
+              return val.replace(re, safeReplace);
             }
             return val;
           }

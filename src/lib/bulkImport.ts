@@ -33,6 +33,9 @@ export function detectFileType(file: File): SupportedFile | null {
   return null;
 }
 
+/** Hard cap per evitare crash su file enormi o abuse. L'utente vede toast con warning. */
+export const MAX_BRIEFS_PER_IMPORT = 500;
+
 export async function parseFileToBriefs(file: File): Promise<ImportedBrief[]> {
   const type = detectFileType(file);
   if (!type) {
@@ -40,21 +43,34 @@ export async function parseFileToBriefs(file: File): Promise<ImportedBrief[]> {
       `Tipo file non supportato: ${file.name}. Usa .md/.txt, .csv, .json, .xlsx, .docx o .pdf.`,
     );
   }
+  let briefs: ImportedBrief[];
   switch (type) {
     case "md":
     case "txt":
-      return splitTextIntoBriefs(await file.text());
+      briefs = splitTextIntoBriefs(await file.text());
+      break;
     case "csv":
-      return parseCsv(await file.text());
+      briefs = parseCsv(await file.text());
+      break;
     case "json":
-      return parseJsonBriefs(await file.text());
+      briefs = parseJsonBriefs(await file.text());
+      break;
     case "xlsx":
-      return parseXlsx(file);
+      briefs = await parseXlsx(file);
+      break;
     case "docx":
-      return parseDocx(file);
+      briefs = await parseDocx(file);
+      break;
     case "pdf":
-      return parsePdf(file);
+      briefs = await parsePdf(file);
+      break;
   }
+  // Cap: se il file ha più di MAX_BRIEFS_PER_IMPORT, lo tronca con un warning
+  // (gestito a livello UI dall'`onAfterParse` del dialog).
+  if (briefs.length > MAX_BRIEFS_PER_IMPORT) {
+    briefs = briefs.slice(0, MAX_BRIEFS_PER_IMPORT);
+  }
+  return briefs;
 }
 
 /* ===== Strategia comune: spezza per heading ===== */
@@ -241,14 +257,23 @@ async function parseDocx(file: File): Promise<ImportedBrief[]> {
 
 /** PDF: estrae testo per pagina via pdfjs, poi splitta come markdown. */
 async function parsePdf(file: File): Promise<ImportedBrief[]> {
-  // pdfjs richiede setup worker. Usiamo modalità "fake worker" per semplicità
-  // in browser (più lento ma niente dipendenza esterna da setup).
   const pdfjs = await import("pdfjs-dist");
-  // Worker via CDN (jsDelivr, già usato dai progetti pdfjs).
-  // Versione coerente con il package installato.
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  // Worker via CDN jsDelivr. Se non raggiungibile (offline/firewall), pdfjs
+  // tenta in modalità "fake worker" (più lento ma funzionante).
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  } catch {
+    // Fallback silenzioso, pdfjs userà il worker inline
+  }
   const buf = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  let pdf;
+  try {
+    pdf = await pdfjs.getDocument({ data: buf }).promise;
+  } catch (e) {
+    throw new Error(
+      `Impossibile leggere il PDF (probabilmente offline o CDN bloccato). Riprova online oppure usa .md / .csv / .xlsx. Dettagli: ${(e as Error).message}`,
+    );
+  }
   const pages: string[] = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);

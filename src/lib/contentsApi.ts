@@ -105,6 +105,9 @@ export async function repeatContentWeekly(
       ? ({ ...src.data } as Record<string, unknown>)
       : ({} as Record<string, unknown>);
 
+  // Strip eventuale suffisso "— settimana N" precedente per evitare append
+  // ricorsivi tipo "Nome — settimana 1 — settimana 1".
+  const baseName = src.name.replace(/\s*—\s*settimana\s*\d+\s*$/i, "");
   const rows = [];
   const start = new Date(firstDateIso);
   for (let i = 0; i < weeks; i++) {
@@ -115,7 +118,7 @@ export async function repeatContentWeekly(
       project_id: src.project_id,
       user_id: userId,
       type: src.type,
-      name: `${src.name} — settimana ${i + 1}`,
+      name: `${baseName} — settimana ${i + 1}`,
       data,
       thumbnail: src.thumbnail,
     });

@@ -38,7 +38,12 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const { request, env } = ctx;
 
   if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_AI_TOKEN) {
-    return jsonError(500, "AI non configurata. Imposta CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_AI_TOKEN su Cloudflare Pages → Environment variables.");
+    // 501 = not implemented: l'endpoint esiste ma la configurazione lato server manca.
+    // Messaggio puntuale per l'admin, non per l'utente finale.
+    return jsonError(
+      501,
+      "AI non configurata sul server: imposta CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_AI_TOKEN come Encrypted env vars su Cloudflare Pages → Settings → Environment variables, poi rideploya.",
+    );
   }
 
   let body: RequestBody;

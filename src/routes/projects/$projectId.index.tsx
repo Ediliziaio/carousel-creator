@@ -343,6 +343,7 @@ function ProjectDashboard() {
           lastClickedIdRef.current = id;
           return next;
         }
+        // Stale ref (card cancellata): fallback a toggle singolo + reset ref.
       }
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -362,7 +363,10 @@ function ProjectDashboard() {
       if (!confirm(`Eliminare ${ids.length} contenuti? Non reversibile.`)) return;
       try {
         await Promise.all(ids.map((id) => deleteContent(id)));
-        setItems((p) => p.filter((x) => !selected.has(x.id)));
+        // Usa il Set locale `idsSet` invece del closure `selected` per evitare
+        // race condition se clearSelection() viene processato prima del filter.
+        const idsSet = new Set(ids);
+        setItems((p) => p.filter((x) => !idsSet.has(x.id)));
         clearSelection();
         toast.success(`${ids.length} contenuti eliminati`);
       } catch (e) {
@@ -383,10 +387,11 @@ function ProjectDashboard() {
       return;
     }
     if (action === "status" && arg) {
-      // Optimistic per tutti
+      // Optimistic per tutti — usa idsSet locale (no closure su `selected`)
+      const idsSet = new Set(ids);
       setItems((p) =>
         p.map((c) => {
-          if (!selected.has(c.id)) return c;
+          if (!idsSet.has(c.id)) return c;
           const data = (c.data && typeof c.data === "object" ? { ...c.data } : {}) as Record<
             string,
             unknown
@@ -1487,9 +1492,17 @@ function CalendarView({
    * Apple Calendar, Outlook. Ogni contenuto = 1 VEVENT di 30 minuti alle 9:00.
    */
   function exportICS() {
-    const scheduledItems = items.filter((c) => getContentScheduledAt(c));
+    // Filtra solo eventi futuri (oggi 00:00 in poi) — gli iCal client
+    // tipicamente non visualizzano eventi passati.
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const scheduledItems = items.filter((c) => {
+      const iso = getContentScheduledAt(c);
+      if (!iso) return false;
+      return new Date(iso) >= todayStart;
+    });
     if (scheduledItems.length === 0) {
-      toast.error("Nessun contenuto programmato da esportare");
+      toast.error("Nessun contenuto futuro programmato da esportare");
       return;
     }
     const pad = (n: number) => String(n).padStart(2, "0");
@@ -1976,14 +1989,20 @@ function BulkCreateDialog({
     setParsing(true);
     setFileName(file.name);
     try {
-      const { parseFileToBriefs } = await import("@/lib/bulkImport");
+      const { parseFileToBriefs, MAX_BRIEFS_PER_IMPORT } = await import("@/lib/bulkImport");
       const briefs = await parseFileToBriefs(file);
       if (briefs.length === 0) {
         toast.error("Nessun contenuto rilevato nel file");
         setParsedBriefs([]);
       } else {
         setParsedBriefs(briefs);
-        toast.success(`${briefs.length} contenuti rilevati nel file`);
+        if (briefs.length === MAX_BRIEFS_PER_IMPORT) {
+          toast.warning(
+            `Il file conteneva più di ${MAX_BRIEFS_PER_IMPORT} contenuti — importati solo i primi ${MAX_BRIEFS_PER_IMPORT}. Splitta il file per importare il resto.`,
+          );
+        } else {
+          toast.success(`${briefs.length} contenuti rilevati nel file`);
+        }
       }
     } catch (e) {
       toast.error((e as Error).message);
