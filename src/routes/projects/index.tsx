@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,8 +25,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Plus, FolderKanban, Trash2, Check } from "lucide-react";
-import { listProjects, createProject, deleteProject, type ProjectRow } from "@/lib/projectsApi";
+import { Loader2, Plus, FolderKanban, Trash2, Check, Search } from "lucide-react";
+import {
+  listProjects,
+  createProject,
+  deleteProject,
+  getAllProjectsStats,
+  type ProjectRow,
+  type ProjectStats,
+} from "@/lib/projectsApi";
+import { STATUS_META } from "@/lib/contentsApi";
 import { UserMenu } from "@/components/UserMenu";
 import { useCarousel } from "@/lib/store";
 import { applyThemeToBrand } from "@/lib/presets";
@@ -41,11 +49,14 @@ export const Route = createFileRoute("/projects/")({
 function ProjectsPage() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [stats, setStats] = useState<Map<string, ProjectStats>>(new Map());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [searchProj, setSearchProj] = useState("");
+  const [searchContents, setSearchContents] = useState("");
   const [pendingDelete, setPendingDelete] = useState<ProjectRow | null>(null);
   const brandPresets = useCarousel((s) => s.brandPresets);
   // ID del brand preset di default per nuovi progetti, salvato in localStorage.
@@ -69,14 +80,49 @@ function ProjectsPage() {
   async function refresh() {
     setLoading(true);
     try {
-      const rows = await listProjects();
+      const [rows, statsMap] = await Promise.all([listProjects(), getAllProjectsStats()]);
       setProjects(rows);
+      setStats(statsMap);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
   }
+
+  // Risultati ricerca: progetti filtrati + match nei contenuti.
+  const filteredProjects = useMemo(() => {
+    const term = searchProj.trim().toLowerCase();
+    if (!term) return projects;
+    return projects.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        (p.description ?? "").toLowerCase().includes(term),
+    );
+  }, [projects, searchProj]);
+
+  const contentMatches = useMemo(() => {
+    const term = searchContents.trim().toLowerCase();
+    if (!term || term.length < 2) return [];
+    const out: { projectId: string; projectName: string; contentId: string; contentName: string; type: string }[] = [];
+    for (const [projectId, ps] of stats.entries()) {
+      const proj = projects.find((p) => p.id === projectId);
+      if (!proj) continue;
+      for (const r of ps.recent) {
+        if (r.name.toLowerCase().includes(term)) {
+          out.push({
+            projectId,
+            projectName: proj.name,
+            contentId: r.id,
+            contentName: r.name,
+            type: r.type,
+          });
+          if (out.length >= 20) return out;
+        }
+      }
+    }
+    return out;
+  }, [searchContents, stats, projects]);
 
   async function onCreate(e: FormEvent) {
     e.preventDefault();
@@ -272,6 +318,56 @@ function ProjectsPage() {
           </Dialog>
         </div>
 
+        {/* Search bar: progetto + contenuti */}
+        {!loading && projects.length > 0 && (
+          <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchProj}
+                onChange={(e) => setSearchProj(e.target.value)}
+                placeholder="Cerca tra i progetti…"
+                className="pl-8"
+              />
+            </div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchContents}
+                onChange={(e) => setSearchContents(e.target.value)}
+                placeholder="Cerca tra TUTTI i contenuti (cross-progetto)…"
+                className="pl-8"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Risultati ricerca contenuti cross-progetto */}
+        {!loading && contentMatches.length > 0 && (
+          <Card className="mb-4 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              🔍 Trovati {contentMatches.length} contenuti
+            </div>
+            <ul className="space-y-1">
+              {contentMatches.map((m) => (
+                <li key={m.contentId}>
+                  <Link
+                    to="/projects/$projectId/builder/$contentId"
+                    params={{ projectId: m.projectId, contentId: m.contentId }}
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                  >
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                      {m.type}
+                    </span>
+                    <span className="flex-1 truncate font-medium">{m.contentName}</span>
+                    <span className="text-xs text-muted-foreground">{m.projectName}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -291,9 +387,26 @@ function ProjectsPage() {
               Crea il primo progetto
             </Button>
           </Card>
+        ) : filteredProjects.length === 0 ? (
+          <Card className="flex flex-col items-center gap-2 py-12 text-center">
+            <Search className="h-8 w-8 text-muted-foreground" />
+            <p className="font-medium">Nessun progetto trovato</p>
+            <p className="text-xs text-muted-foreground">Prova a cambiare i termini di ricerca.</p>
+            <Button variant="outline" size="sm" onClick={() => setSearchProj("")} className="mt-1">
+              Reset filtro
+            </Button>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
+            {filteredProjects.map((p) => {
+              const ps = stats.get(p.id);
+              const total = ps?.total ?? 0;
+              const published = ps?.byStatus["published"] ?? 0;
+              const inProgress = ps?.byStatus["in_progress"] ?? 0;
+              const review = ps?.byStatus["review"] ?? 0;
+              const today = ps?.scheduledToday ?? 0;
+              const week = ps?.scheduledThisWeek ?? 0;
+              return (
               <Card key={p.id} className="group relative overflow-hidden p-5 transition hover:shadow-md">
                 <Link
                   to="/projects/$projectId"
@@ -306,7 +419,76 @@ function ProjectsPage() {
                       {p.description}
                     </p>
                   )}
-                  <p className="mt-3 text-xs text-muted-foreground">
+
+                  {/* Stats riassunto */}
+                  {total > 0 ? (
+                    <div className="mt-3 grid grid-cols-3 gap-1 text-center">
+                      <div className="rounded-md bg-muted/50 py-1.5">
+                        <div className="text-lg font-bold tabular-nums">{total}</div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                          Totali
+                        </div>
+                      </div>
+                      <div className="rounded-md bg-amber-500/10 py-1.5">
+                        <div className="text-lg font-bold tabular-nums text-amber-700">
+                          {inProgress + review}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-amber-700/80">
+                          In lavoro
+                        </div>
+                      </div>
+                      <div className="rounded-md bg-green-500/10 py-1.5">
+                        <div className="text-lg font-bold tabular-nums text-green-700">
+                          {published}
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider text-green-700/80">
+                          Pubblicati
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      Nessun contenuto ancora.
+                    </p>
+                  )}
+
+                  {/* Badge calendario */}
+                  {(today > 0 || week > 0) && (
+                    <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                      {today > 0 && (
+                        <span className="rounded-full bg-blue-500/15 px-2 py-0.5 font-semibold text-blue-700">
+                          📅 {today} oggi
+                        </span>
+                      )}
+                      {week > 0 && (
+                        <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-blue-700/80">
+                          {week} questa settimana
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Recent contents */}
+                  {ps && ps.recent.length > 0 && (
+                    <div className="mt-3 border-t border-border pt-2">
+                      <div className="mb-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+                        Recenti
+                      </div>
+                      <ul className="space-y-0.5">
+                        {ps.recent.map((r) => (
+                          <li
+                            key={r.id}
+                            className="truncate text-xs text-muted-foreground"
+                            title={r.name}
+                          >
+                            · {r.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-[10px] text-muted-foreground">
                     Aggiornato il{" "}
                     {new Date(p.updated_at).toLocaleDateString("it-IT", {
                       day: "2-digit",
@@ -327,7 +509,8 @@ function ProjectsPage() {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
