@@ -72,7 +72,13 @@ import {
   type ContentStatus,
 } from "@/lib/contentsApi";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "lucide-react";
+import { Calendar, Bell } from "lucide-react";
+import {
+  isNotificationSupported,
+  getNotificationPermission,
+  requestNotificationPermission,
+  notifyScheduledToday,
+} from "@/lib/notifications";
 import { UserMenu } from "@/components/UserMenu";
 import { Input } from "@/components/ui/input";
 import { makeDefaultSlide, type SlideFormat } from "@/lib/templates";
@@ -132,6 +138,7 @@ function ProjectDashboard() {
     new Set(["post", "carousel", "story"]),
   );
   const [search, setSearch] = useState("");
+  const [notifPerm, setNotifPerm] = useState(getNotificationPermission());
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem(VIEW_KEY, view);
@@ -183,6 +190,23 @@ function ProjectDashboard() {
     });
     return out;
   }, [items]);
+
+  // Contenuti pianificati per OGGI (per badge + notifica browser).
+  const scheduledTodayCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return items.filter((c) => {
+      const iso = getContentScheduledAt(c);
+      const status = getContentStatus(c);
+      return iso && iso.slice(0, 10) === today && status !== "published";
+    }).length;
+  }, [items]);
+
+  // Trigger notifica browser una volta al giorno per progetto se ci sono contenuti
+  // scheduled per oggi e l'utente ha dato il permesso.
+  useEffect(() => {
+    if (!project || scheduledTodayCount === 0) return;
+    notifyScheduledToday(project.id, project.name, scheduledTodayCount);
+  }, [project, scheduledTodayCount, notifPerm]);
 
   const countsByType = useMemo(() => {
     return {
@@ -426,6 +450,25 @@ function ProjectDashboard() {
                   </button>
                 </div>
 
+                {isNotificationSupported() && notifPerm !== "granted" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const res = await requestNotificationPermission();
+                      setNotifPerm(res);
+                      if (res === "granted") {
+                        toast.success("Notifiche attive: ti avviseremo se hai contenuti da pubblicare oggi");
+                      } else if (res === "denied") {
+                        toast.error("Notifiche bloccate. Abilita dalle impostazioni del browser.");
+                      }
+                    }}
+                    title="Abilita promemoria browser per oggi"
+                  >
+                    <Bell className="mr-1 h-4 w-4" />
+                    {scheduledTodayCount > 0 ? `Promemoria (${scheduledTodayCount})` : "Promemoria"}
+                  </Button>
+                )}
                 <BulkCreateDialog
                   projectId={projectId}
                   defaultType="carousel"
@@ -1138,7 +1181,7 @@ function GridView({
 }
 
 /* ===================== CalendarView ===================== */
-type CalendarMode = "month" | "week";
+type CalendarMode = "month" | "week" | "timeline";
 
 function CalendarView({
   items,
@@ -1249,6 +1292,60 @@ function CalendarView({
     toast.success(`Esportato CSV con ${rows.length} contenuti`);
   }
 
+  /**
+   * Esporta iCal (.ics) standard RFC 5545. Importabile in Google Calendar,
+   * Apple Calendar, Outlook. Ogni contenuto = 1 VEVENT di 30 minuti alle 9:00.
+   */
+  function exportICS() {
+    const scheduledItems = items.filter((c) => getContentScheduledAt(c));
+    if (scheduledItems.length === 0) {
+      toast.error("Nessun contenuto programmato da esportare");
+      return;
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) =>
+      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+    const escapeICS = (s: string) =>
+      s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    const now = fmt(new Date());
+    const lines: string[] = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Carousel Creator//IT",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+    for (const c of scheduledItems) {
+      const iso = getContentScheduledAt(c)!;
+      const start = new Date(iso);
+      const end = new Date(start.getTime() + 30 * 60 * 1000);
+      const status = getContentStatus(c);
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:carousel-creator-${c.id}@app`,
+        `DTSTAMP:${now}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
+        `SUMMARY:${escapeICS(`${STATUS_META[status].emoji} ${c.name}`)}`,
+        `DESCRIPTION:${escapeICS(`Tipo: ${c.type} · Stato: ${STATUS_META[status].label}`)}`,
+        `CATEGORIES:${c.type.toUpperCase()}`,
+        "END:VEVENT",
+      );
+    }
+    lines.push("END:VCALENDAR");
+    const ics = lines.join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `calendario-${new Date().toISOString().slice(0, 10)}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(
+      `Esportato iCal con ${scheduledItems.length} contenuti. Importalo in Google/Apple Calendar.`,
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_240px]">
       <div>
@@ -1275,6 +1372,14 @@ function CalendarView({
               >
                 Settimana
               </button>
+              <button
+                onClick={() => setMode("timeline")}
+                className={`rounded px-2 py-1 text-xs transition ${
+                  mode === "timeline" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                }`}
+              >
+                Timeline
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1286,6 +1391,14 @@ function CalendarView({
               title="Scarica un CSV con i contenuti programmati"
             >
               ⬇ CSV
+            </button>
+            <button
+              type="button"
+              onClick={exportICS}
+              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+              title="Esporta come .ics per Google/Apple Calendar"
+            >
+              ⬇ iCal
             </button>
           </div>
         </div>
@@ -1305,7 +1418,9 @@ function CalendarView({
           ))}
         </div>
 
-        {mode === "month" ? (
+        {mode === "timeline" ? (
+          <TimelineView items={items} byDay={byDay} projectId={projectId} />
+        ) : mode === "month" ? (
           /* Griglia mese 7×6 */
           <div className="mt-1 grid grid-cols-7 gap-1">
             {weeks.flat().map((day) => {
@@ -1408,6 +1523,133 @@ function CalendarView({
           </p>
         </div>
       </aside>
+    </div>
+  );
+}
+
+/**
+ * Vista timeline: lista cronologica raggruppata per "sezioni temporali":
+ * Oggi · Domani · Questa settimana · Prossime · Scaduti · Senza data.
+ */
+function TimelineView({
+  items,
+  byDay,
+  projectId,
+}: {
+  items: ContentRow[];
+  byDay: Map<string, ContentRow[]>;
+  projectId: string;
+}) {
+  void byDay;
+  const groups = useMemo(() => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+    const weekEnd = new Date();
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekEndIso = weekEnd.toISOString().slice(0, 10);
+
+    const today: ContentRow[] = [];
+    const tomorrowGr: ContentRow[] = [];
+    const thisWeek: ContentRow[] = [];
+    const future: ContentRow[] = [];
+    const overdue: ContentRow[] = [];
+    const unscheduled: ContentRow[] = [];
+
+    for (const c of items) {
+      const iso = getContentScheduledAt(c);
+      const isPublished = getContentStatus(c) === "published";
+      if (!iso) {
+        if (!isPublished) unscheduled.push(c);
+        continue;
+      }
+      const day = iso.slice(0, 10);
+      if (day === todayIso) today.push(c);
+      else if (day === tomorrowIso) tomorrowGr.push(c);
+      else if (day > todayIso && day <= weekEndIso) thisWeek.push(c);
+      else if (day > weekEndIso) future.push(c);
+      else if (!isPublished) overdue.push(c);
+    }
+
+    const sortByDate = (a: ContentRow, b: ContentRow) =>
+      (getContentScheduledAt(a) ?? "").localeCompare(getContentScheduledAt(b) ?? "");
+    today.sort(sortByDate);
+    tomorrowGr.sort(sortByDate);
+    thisWeek.sort(sortByDate);
+    future.sort(sortByDate);
+    overdue.sort(sortByDate);
+
+    return [
+      { label: "🔴 Scaduti (non pubblicati)", items: overdue, color: "text-destructive" },
+      { label: "📍 Oggi", items: today, color: "text-primary" },
+      { label: "⏭ Domani", items: tomorrowGr, color: "text-blue-600" },
+      { label: "🗓 Questa settimana", items: thisWeek, color: "text-foreground" },
+      { label: "📅 Prossime", items: future, color: "text-muted-foreground" },
+      { label: "❓ Senza data", items: unscheduled, color: "text-muted-foreground" },
+    ];
+  }, [items]);
+
+  const total = groups.reduce((n, g) => n + g.items.length, 0);
+  if (total === 0) {
+    return (
+      <div className="rounded-md border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
+        Nessun contenuto in questo progetto.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {groups.map((g) =>
+        g.items.length === 0 ? null : (
+          <div key={g.label}>
+            <div className={`mb-2 text-xs font-bold uppercase tracking-wider ${g.color}`}>
+              {g.label} <span className="ml-1 text-muted-foreground">({g.items.length})</span>
+            </div>
+            <div className="space-y-1.5">
+              {g.items.map((c) => {
+                const iso = getContentScheduledAt(c);
+                const status = getContentStatus(c);
+                const meta = STATUS_META[status];
+                const typeMeta = TYPE_META[c.type];
+                const TypeIcon = typeMeta.icon;
+                return (
+                  <Link
+                    key={c.id}
+                    to="/projects/$projectId/builder/$contentId"
+                    params={{ projectId, contentId: c.id }}
+                    className="flex items-center gap-3 rounded-md border border-border bg-card px-3 py-2 transition hover:border-primary hover:shadow-sm"
+                  >
+                    <TypeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{c.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {typeMeta.label}
+                        {iso && (
+                          <>
+                            {" · "}
+                            {new Date(iso).toLocaleDateString("it-IT", {
+                              weekday: "short",
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${meta.bg} ${meta.color}`}
+                    >
+                      {meta.emoji} {meta.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ),
+      )}
     </div>
   );
 }
