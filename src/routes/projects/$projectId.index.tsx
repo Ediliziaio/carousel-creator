@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -139,10 +139,21 @@ function ProjectDashboard() {
   );
   const [search, setSearch] = useState("");
   const [notifPerm, setNotifPerm] = useState(getNotificationPermission());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const lastClickedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem(VIEW_KEY, view);
   }, [view]);
+
+  // Esc → deseleziona tutto
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") clearSelection();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -315,6 +326,83 @@ function ProjectDashboard() {
     } catch (e) {
       toast.error((e as Error).message);
       void load();
+    }
+  }
+
+  function toggleSelect(id: string, shiftKey: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      // Shift+click: range tra ultimo cliccato e questo (su lista filtrata).
+      if (shiftKey && lastClickedIdRef.current && lastClickedIdRef.current !== id) {
+        const order = filtered.map((c) => c.id);
+        const i = order.indexOf(lastClickedIdRef.current);
+        const j = order.indexOf(id);
+        if (i >= 0 && j >= 0) {
+          const [a, b] = i < j ? [i, j] : [j, i];
+          for (let k = a; k <= b; k++) next.add(order[k]);
+          lastClickedIdRef.current = id;
+          return next;
+        }
+      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      lastClickedIdRef.current = id;
+      return next;
+    });
+  }
+  function clearSelection() {
+    setSelected(new Set());
+    lastClickedIdRef.current = null;
+  }
+
+  async function bulkAction(action: "status" | "duplicate" | "delete", arg?: ContentStatus) {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (action === "delete") {
+      if (!confirm(`Eliminare ${ids.length} contenuti? Non reversibile.`)) return;
+      try {
+        await Promise.all(ids.map((id) => deleteContent(id)));
+        setItems((p) => p.filter((x) => !selected.has(x.id)));
+        clearSelection();
+        toast.success(`${ids.length} contenuti eliminati`);
+      } catch (e) {
+        toast.error((e as Error).message);
+        void load();
+      }
+      return;
+    }
+    if (action === "duplicate") {
+      try {
+        const dups = await Promise.all(ids.map((id) => duplicateContent(id)));
+        setItems((p) => [...dups, ...p]);
+        clearSelection();
+        toast.success(`${dups.length} contenuti duplicati`);
+      } catch (e) {
+        toast.error((e as Error).message);
+      }
+      return;
+    }
+    if (action === "status" && arg) {
+      // Optimistic per tutti
+      setItems((p) =>
+        p.map((c) => {
+          if (!selected.has(c.id)) return c;
+          const data = (c.data && typeof c.data === "object" ? { ...c.data } : {}) as Record<
+            string,
+            unknown
+          >;
+          data.status = arg;
+          return { ...c, data: data as unknown };
+        }),
+      );
+      try {
+        await Promise.all(ids.map((id) => updateContentStatus(id, arg)));
+        clearSelection();
+        toast.success(`${ids.length} contenuti → ${STATUS_META[arg].label}`);
+      } catch (e) {
+        toast.error((e as Error).message);
+        void load();
+      }
     }
   }
 
@@ -522,6 +610,8 @@ function ProjectDashboard() {
               <KanbanBoard
                 items={filtered}
                 projectId={projectId}
+                selected={selected}
+                onToggleSelect={toggleSelect}
                 onStatusChange={onStatusChange}
                 onScheduleChange={onScheduleChange}
                 onAfterRepeat={() => void load()}
@@ -547,6 +637,52 @@ function ProjectDashboard() {
           </>
         )}
       </main>
+
+      {/* Bulk action bar (fissa in basso quando ci sono selezionati) */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 shadow-lg">
+          <span className="text-xs font-medium">
+            {selected.size} selezionati
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <Select onValueChange={(v) => void bulkAction("status", v as ContentStatus)}>
+            <SelectTrigger className="h-7 w-[160px] text-xs">
+              <SelectValue placeholder="Cambia stato…" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_ORDER.map((s) => (
+                <SelectItem key={s} value={s} className="text-xs">
+                  {STATUS_META[s].emoji} {STATUS_META[s].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void bulkAction("duplicate")}
+            className="h-7 text-xs"
+          >
+            <Copy className="mr-1 h-3 w-3" /> Duplica
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void bulkAction("delete")}
+            className="h-7 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="mr-1 h-3 w-3" /> Elimina
+          </Button>
+          <div className="h-4 w-px bg-border" />
+          <button
+            onClick={clearSelection}
+            className="text-xs text-muted-foreground hover:text-foreground"
+            title="Deseleziona tutto (Esc)"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <AlertDialog
         open={!!pendingDelete}
@@ -745,6 +881,8 @@ function EmptyState({
 function KanbanBoard({
   items,
   projectId,
+  selected,
+  onToggleSelect,
   onStatusChange,
   onScheduleChange,
   onAfterRepeat,
@@ -753,6 +891,8 @@ function KanbanBoard({
 }: {
   items: ContentRow[];
   projectId: string;
+  selected: Set<string>;
+  onToggleSelect: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, status: ContentStatus) => void;
   onScheduleChange: (id: string, scheduledAt: string | null) => void;
   onAfterRepeat: () => void;
@@ -775,6 +915,17 @@ function KanbanBoard({
 
   const onDrop = (e: React.DragEvent, target: ContentStatus) => {
     e.preventDefault();
+    // Multi-drag: se sono stati settati 'ids', applica a tutti.
+    const idsRaw = e.dataTransfer.getData("application/x-ids");
+    if (idsRaw) {
+      try {
+        const ids = JSON.parse(idsRaw) as string[];
+        ids.forEach((id) => onStatusChange(id, target));
+        return;
+      } catch {
+        // fallback single
+      }
+    }
     const id = e.dataTransfer.getData("text/plain");
     if (id) onStatusChange(id, target);
   };
@@ -809,6 +960,9 @@ function KanbanBoard({
                     key={c.id}
                     content={c}
                     projectId={projectId}
+                    selected={selected.has(c.id)}
+                    selectedIds={selected}
+                    onToggleSelect={onToggleSelect}
                     onDuplicate={onDuplicate}
                     onDelete={onDelete}
                     onStatusChange={onStatusChange}
@@ -828,6 +982,9 @@ function KanbanBoard({
 function KanbanCard({
   content,
   projectId,
+  selected,
+  selectedIds,
+  onToggleSelect,
   onDuplicate,
   onDelete,
   onStatusChange,
@@ -836,6 +993,9 @@ function KanbanCard({
 }: {
   content: ContentRow;
   projectId: string;
+  selected: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, shiftKey: boolean) => void;
   onDuplicate: (id: string) => void;
   onDelete: (c: ContentRow) => void;
   onStatusChange: (id: string, status: ContentStatus) => void;
@@ -851,9 +1011,39 @@ function KanbanCard({
   return (
     <div
       draggable
-      onDragStart={(e) => e.dataTransfer.setData("text/plain", content.id)}
-      className="group relative cursor-move rounded-md border border-border bg-card p-2 shadow-sm transition hover:shadow-md"
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", content.id);
+        // Multi-drag: se il contenuto draggato è selected, applica a tutti i selezionati.
+        if (selected && selectedIds.size > 1) {
+          e.dataTransfer.setData(
+            "application/x-ids",
+            JSON.stringify(Array.from(selectedIds)),
+          );
+        }
+      }}
+      className={`group relative cursor-move rounded-md border bg-card p-2 shadow-sm transition hover:shadow-md ${
+        selected ? "border-primary ring-1 ring-primary" : "border-border"
+      }`}
     >
+      {/* Checkbox selezione (visibile al hover oppure se >0 selezionati globalmente) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleSelect(content.id, e.shiftKey);
+        }}
+        className={`absolute left-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded border bg-card text-[10px] transition ${
+          selected
+            ? "border-primary bg-primary text-primary-foreground opacity-100"
+            : selectedIds.size > 0
+              ? "border-border opacity-70 hover:opacity-100"
+              : "border-border opacity-0 group-hover:opacity-70 hover:!opacity-100"
+        }`}
+        title="Seleziona (Shift+click per range)"
+      >
+        {selected ? "✓" : ""}
+      </button>
       <Link
         to="/projects/$projectId/builder/$contentId"
         params={{ projectId, contentId: content.id }}
