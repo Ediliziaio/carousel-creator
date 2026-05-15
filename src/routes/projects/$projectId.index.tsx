@@ -51,7 +51,7 @@ import {
   Search,
   ChevronDown,
 } from "lucide-react";
-import { getProject, type ProjectRow } from "@/lib/projectsApi";
+import { getProject, updateProject, type ProjectRow } from "@/lib/projectsApi";
 import {
   listContents,
   deleteContent,
@@ -312,14 +312,12 @@ function ProjectDashboard() {
             <Link to="/projects" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold text-foreground">
-                {project?.name ?? "…"}
-              </h1>
-              {project?.description && (
-                <p className="truncate text-xs text-muted-foreground">{project.description}</p>
-              )}
-            </div>
+            <ProjectHeaderEditable
+              project={project}
+              onUpdate={(patch) =>
+                setProject((p) => (p ? { ...p, ...patch } : p))
+              }
+            />
           </div>
           <UserMenu />
         </div>
@@ -533,6 +531,118 @@ function ProjectDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/* ===================== ProjectHeaderEditable ===================== */
+/**
+ * Header del progetto con nome/descrizione modificabili inline.
+ * Click sul nome → input; Enter o blur → salva; Esc → annulla.
+ * Optimistic update via onUpdate callback.
+ */
+function ProjectHeaderEditable({
+  project,
+  onUpdate,
+}: {
+  project: ProjectRow | null;
+  onUpdate: (patch: Partial<ProjectRow>) => void;
+}) {
+  const [editingName, setEditingName] = useState(false);
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [descDraft, setDescDraft] = useState("");
+
+  if (!project) {
+    return (
+      <div className="min-w-0">
+        <h1 className="truncate text-lg font-semibold text-foreground">…</h1>
+      </div>
+    );
+  }
+
+  async function saveName() {
+    const v = nameDraft.trim();
+    setEditingName(false);
+    if (!project || !v || v === project.name) return;
+    const prev = project.name;
+    onUpdate({ name: v });
+    try {
+      await updateProject(project.id, { name: v });
+    } catch (e) {
+      onUpdate({ name: prev });
+      toast.error((e as Error).message);
+    }
+  }
+  async function saveDesc() {
+    const v = descDraft.trim();
+    setEditingDesc(false);
+    if (!project) return;
+    const prev = project.description;
+    const newVal = v || null;
+    if (newVal === prev) return;
+    onUpdate({ description: newVal });
+    try {
+      await updateProject(project.id, { description: newVal });
+    } catch (e) {
+      onUpdate({ description: prev });
+      toast.error((e as Error).message);
+    }
+  }
+
+  return (
+    <div className="min-w-0 flex-1">
+      {editingName ? (
+        <Input
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onBlur={() => void saveName()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void saveName();
+            if (e.key === "Escape") setEditingName(false);
+          }}
+          autoFocus
+          className="h-7 text-lg font-semibold"
+        />
+      ) : (
+        <h1
+          className="cursor-text truncate text-lg font-semibold text-foreground hover:text-primary"
+          onClick={() => {
+            setNameDraft(project.name);
+            setEditingName(true);
+          }}
+          title="Click per rinominare"
+        >
+          {project.name}
+        </h1>
+      )}
+      {editingDesc ? (
+        <Input
+          value={descDraft}
+          onChange={(e) => setDescDraft(e.target.value)}
+          onBlur={() => void saveDesc()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void saveDesc();
+            if (e.key === "Escape") setEditingDesc(false);
+          }}
+          autoFocus
+          placeholder="Descrizione (vuoto per rimuovere)"
+          className="mt-0.5 h-6 text-xs"
+        />
+      ) : (
+        <p
+          className="cursor-text truncate text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            setDescDraft(project.description ?? "");
+            setEditingDesc(true);
+          }}
+          title="Click per modificare la descrizione"
+        >
+          {project.description || (
+            <span className="italic opacity-60">+ aggiungi descrizione</span>
+          )}
+        </p>
+      )}
     </div>
   );
 }
